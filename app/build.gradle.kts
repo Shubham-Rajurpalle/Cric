@@ -72,6 +72,9 @@ dependencies {
     // Facebook Login
     implementation("com.facebook.android:facebook-login:16.3.0")
 
+    //Google Login
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
     //Gson for json parsing
     implementation ("com.google.code.gson:gson:2.8.8")
 }
