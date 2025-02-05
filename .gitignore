@@ -1,19 +1,28 @@
+# Android Studio files
+.idea/
+.gradle/
+local.properties
 *.iml
-.gradle
-/local.properties
+
+# Idea-specific files
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+
+# macOS specific
 .DS_Store
+
+# Build folders
 /build
+/app/build
 /captures
 .externalNativeBuild
 .cxx
-local.properties
 
-# Project exclude paths
-/app/
-/gradle/
+# Google Services (if using Firebase)
+google-services.json
+
+# Project exclude paths (Removed /app/ and /gradle/ to include source code and Gradle wrappers)
