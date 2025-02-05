@@ -22,6 +22,8 @@ local.properties
 .externalNativeBuild
 .cxx
 
+hs_err_pid*.log
+
 # Google Services (if using Firebase)
 google-services.json
 
