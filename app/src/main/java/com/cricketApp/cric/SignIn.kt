@@ -1,7 +1,10 @@
 package com.cricketApp.cric
 
+import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
@@ -12,14 +15,28 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.cricketApp.cric.databinding.ActivitySignInBinding
+import com.facebook.CallbackManager
+import com.facebook.CallbackManager.Factory.create
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.FacebookSdk
+import com.facebook.GraphRequest
+import com.facebook.GraphResponse
+import com.facebook.appevents.AppEventsLogger
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
+import org.json.JSONException
+import org.json.JSONObject
+import java.util.Arrays
+
 
 class SignIn : AppCompatActivity() {
 
@@ -27,6 +44,9 @@ class SignIn : AppCompatActivity() {
     private lateinit var binding: ActivitySignInBinding
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+    private lateinit var callbackManager: CallbackManager
+    private lateinit var loginManager: LoginManager
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,6 +61,20 @@ class SignIn : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        // Facebook LogIn
+        FacebookSdk.sdkInitialize(applicationContext)
+        AppEventsLogger.activateApp(application)
+        callbackManager = CallbackManager.Factory.create();
+        facebookLogin();
+        binding.facebookLoginBtn.setOnClickListener{
+                loginManager.logInWithReadPermissions(
+                    this@SignIn,
+                    Arrays.asList(
+                        "email",
+                        "public_profile",
+                        "user_birthday"));
+            }
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
@@ -105,6 +139,42 @@ class SignIn : AppCompatActivity() {
 
         // Check if user is already signed in
         checkExistingGoogleUser()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    fun facebookLogin() {
+        loginManager= LoginManager.getInstance()
+        loginManager
+            .registerCallback(
+                callbackManager,
+                object : FacebookCallback<LoginResult>{
+                    override fun onCancel() {
+                        Log.v("LoginScreen", "---onCancel")
+                    }
+                    override fun onError(error: FacebookException) {
+                        // here write code when get error
+                        Log.v(
+                            "LoginScreen", "----onError: "
+                                    + error.message
+                        )
+                    }
+                    override fun onSuccess(result: LoginResult) {
+                        val accessToken = result?.accessToken ?: return
+                        val credential = FacebookAuthProvider.getCredential(accessToken.token)
+                        auth.signInWithCredential(credential)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    checkUserInfo()
+                                } else {
+                                    Toast.makeText(this@SignIn, "Facebook Authentication Failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                    }
+                })
     }
 
     private fun checkExistingGoogleUser() {
@@ -188,4 +258,6 @@ class SignIn : AppCompatActivity() {
                 }
             }
     }
+
+
 }

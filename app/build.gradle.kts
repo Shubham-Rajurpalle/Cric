@@ -51,6 +51,9 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.navigation.fragment)
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,4 +80,11 @@ dependencies {
 
     //Gson for json parsing
     implementation ("com.google.code.gson:gson:2.8.8")
+
+    //Material Dependencies
+    implementation ("com.google.android.material:material:1.9.0")
+
+    // Navigation Components
+    implementation ("androidx.navigation:navigation-fragment-ktx:2.6.0 ")
+    implementation ("androidx.navigation:navigation-ui-ktx:2.6.0")
 }

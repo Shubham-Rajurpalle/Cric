@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/homeIcon"
+        android:icon="@drawable/home_icon"
+        android:title="Home"/>
+
+    <item
+        android:id="@+id/chatIcon"
+        android:icon="@drawable/chat_icon"
+        android:title="Trolls"/>
+
+    <item
+        android:id="@+id/memeIcon"
+        android:icon="@drawable/meme_icon"
+        android:title="Memes"/>
+
+    <item
+        android:id="@+id/leaderboardIcon"
+        android:icon="@drawable/leaderboard_icon"
+        android:title="Leaderboard"/>
+
+    <item
+        android:id="@+id/profileIcon"
+        android:icon="@drawable/profile_icon"
+        android:title="Profile"/>
+
+</menu>

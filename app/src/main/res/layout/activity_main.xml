@@ -9,9 +9,9 @@
     tools:context=".MainActivity">
 
     <ImageView
-        android:layout_width="@dimen/_300sdp"
+        android:layout_width="@dimen/_260sdp"
         android:layout_height="@dimen/_130sdp"
-        android:scaleType="centerInside"
+        android:scaleType="fitCenter"
         android:src="@drawable/cric_logo"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

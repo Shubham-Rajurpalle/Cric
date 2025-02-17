@@ -5,4 +5,8 @@
     <color name="transparent">#00000000</color>
     <color name="grey">#8E8E8E</color>
     <color name="blue">#00B7FF</color>
+    <color name="red">#FF0000</color>
+    <color name="backgroud_bottom">#1E1E1E</color>
+    <color name="background">#121212</color>
+    <color name="primary">#1E88E5</color>
 </resources>
