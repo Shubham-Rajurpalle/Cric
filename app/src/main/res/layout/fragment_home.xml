@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<LinearLayout xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -30,10 +30,10 @@
                     android:id="@+id/backBtn"
                     android:layout_width="@dimen/_23sdp"
                     android:layout_height="@dimen/_23sdp"
-                    android:layout_marginStart="@dimen/_10sdp"
-                    android:layout_marginTop="@dimen/_10sdp"
                     android:padding="@dimen/_2sdp"
+                    android:layout_marginStart="@dimen/_10sdp"
                     android:src="@drawable/profile_icon"
+                    app:layout_constraintBottom_toBottomOf="@+id/imageView"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -41,10 +41,10 @@
                     android:id="@+id/bell_icon"
                     android:layout_width="@dimen/_23sdp"
                     android:layout_height="@dimen/_23sdp"
-                    android:layout_marginTop="@dimen/_10sdp"
                     android:layout_marginEnd="@dimen/_10sdp"
                     android:padding="@dimen/_2sdp"
                     android:src="@drawable/bell_icon"
+                    app:layout_constraintBottom_toTopOf="@+id/appBarLayout"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
@@ -73,13 +73,13 @@
                         android:layout_height="match_parent"
                         android:backgroundTint="@color/transparent"
                         app:tabGravity="fill"
-                        app:tabSelectedTextAppearance="@style/TabTextStyle"
-                        app:tabTextAppearance="@style/TabTextStyle"
                         app:tabIndicator="@color/red"
                         app:tabIndicatorColor="@color/transparent"
                         app:tabIndicatorFullWidth="true"
                         app:tabIndicatorHeight="@dimen/_1sdp"
+                        app:tabSelectedTextAppearance="@style/TabTextStyle"
                         app:tabSelectedTextColor="@color/white"
+                        app:tabTextAppearance="@style/TabTextStyle"
                         app:tabTextColor="@color/grey">
 
                         <com.google.android.material.tabs.TabItem

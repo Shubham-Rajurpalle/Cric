@@ -1,21 +1,14 @@
 package com.cricketApp.cric
 
-import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import androidx.activity.addCallback
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
-import androidx.navigation.NavController
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
 import com.cricketApp.cric.databinding.ActivityHomeBinding
-import com.google.android.material.tabs.TabLayoutMediator
 
 class Home : AppCompatActivity() {
 
@@ -36,10 +29,32 @@ class Home : AppCompatActivity() {
             insets
         }
 
-        if (savedInstanceState==null){
-            switchFragment(homeFragment(),"Home")
-        }
         setupBottomNav()
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val navHostFragment = supportFragmentManager.findFragmentById(R.id.navHost)
+                val currentFragment = navHostFragment?.childFragmentManager?.fragments?.lastOrNull()
+
+                if (currentFragment !is homeFragment) {
+                    supportFragmentManager.beginTransaction()
+                        .replace(R.id.navHost, homeFragment())
+                        .addToBackStack(null)
+                        .commit()
+
+                    binding.bottomNavigation.post {
+                        binding.bottomNavigation.selectedItemId = R.id.homeIcon
+                    }
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
+
+        if (savedInstanceState == null) {
+            switchFragment(homeFragment(), "Home")
+        }
     }
 
     private fun setupBottomNav() {
@@ -59,39 +74,20 @@ class Home : AppCompatActivity() {
 
     private fun switchFragment(fragment: Fragment, tag: String) {
         val fragmentManager = supportFragmentManager
-        val currentFragment=fragmentManager.findFragmentById(R.id.navHost)
+        val currentFragment = fragmentManager.findFragmentById(R.id.navHost)
 
-        if(currentFragment!=null&&currentFragment.tag==tag){
+        if (currentFragment != null && currentFragment.tag == tag) {
             return
         }
 
-        val transaction=fragmentManager.beginTransaction()
+        val transaction = fragmentManager.beginTransaction()
+        fragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
 
-        if(tag=="Home"){
-            fragmentManager.popBackStack(null,androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
-            transaction.replace(R.id.navHost,fragment,tag)
-        }else{
-            fragmentManager.popBackStack(null,androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
-            transaction.replace(R.id.navHost,fragment,tag)
+        transaction.replace(R.id.navHost, fragment, tag)
+        if (tag != "Home") {
             transaction.addToBackStack("Home")
         }
 
         transaction.commit()
-    }
-
-    override fun onBackPressed() {
-        val fragmentManager = supportFragmentManager
-
-        // Check if we are not already on the home fragment
-        if (fragmentManager.backStackEntryCount > 0) {
-            // Simulate clicking on the "Home" icon by resetting the selected item
-            binding.bottomNavigation.selectedItemId = R.id.homeIcon
-
-            // Replace the current fragment with the Home fragment
-            switchFragment(homeFragment(), "Home")
-        } else {
-            // If there's nothing in the back stack, use the default back press behavior
-            super.onBackPressed()
-        }
     }
 }
