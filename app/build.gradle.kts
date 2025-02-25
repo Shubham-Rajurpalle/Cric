@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.ui.test.android)
+    implementation(libs.androidx.room.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -67,11 +68,13 @@ dependencies {
     implementation("com.intuit.ssp:ssp-android:1.1.1")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))  // Updated to latest stable version
+    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))  // Updated to latest stable version
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
-    implementation(libs.firebase.storage.ktx)
+    implementation ("com.google.firebase:firebase-firestore")
+    implementation ("com.google.firebase:firebase-storage")
+    implementation ("com.google.android.gms:play-services-auth:20.7.0")
 
     // Facebook Login
     implementation("com.facebook.android:facebook-login:16.3.0")
@@ -88,4 +91,15 @@ dependencies {
     // Navigation Components
     implementation ("androidx.navigation:navigation-fragment-ktx:2.6.0 ")
     implementation ("androidx.navigation:navigation-ui-ktx:2.6.0")
+
+    // RecyclerView for displaying video list
+    implementation ("androidx.recyclerview:recyclerview:1.2.1")
+
+    // ExoPlayer for playing videos
+    implementation ("com.google.android.exoplayer:exoplayer:2.18.1")
+
+    //Glide for Thumbnail loading
+    implementation ("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.15.1")
+
 }
