@@ -10,7 +10,7 @@
         android:id="@+id/shots_recycler_view"
         android:layout_width="match_parent"
         android:orientation="horizontal"
-        android:layout_marginTop="@dimen/_5sdp"
+        android:layout_margin="@dimen/_5sdp"
         android:layout_height="@dimen/_200sdp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
