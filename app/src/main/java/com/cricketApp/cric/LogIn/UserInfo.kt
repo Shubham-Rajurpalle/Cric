@@ -1,9 +1,8 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.LogIn
 
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -12,7 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.cricketApp.cric.databinding.ActivitySignUpBinding
+import com.cricketApp.cric.home.Home
+import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivityUserInfoBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
@@ -166,7 +166,7 @@ class UserInfo : AppCompatActivity() {
                     }
 
                     showToast("Info stored successfully")
-                    startActivity(Intent(this@UserInfo,Home::class.java))
+                    startActivity(Intent(this@UserInfo, Home::class.java))
                     finish()
                 } catch (e: Exception) {
                     showToast("Error: ${e.message}")
@@ -189,7 +189,7 @@ class UserInfo : AppCompatActivity() {
             val iplTeams = arrayOf(
                 "Select your Team", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
             )
-            val adapter = ArrayAdapter(this,R.layout.spinner_item, iplTeams)
+            val adapter = ArrayAdapter(this, R.layout.spinner_item, iplTeams)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.iplTeamTxt.adapter = adapter
         }

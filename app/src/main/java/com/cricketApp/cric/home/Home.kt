@@ -1,14 +1,18 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.home
 
 import android.os.Bundle
-import androidx.activity.addCallback
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
+import com.cricketApp.cric.R
+import com.cricketApp.cric.Chat.chatFragment
+import com.cricketApp.cric.Leaderboard.LeaderboardFragment
 import com.cricketApp.cric.databinding.ActivityHomeBinding
+import com.cricketApp.cric.Meme.memeFragment
+import com.cricketApp.cric.Profile.ProfileFragment
 
 class Home : AppCompatActivity() {
 
@@ -36,9 +40,9 @@ class Home : AppCompatActivity() {
                 val navHostFragment = supportFragmentManager.findFragmentById(R.id.navHost)
                 val currentFragment = navHostFragment?.childFragmentManager?.fragments?.lastOrNull()
 
-                if (currentFragment !is homeFragment) {
+                if (currentFragment !is HomeFragment) {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.navHost, homeFragment())
+                        .replace(R.id.navHost, HomeFragment())
                         .addToBackStack(null)
                         .commit()
 
@@ -53,7 +57,7 @@ class Home : AppCompatActivity() {
         })
 
         if (savedInstanceState == null) {
-            switchFragment(homeFragment(), "Home")
+            switchFragment(HomeFragment(), "Home")
         }
     }
 
@@ -61,11 +65,11 @@ class Home : AppCompatActivity() {
         binding.bottomNavigation.itemIconTintList = null
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
-                R.id.homeIcon -> switchFragment(homeFragment(), "Home")
+                R.id.homeIcon -> switchFragment(HomeFragment(), "Home")
                 R.id.chatIcon -> switchFragment(chatFragment(), "Chat")
                 R.id.memeIcon -> switchFragment(memeFragment(), "Meme")
-                R.id.leaderboardIcon -> switchFragment(leaderboardFragment(), "Leaderboard")
-                R.id.profileIcon -> switchFragment(profileFragment(), "Profile")
+                R.id.leaderboardIcon -> switchFragment(LeaderboardFragment(), "Leaderboard")
+                R.id.profileIcon -> switchFragment(ProfileFragment(), "Profile")
                 else -> false
             }
             true

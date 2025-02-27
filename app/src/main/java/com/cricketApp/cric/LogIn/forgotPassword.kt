@@ -1,4 +1,4 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.LogIn
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivityForgotPasswordBinding
 import com.google.firebase.auth.FirebaseAuth
 
@@ -33,7 +34,7 @@ class forgotPassword : AppCompatActivity() {
 
         //Back Btn
         binding.backBtn.setOnClickListener {
-            startActivity(Intent(this@forgotPassword,SignIn::class.java))
+            startActivity(Intent(this@forgotPassword, SignIn::class.java))
         }
 
         binding.resetPassword.setOnClickListener{
@@ -59,7 +60,7 @@ class forgotPassword : AppCompatActivity() {
 
                 if(task.isSuccessful){
                     Toast.makeText(this, "Reset link sent to your email!", Toast.LENGTH_LONG).show()
-                    startActivity(Intent(this@forgotPassword,SignIn::class.java))
+                    startActivity(Intent(this@forgotPassword, SignIn::class.java))
                     finish()
                 }else{
                     Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()

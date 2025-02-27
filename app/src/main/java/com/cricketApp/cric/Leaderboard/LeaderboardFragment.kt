@@ -1,17 +1,21 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.Leaderboard
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import com.cricketApp.cric.R
 
-class chatFragment : Fragment() {
+
+class LeaderboardFragment : Fragment() {
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        return inflater.inflate(R.layout.fragment_chat, container, false)
+        return inflater.inflate(R.layout.fragment_leaderboard, container, false)
     }
 
 }

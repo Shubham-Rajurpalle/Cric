@@ -1,7 +1,5 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.LogIn
 
-import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -14,14 +12,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.cricketApp.cric.home.Home
+import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivitySignInBinding
 import com.facebook.CallbackManager
-import com.facebook.CallbackManager.Factory.create
 import com.facebook.FacebookCallback
 import com.facebook.FacebookException
 import com.facebook.FacebookSdk
-import com.facebook.GraphRequest
-import com.facebook.GraphResponse
 import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
@@ -33,8 +30,6 @@ import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
-import org.json.JSONException
-import org.json.JSONObject
 import java.util.Arrays
 
 

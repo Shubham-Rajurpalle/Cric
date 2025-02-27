@@ -1,4 +1,4 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.home
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import com.cricketApp.cric.databinding.FragmentHomeBinding
 import com.google.android.material.tabs.TabLayoutMediator
 
-class homeFragment : Fragment() {
+class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 

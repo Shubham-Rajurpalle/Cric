@@ -68,7 +68,7 @@ dependencies {
     implementation("com.intuit.ssp:ssp-android:1.1.1")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))  // Updated to latest stable version
+    implementation(platform("com.google.firebase:firebase-bom:32.7.3"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")

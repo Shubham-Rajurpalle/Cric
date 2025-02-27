@@ -1,4 +1,4 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.LogIn
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +8,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.cricketApp.cric.home.Home
+import com.cricketApp.cric.R
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,9 +35,9 @@ class MainActivity : AppCompatActivity() {
             val isLoggedIn=sharedPreference.getBoolean("isLoggedIn",false)
 
             if(isLoggedIn){
-                startActivity(Intent(this@MainActivity,Home::class.java))
+                startActivity(Intent(this@MainActivity, Home::class.java))
             }else{
-                startActivity(Intent(this@MainActivity,SignIn::class.java))
+                startActivity(Intent(this@MainActivity, SignIn::class.java))
             }
 
             // Removing current activity from stack

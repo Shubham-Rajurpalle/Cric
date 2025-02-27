@@ -22,7 +22,7 @@
         android:background="@drawable/gradient_overlay_cric_shot" />
 
     <TextView
-        android:id="@+id/videoTitle"
+        android:id="@+id/textTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/viewsContainer"
@@ -44,21 +44,40 @@
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/viewCount"
+            android:id="@+id/textViewCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="10K.Views"
+            android:text="10K"
             android:textColor="#E0E0E0"
             android:textSize="12sp" />
-
 
         <TextView
-            android:id="@+id/timeBefore"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1 hours ago"
+            android:text=" Views"
             android:textColor="#E0E0E0"
             android:textSize="12sp" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" · "
+            android:textColor="#E0E0E0"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/textTimeAgo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1"
+            android:textColor="#E0E0E0"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" hours ago"
+            android:textColor="#E0E0E0"
+            android:textSize="12sp" />
     </LinearLayout>
 </RelativeLayout>
