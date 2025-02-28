@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_180sdp"
+    app:cardCornerRadius="@dimen/_12sdp"
+    app:cardElevation="4dp"
+    app:cardUseCompatPadding="true"
+    app:cardPreventCornerOverlap="true"
+    android:background="@drawable/gradient_border_background">
+
+<RelativeLayout
+android:layout_width="match_parent"
+android:layout_height="match_parent">
+
+<ProgressBar
+    android:id="@+id/loadingProgress"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_centerInParent="true"
+    android:indeterminateTint="@color/white"
+    android:visibility="visible" />
+
+<ImageView
+    android:id="@+id/imagePlayer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="2dp"
+    android:contentDescription="Cricket player image"
+    android:scaleType="centerCrop"
+    android:src="@drawable/loading"
+    android:visibility="visible" />
+
+<View
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_80sdp"
+    android:layout_alignBottom="@id/imagePlayer"
+    android:background="@drawable/gradient_overlay_cric_shot" />
+
+<!-- Title with ellipsis -->
+
+    <TextView
+        android:id="@+id/videoTitle"
+        android:layout_width="@dimen/_180sdp"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/viewsContainer"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="@dimen/_5sdp"
+        android:layout_marginBottom="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="RCB Jitegi - Full Match Highlights of IPL Finals"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+    android:id="@+id/viewsContainer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_alignBottom="@id/imagePlayer"
+    android:layout_marginStart="@dimen/_5sdp"
+    android:layout_marginEnd="@dimen/_5sdp"
+    android:layout_marginBottom="@dimen/_5sdp"
+    android:orientation="horizontal">
+
+    <!-- Views Count -->
+    <TextView
+        android:id="@+id/viewCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10K Views"
+        android:textColor="#E0E0E0"
+        android:textSize="12sp" />
+
+    <!-- Time at right -->
+    <TextView
+        android:id="@+id/timeBefore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:text="1 hour ago"
+        android:maxLines="1"
+        android:textColor="#E0E0E0"
+        android:textSize="12sp"
+        android:layout_marginStart="8dp" />
+</LinearLayout>
+
+    <Button
+        android:id="@+id/detailsButton"
+        android:layout_width="@dimen/_60sdp"
+        android:layout_height="@dimen/_30sdp"
+        android:text="Details"
+        android:textSize="12sp"
+        android:padding="4dp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/button_background"
+        android:stateListAnimator="@null"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="@dimen/_5sdp"
+        android:layout_marginBottom="@dimen/_5sdp"/>
+
+</RelativeLayout>
+    </androidx.cardview.widget.CardView>

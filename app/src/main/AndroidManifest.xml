@@ -23,23 +23,23 @@
         android:theme="@style/Theme.Cric"
         tools:targetApi="31">
         <activity
-            android:name=".home.Shots.VideoPlayerActivity"
+            android:name=".home.Shots.NewsDetailsActivity"
             android:exported="false" />
         <activity
-            android:name=".VideoPlayer"
+            android:name=".home.Shots.VideoPlayerActivity"
             android:exported="false" />
         <activity
             android:name=".LogIn.forgotPassword"
             android:exported="false" />
         <activity
             android:name=".LogIn.UserInfo"
-            android:exported="false" /> <!-- Facebook SDK Meta Data -->
+            android:exported="false" />
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id" />
         <meta-data
             android:name="com.facebook.sdk.ClientToken"
-            android:value="@string/facebook_client_token" /> <!-- Facebook Login Activities -->
+            android:value="@string/facebook_client_token" />
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"

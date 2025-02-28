@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.widget.ViewPager2
+import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.FragmentCricShotsBinding
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -18,7 +20,9 @@ class Cric_shots : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var videoAdapter: VideoAdapter
+    private lateinit var newsAdapter: NewsAdapter
     private val videoList = mutableListOf<Video>()
+    private val newsList = mutableListOf<News>()
     private val firestore = FirebaseFirestore.getInstance()
 
     override fun onCreateView(
@@ -31,16 +35,29 @@ class Cric_shots : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupRecyclerView()
+        setupCricShotsRecyclerView()
+        setupNewsRecyclerView()
         fetchVideos()
+        fetchNews()
     }
 
-    private fun setupRecyclerView() {
-        binding.shotsRecyclerView.layoutManager = LinearLayoutManager(
+    private fun setupNewsRecyclerView() {
+        binding.newsRecycleView.layoutManager = LinearLayoutManager(
             requireContext(),
-            LinearLayoutManager.HORIZONTAL,
+            LinearLayoutManager.VERTICAL,
             false
         )
+        newsAdapter = NewsAdapter(newsList, requireContext())
+        binding.newsRecycleView.adapter = newsAdapter
+    }
+
+    private fun setupCricShotsRecyclerView() {
+        val viewPager2 = requireActivity().findViewById<ViewPager2>(R.id.viewPager)
+
+        binding.shotsRecyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            (this as? InterceptableRecyclerView)?.viewPager2 = viewPager2
+        }
         videoAdapter = VideoAdapter(videoList) { video ->
             openVideoPlayer(video)
         }
@@ -52,12 +69,12 @@ class Cric_shots : Fragment() {
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snapshot ->
-                if (snapshot != null && !snapshot.isEmpty) {
-                    val fetchedVideos = snapshot.toObjects(Video::class.java)
-                    videoAdapter.updateData(fetchedVideos) // ✅ Correctly update RecyclerView
-                    Log.d("Firestore", "Total videos fetched: ${fetchedVideos.size}")
-                } else {
-                    Log.d("Firestore", "No videos found in Firestore")
+                snapshot?.let {
+                    if (!it.isEmpty) {
+                        videoList.clear()
+                        videoList.addAll(it.toObjects(Video::class.java))
+                        videoAdapter.notifyDataSetChanged()
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -65,7 +82,23 @@ class Cric_shots : Fragment() {
             }
     }
 
-
+    private fun fetchNews() {
+        firestore.collection("NewsPosts")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                snapshot?.let {
+                    if (!it.isEmpty) {
+                        newsList.clear()
+                        newsList.addAll(it.toObjects(News::class.java))
+                        newsAdapter.notifyDataSetChanged()
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Firestore", "Error fetching news", e)
+            }
+    }
 
     private fun openVideoPlayer(video: Video) {
         val intent = Intent(requireContext(), VideoPlayerActivity::class.java).apply {

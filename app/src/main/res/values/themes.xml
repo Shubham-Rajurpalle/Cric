@@ -5,7 +5,7 @@
         <item name="android:windowBackground">@color/background</item>
 
         <!-- Primary Colors -->
-        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimary">#FD3535</item>
         <item name="colorOnPrimary">@color/white</item>
 
         <!-- Status Bar Color -->
@@ -21,5 +21,11 @@
     <style name="TabTextStyle">
         <item name="android:textSize">@dimen/_13sdp</item>
         <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="buttonDetailsTheme" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 </resources>

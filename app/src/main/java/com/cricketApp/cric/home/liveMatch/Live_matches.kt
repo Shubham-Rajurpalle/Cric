@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.cricketApp.cric.R
 
-class live_matches : Fragment() {
+class Live_matches : Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

@@ -1,8 +1,32 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.Cric" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
 
+    <style name="Base.Theme.Cric" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Background Colors (Same for Light & Dark Mode) -->
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:windowBackground">@color/background</item>
+
+        <!-- Primary Colors -->
+        <item name="colorPrimary">#B40000</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- Status Bar Color -->
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Tab Text Style -->
+        <item name="tabTextAppearance">@style/TabTextStyle</item>
+    </style>
+
+    <style name="Theme.Cric" parent="Base.Theme.Cric" />
+
+    <style name="TabTextStyle">
+        <item name="android:textSize">@dimen/_13sdp</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="buttonDetailsTheme" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/button_background</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">#FFFFFF</item>
     </style>
 </resources>
