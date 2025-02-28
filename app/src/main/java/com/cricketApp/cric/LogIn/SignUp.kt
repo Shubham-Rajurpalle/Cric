@@ -215,7 +215,7 @@ class SignUp : AppCompatActivity() {
 
     private fun setIplTeams() {
         val iplTeams = arrayOf(
-            "Select your Team", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
+            "Select your com.cricketApp.cric.home.liveMatch.Team", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
         )
         val adapter = ArrayAdapter(this, R.layout.spinner_item, iplTeams)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)

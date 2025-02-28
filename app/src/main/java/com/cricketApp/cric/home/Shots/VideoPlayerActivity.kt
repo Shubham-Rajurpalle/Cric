@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.cricketApp.cric.databinding.ActivityVideoPlayerBinding
 import com.google.firebase.firestore.FieldValue
@@ -41,7 +42,14 @@ class VideoPlayerActivity : AppCompatActivity() {
         // Click Listeners
         binding.likeButton.setOnClickListener { updateLikeCount(videoId!!) }
         binding.shareButton.setOnClickListener { shareVideo(videoUrl!!, videoId!!) }
-        binding.backButton.setOnClickListener { onBackPressed() }
+        binding.backButton.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
+        // ✅ Handling back press with OnBackPressedDispatcher
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finish()
+            }
+        })
     }
 
     private fun setupPlayer(videoUrl: String) {

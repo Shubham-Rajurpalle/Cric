@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.cricketApp.cric.adapter.UpcomingMatchAdapter
 import com.cricketApp.cric.databinding.FragmentUpcomingMatchesBinding
 
-class Upcoming_matches : Fragment() {
+class UpcomingMatchesFragment : Fragment() {
     private var _binding: FragmentUpcomingMatchesBinding? = null
     private val binding get() = _binding!!
     private lateinit var viewModel: UpcomingMatchViewModel
@@ -35,7 +35,10 @@ class Upcoming_matches : Fragment() {
 
     private fun observeUpcomingMatches() {
         viewModel.matches.observe(viewLifecycleOwner) { matches ->
-            adapter.updateData(matches ?: emptyList())
+            if (matches.isNullOrEmpty()) {
+                Log.d("UpcomingMatches", "No upcoming matches available")
+            }
+            adapter.updateData(matches)
         }
     }
 
