@@ -1,6 +1,6 @@
 package com.cricketApp.cric.home
 
-import LeaderboardFragment
+import com.cricketApp.cric.Leaderboard.LeaderboardFragment
 import android.os.Bundle
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge

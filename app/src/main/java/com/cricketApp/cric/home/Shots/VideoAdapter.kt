@@ -65,7 +65,9 @@ class VideoAdapter(
             viewCount.text = "${video.views} Views"
             timeBefore.text = getTimeAgo(video.timestamp)
 
-            root.setOnClickListener { onVideoClick(video) }
+            root.setOnClickListener { onVideoClick(video)
+            viewCount.text= "${video.views+1} Views"
+            }
         }
     }
 

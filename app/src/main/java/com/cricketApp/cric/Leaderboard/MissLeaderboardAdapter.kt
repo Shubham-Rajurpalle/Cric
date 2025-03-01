@@ -1,17 +1,14 @@
 package com.cricketApp.cric.Leaderboard
 
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.bumptech.glide.request.target.Target
 import com.cricketApp.cric.databinding.CardLeaderboardBinding
 
-
-class LeaderboardAdapter : ListAdapter<TeamData, LeaderboardAdapter.ViewHolder>(TeamDiffCallback()) {
+class MissLeaderboardAdapter : ListAdapter<TeamData, MissLeaderboardAdapter.ViewHolder>(TeamDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = CardLeaderboardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -20,14 +17,14 @@ class LeaderboardAdapter : ListAdapter<TeamData, LeaderboardAdapter.ViewHolder>(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val team = getItem(position)
-        holder.bind(team, position + 4) // Positions start from 4
+        holder.bind(team, position + 4)
     }
 
     class ViewHolder(private val binding: CardLeaderboardBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(team: TeamData, rank: Int) {
             binding.tvRank.text = rank.toString()
             binding.tvTeamName.text = team.name
-            binding.tvHits.text = "${team.hits} Hits"
+            binding.tvHits.text = "${team.misses} Misses"
 
             Glide.with(binding.root.context)
                 .load(team.logoUrl)

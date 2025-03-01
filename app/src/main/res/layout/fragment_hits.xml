@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/black"
+    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/topPlayersCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:paddingTop="@dimen/_50sdp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:cardBackgroundColor="@color/black"
+        app:cardCornerRadius="12dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/background_leaderboard"
+            android:paddingTop="@dimen/_70sdp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <!-- Second Place -->
+            <LinearLayout
+                android:layout_marginBottom="@dimen/_5sdp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="bottom|center_horizontal"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/secondPlace"
+                    android:layout_width="@dimen/_45sdp"
+                    android:gravity="bottom"
+                    android:layout_height="@dimen/_55sdp"
+                    android:orientation="vertical">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_45sdp"
+                        android:background="@drawable/circle_yellow"
+                        app:cardCornerRadius="@dimen/_30sdp">
+
+                        <ImageView
+                            android:id="@+id/secondTeamLogo"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@drawable/circle_blue"
+                            android:padding="@dimen/_2sdp"
+                            android:src="@drawable/icc_logo" />
+                    </androidx.cardview.widget.CardView>
+
+                    <ImageView
+                        android:layout_width="@dimen/_10sdp"
+                        android:layout_height="@dimen/_10sdp"
+                        android:layout_gravity="center_horizontal"
+                        android:src="@drawable/second_number" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/secondTeam"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="CSK"
+                    android:textColor="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/secondHits"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1847"
+                    android:textColor="#3D7BF5"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hits"
+                    android:textColor="#9E9E9E"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.2"
+                android:layout_gravity="top"
+                android:gravity="top|center_horizontal"
+                android:orientation="vertical">
+
+
+                <LinearLayout
+                    android:id="@+id/firstPlaceLayout"
+                    android:layout_width="@dimen/_60sdp"
+                    android:layout_height="@dimen/_90sdp"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="@dimen/_20sdp"
+                        android:layout_height="@dimen/_20sdp"
+                        android:layout_gravity="center_horizontal"
+                        android:src="@drawable/king_logo" />
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_60sdp"
+                        android:background="@drawable/circle_yellow"
+                        app:cardCornerRadius="@dimen/_30sdp">
+
+                        <ImageView
+                            android:id="@+id/firstTeamLogo"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@drawable/circle_yellow"
+                            android:padding="@dimen/_2sdp"
+                            android:src="@drawable/icc_logo" />
+                    </androidx.cardview.widget.CardView>
+
+                    <ImageView
+                        android:layout_width="@dimen/_10sdp"
+                        android:layout_height="@dimen/_10sdp"
+                        android:layout_gravity="center_horizontal"
+                        android:src="@drawable/one_number" />
+
+                </LinearLayout>
+
+
+                <TextView
+                    android:id="@+id/firstTeam"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="MI"
+                    android:textColor="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/firstHits"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2430"
+                    android:textColor="#FFC107"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hits"
+                    android:textColor="#9E9E9E"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Third Place -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:layout_marginBottom="@dimen/_5sdp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/thirdPlaceLayout"
+                    android:layout_width="@dimen/_45sdp"
+                    android:gravity="bottom"
+                    android:layout_height="@dimen/_55sdp"
+                    android:orientation="vertical">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_45sdp"
+                        android:background="@drawable/circle_yellow"
+                        app:cardCornerRadius="@dimen/_30sdp">
+
+                        <ImageView
+                            android:id="@+id/thirdTeamLogo"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:background="@drawable/circle_green"
+                            android:padding="@dimen/_2sdp"
+                            android:src="@drawable/icc_logo" />
+                    </androidx.cardview.widget.CardView>
+
+                    <ImageView
+                        android:layout_width="@dimen/_10sdp"
+                        android:layout_height="@dimen/_10sdp"
+                        android:layout_gravity="center_horizontal"
+                        android:src="@drawable/third_number" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/thirdTeam"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="RCB"
+                    android:textColor="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/thirdHits"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1520"
+                    android:textColor="#4CAF50"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hits"
+                    android:textColor="#9E9E9E"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/leaderboardList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/_10sdp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/topPlayersCard"
+        tools:listitem="@layout/card_leaderboard" />
+
+</LinearLayout>

@@ -1,40 +1,35 @@
+package com.cricketApp.cric
 
-import android.R
 import android.os.Bundle
+import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.cricketApp.cric.Leaderboard.LeaderboardAdapter
+import com.cricketApp.cric.Leaderboard.HitsLeaderboardAdapter
 import com.cricketApp.cric.Leaderboard.TeamData
-import com.cricketApp.cric.databinding.FragmentLeaderboardBinding
+import com.cricketApp.cric.databinding.FragmentHitsBinding
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import java.security.AccessController.getContext
-import java.util.Collections
 
-class LeaderboardFragment : Fragment() {
-
-    private var _binding: FragmentLeaderboardBinding? = null
+class hitsFragment : Fragment() {
+    private var _binding: FragmentHitsBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var databaseRef: DatabaseReference
-    private lateinit var adapter: LeaderboardAdapter
+    private lateinit var adapter: HitsLeaderboardAdapter
     private val allTeams = mutableListOf<TeamData>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentLeaderboardBinding.inflate(inflater, container, false)
+        _binding = FragmentHitsBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -46,7 +41,7 @@ class LeaderboardFragment : Fragment() {
 
         // Initialize RecyclerView
         binding.leaderboardList.layoutManager = LinearLayoutManager(requireContext())
-        adapter = LeaderboardAdapter()
+        adapter = HitsLeaderboardAdapter()
         binding.leaderboardList.adapter = adapter
 
         // Load data
@@ -54,7 +49,8 @@ class LeaderboardFragment : Fragment() {
     }
 
     private fun loadLeaderboardData() {
-        databaseRef.orderByChild("hits").limitToLast(10).addValueEventListener(object : ValueEventListener {
+        databaseRef.orderByChild("hits").limitToLast(10).addValueEventListener(object :
+            ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 allTeams.clear()
 
