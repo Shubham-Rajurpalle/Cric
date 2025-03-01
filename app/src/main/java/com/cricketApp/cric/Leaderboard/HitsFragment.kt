@@ -1,4 +1,4 @@
-package com.cricketApp.cric
+package com.cricketApp.cric.Leaderboard
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -8,8 +8,6 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
-import com.cricketApp.cric.Leaderboard.HitsLeaderboardAdapter
-import com.cricketApp.cric.Leaderboard.TeamData
 import com.cricketApp.cric.databinding.FragmentHitsBinding
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError

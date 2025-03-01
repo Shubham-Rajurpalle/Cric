@@ -8,8 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
+import com.cricketApp.cric.Chat.ChatFragment
 import com.cricketApp.cric.R
-import com.cricketApp.cric.Chat.chatFragment
 import com.cricketApp.cric.databinding.ActivityHomeBinding
 import com.cricketApp.cric.Meme.memeFragment
 import com.cricketApp.cric.Profile.ProfileFragment
@@ -66,7 +66,7 @@ class Home : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.homeIcon -> switchFragment(HomeFragment(), "Home")
-                R.id.chatIcon -> switchFragment(chatFragment(), "Chat")
+                R.id.chatIcon -> switchFragment(ChatFragment(), "Chat")
                 R.id.memeIcon -> switchFragment(memeFragment(), "Meme")
                 R.id.leaderboardIcon -> switchFragment(LeaderboardFragment(), "Leaderboard")
                 R.id.profileIcon -> switchFragment(ProfileFragment(), "Profile")

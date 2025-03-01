@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.cricketApp.cric.databinding.FragmentLeaderboardBinding
-import com.cricketApp.cric.hitsFragment
 import com.google.android.material.tabs.TabLayout
 
 class LeaderboardFragment : Fragment() {

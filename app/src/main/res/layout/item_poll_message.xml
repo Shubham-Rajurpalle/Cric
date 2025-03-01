@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- User Info -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/imageViewPollProfile"
+                android:layout_width="@dimen/_25sdp"
+                android:layout_height="@dimen/_25sdp"
+                android:src="@drawable/profile_empty"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:id="@+id/textViewPollName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Shubham R"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/textViewPollTeam"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CSK"
+                    android:textColor="@android:color/darker_gray"/>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/imageViewPollTeam"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/icc_logo"/>
+        </LinearLayout>
+
+        <!-- Poll Question -->
+        <TextView
+            android:id="@+id/textViewPollQuestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Who will win today?"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <!-- Poll Options -->
+        <LinearLayout
+            android:id="@+id/linearLayoutOptions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp">
+
+            <!-- Option items will be added dynamically -->
+        </LinearLayout>
+
+        <!-- Reactions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/textViewPollFire"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥 0"
+                android:padding="4dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/button_background"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/textViewPollLaugh"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😂 0"
+                android:padding="4dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/button_background"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/textViewPollCry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😢 0"
+                android:padding="4dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/button_background"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/textViewPollTroll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏏 0"
+                android:padding="4dp"
+                android:background="@drawable/button_background"
+                android:clickable="true"/>
+        </LinearLayout>
+
+        <!-- Hit/Miss Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/buttonPollHit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Hit 0"
+                android:layout_marginEnd="4dp"/>
+
+            <Button
+                android:id="@+id/buttonPollMiss"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Miss 0"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
+
+        <!-- Comments Button -->
+        <TextView
+            android:id="@+id/textViewPollComments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="View Comments (0)"
+            android:textColor="@color/black"
+            android:clickable="true"/>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

@@ -23,7 +23,7 @@
                 android:layout_height="wrap_content"
                 android:text="All"
                 android:layout_marginEnd="8dp"
-                app:chipBackgroundColor="@color/black"
+                app:chipBackgroundColor="@color/colorPrimary"
                 app:chipStrokeWidth="1dp"
                 android:textColor="@android:color/white"/>
 
@@ -73,14 +73,14 @@
             android:layout_weight="1"
             android:hint="Type a message..."
             android:padding="12dp"
-            android:background="@drawable/button_background"
+            android:background="@drawable/rounded_edittext"
             android:inputType="textMultiLine"/>
 
         <ImageButton
             android:id="@+id/buttonPoll"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/google_logo"
+            android:src="@drawable/ic_poll"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Create Poll"/>
 
@@ -88,7 +88,7 @@
             android:id="@+id/buttonSend"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/facebook_logo"
+            android:src="@drawable/ic_send"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Send Message"/>
     </LinearLayout>
