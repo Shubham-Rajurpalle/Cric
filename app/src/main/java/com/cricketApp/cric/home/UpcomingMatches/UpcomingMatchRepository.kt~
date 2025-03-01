@@ -68,7 +68,7 @@ class UpcomingMatchRepository {
         // Check if we already have team objects, series logo, and league logo in the response
         val needTeamFetch = matches.any { it.localteam == null || it.visitorteam == null }
         val needSeriesFetch = matches.any { it.seriesLogo == null }
-        val needLeagueFetch = matches.any { it.leagueLogo == null }
+        val needLeagueFetch = matches.any { it.seriesLogo == null }
 
         if (!needTeamFetch && !needSeriesFetch && !needLeagueFetch) {
             // If we already have team objects, series logos, and league logos, just extract them
@@ -76,7 +76,7 @@ class UpcomingMatchRepository {
                 match.localteamLogo = match.localteam?.image_path
                 match.visitorteamLogo = match.visitorteam?.image_path
                 match.seriesLogo = match.seriesLogo
-                match.leagueLogo = match.leagueLogo
+                match.seriesLogo = match.seriesLogo
             }
             onResult(matches)
             return
@@ -151,7 +151,7 @@ class UpcomingMatchRepository {
                     val index = processedMatches.indexOfFirst { it.id == match.id }
                     if (index != -1) {
                         val updatedMatch = processedMatches[index].copy()
-                        updatedMatch.leagueLogo = leagueDetails.logo_path
+                        updatedMatch.seriesLogo = leagueDetails.logo_path
                         processedMatches[index] = updatedMatch
                     }
 

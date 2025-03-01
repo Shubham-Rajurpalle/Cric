@@ -1,9 +1,7 @@
 package com.cricketApp.cric.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.databinding.CardLiveMatchBinding
@@ -11,25 +9,6 @@ import com.cricketApp.cric.home.liveMatch.MatchData
 
 class LiveMatchAdapter(private var matchList: List<MatchData>) :
     RecyclerView.Adapter<LiveMatchAdapter.MatchViewHolder>() {
-
-    private var emptyStateLayout: LinearLayout? = null
-    private var recyclerView: RecyclerView? = null
-
-    fun setEmptyStateViews(recyclerView: RecyclerView, emptyStateLayout: LinearLayout) {
-        this.recyclerView = recyclerView
-        this.emptyStateLayout = emptyStateLayout
-        checkEmptyState()
-    }
-
-    private fun checkEmptyState() {
-        if (matchList.isEmpty()) {
-            recyclerView?.visibility = View.GONE
-            emptyStateLayout?.visibility = View.VISIBLE
-        } else {
-            recyclerView?.visibility = View.VISIBLE
-            emptyStateLayout?.visibility = View.GONE
-        }
-    }
 
     inner class MatchViewHolder(private val binding: CardLiveMatchBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -172,7 +151,6 @@ class LiveMatchAdapter(private var matchList: List<MatchData>) :
     fun updateData(newMatches: List<MatchData>) {
         matchList = newMatches
         notifyDataSetChanged()
-        checkEmptyState()
     }
 
     override fun getItemCount() = matchList.size

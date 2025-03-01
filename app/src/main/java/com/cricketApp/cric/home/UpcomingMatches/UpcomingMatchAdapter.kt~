@@ -13,14 +13,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
+class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
     RecyclerView.Adapter<UpcomingMatchAdapter.MatchViewHolder>() {
 
     inner class MatchViewHolder(private val binding: CardUpcomingMatchesBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(match: MatchData) {
-
             // Set initial loading state for series name
             binding.seriesName.text = "Loading..."
             fetchSeriesOrLeagueName(match)
@@ -68,6 +67,12 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                 CoroutineScope(Dispatchers.Main).launch {
                     binding.seriesName.text = seriesName ?: "N/A"
                     loadSeriesLogo(match.series_id)
+
+                    // Now that data is ready, notify adapter to update the current item
+                    val position = adapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        notifyItemChanged(position) // This ensures only the updated item is redrawn
+                    }
                 }
             }
         }
@@ -147,8 +152,9 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
     }
 
     fun updateData(newMatches: List<MatchData>) {
-        matchList = newMatches
-        notifyDataSetChanged()
+        // Update data and notify changes incrementally
+        matchList.addAll(newMatches)
+        notifyItemRangeInserted(matchList.size - newMatches.size, newMatches.size)
     }
 
     override fun getItemCount() = matchList.size

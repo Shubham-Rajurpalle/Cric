@@ -16,7 +16,9 @@ data class MatchData(
     var localteamLogo: String? = null,
     var visitorteamLogo: String? = null,
     var seriesLogo: String? = null,  // This will hold the series logo URL
-    val series_id: Int  // This links to the series
+    val series_id: Int,
+    val league_id: Int,
+    var leagueLogo:String?=null
 )
 
 data class Team(
