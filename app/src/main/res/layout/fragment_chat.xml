@@ -6,6 +6,37 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:gravity="center_vertical"
+        android:background="@color/backgroud_bottom"
+        android:layout_height="@dimen/_40sdp">
+
+        <ImageView
+            android:layout_width="@dimen/_25sdp"
+            android:layout_height="@dimen/_25sdp"
+            android:src="@drawable/profile_empty"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="Back"/>
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/noballzone"
+            android:layout_gravity="center"
+            android:layout_marginRight="@dimen/_30sdp"
+            android:layout_marginLeft="@dimen/_30sdp"
+            android:layout_weight="1"/>
+
+        <ImageView
+            android:layout_width="@dimen/_25sdp"
+            android:layout_height="@dimen/_25sdp"
+            android:layout_marginRight="@dimen/_10sdp"
+            android:src="@drawable/leaderboard_icon"/>
+    </LinearLayout>
+
     <!-- Filter Options -->
     <HorizontalScrollView
         android:layout_width="match_parent"
@@ -59,37 +90,54 @@
         android:layout_height="0dp"
         android:layout_weight="1"/>
 
-    <!-- Message Input -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp">
 
-        <EditText
-            android:id="@+id/editTextMessage"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/background_chat_type"
             android:layout_weight="1"
-            android:hint="Type a message..."
-            android:padding="12dp"
-            android:background="@drawable/button_background"
-            android:inputType="textMultiLine"/>
+            >
 
-        <ImageButton
-            android:id="@+id/buttonPoll"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/google_logo"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Create Poll"/>
+            <EditText
+                android:id="@+id/editTextMessage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Type a message..."
+                android:padding="12dp"
+                android:background="@android:color/transparent"
+                android:textColorHint="#7E7D7D"
+                android:inputType="textMultiLine"/>
+
+            <ImageButton
+                android:id="@+id/buttonMeme"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/image_picker"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Create Poll"/>
+
+            <ImageButton
+                android:id="@+id/buttonPoll"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/poll_btn"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Create Poll"/>
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/buttonSend"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/facebook_logo"
+            android:src="@drawable/send_button"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Send Message"/>
     </LinearLayout>
+
 </LinearLayout>

@@ -3,7 +3,8 @@ package com.cricketApp.cric.Chat
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.cricketApp.cric.databinding.ItemCommentBinding
+import com.cricketApp.cric.databinding.ItemSendChatBinding
+import com.cricketApp.cric.databinding.ItemSendCommentBinding
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -12,7 +13,7 @@ class CommentAdapter(private val comments: List<CommentMessage>) :
     RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentViewHolder {
-        val binding = ItemCommentBinding.inflate(
+        val binding = ItemSendCommentBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
         return CommentViewHolder(binding)
@@ -24,38 +25,36 @@ class CommentAdapter(private val comments: List<CommentMessage>) :
 
     override fun getItemCount(): Int = comments.size
 
-    inner class CommentViewHolder(private val binding: ItemCommentBinding) :
+    inner class CommentViewHolder(private val binding: ItemSendCommentBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(comment: CommentMessage) {
             binding.apply {
-                textViewCommentName.text = comment.senderName
-                textViewCommentMessage.text = comment.message
 
-                // Format timestamp
-                val sdf = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
-                val dateTime = Date(comment.timestamp)
-                textViewCommentTime.text = sdf.format(dateTime)
+                textViewName.text = comment.senderName
+                textViewMessage.text = comment.message
 
                 // Set reactions
-                textViewCommentFire.text = "🔥 ${comment.reactions["fire"] ?: 0}"
-                textViewCommentLaugh.text = "😂 ${comment.reactions["laugh"] ?: 0}"
-                textViewCommentCry.text = "😢 ${comment.reactions["cry"] ?: 0}"
-                textViewCommentTroll.text = "🏏 ${comment.reactions["troll"] ?: 0}"
+                tvAngryEmoji.text = "🔥 ${comment.reactions["fire"] ?: 0}"
+                tvHappyEmoji.text = "😂 ${comment.reactions["laugh"] ?: 0}"
+                tvCryingEmoji.text = "😢 ${comment.reactions["cry"] ?: 0}"
+                tvSadEmoji.text = "🏏 ${comment.reactions["troll"] ?: 0}"
 
                 // Set hit/miss counts
-                buttonCommentHit.text = "Hit ${comment.hit}"
-                buttonCommentMiss.text = "Miss ${comment.miss}"
+                buttonHit.text = "Hit ${comment.hit}"
+                buttonMiss.text = "Miss ${comment.miss}"
+
 
                 // Set reaction click listeners
-                textViewCommentFire.setOnClickListener { addReaction(comment, "fire") }
-                textViewCommentLaugh.setOnClickListener { addReaction(comment, "laugh") }
-                textViewCommentCry.setOnClickListener { addReaction(comment, "cry") }
-                textViewCommentTroll.setOnClickListener { addReaction(comment, "troll") }
+                tvAngryEmoji.setOnClickListener { addReaction(comment, "fire") }
+                tvHappyEmoji.setOnClickListener { addReaction(comment, "laugh") }
+                tvCryingEmoji.setOnClickListener { addReaction(comment, "cry") }
+                tvSadEmoji.setOnClickListener { addReaction(comment, "troll") }
 
                 // Set hit/miss click listeners
-                buttonCommentHit.setOnClickListener { addHit(comment) }
-                buttonCommentMiss.setOnClickListener { addMiss(comment) }
+                buttonHit.setOnClickListener { addHit(comment) }
+                buttonMiss.setOnClickListener { addMiss(comment) }
+
             }
         }
 

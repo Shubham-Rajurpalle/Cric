@@ -6,7 +6,8 @@
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#000000">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,7 +18,8 @@
         <!-- User Info -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <ImageView
@@ -38,21 +40,26 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Shubham R"
-                    android:textStyle="bold"/>
-
-                <TextView
-                    android:id="@+id/textViewTeam"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="CSK"
-                    android:textColor="@android:color/darker_gray"/>
+                    android:textStyle="bold"
+                    android:textColor="#00A3FF"/>
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/textViewTeam"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CSK"
+                android:textStyle="bold"
+                android:layout_marginRight="@dimen/_5sdp"
+                android:textColor="#FFD300"/>
 
             <ImageView
                 android:id="@+id/imageViewTeam"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/icc_logo"/>
+                android:src="@drawable/icc_logo"
+                android:background="@drawable/circular_background"
+                android:padding="2dp"/>
         </LinearLayout>
 
         <!-- Message Content -->
@@ -61,53 +68,54 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="CSK will win today!"
-            android:textSize="16sp"/>
+            android:text="I am doing well. Can we meet up tomorrow?"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"/>
 
         <!-- Reactions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="16dp">
 
             <TextView
-                android:id="@+id/textViewFire"
+                android:id="@+id/textViewEmoji1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔥 0"
+                android:text="😁 2.2k"
                 android:padding="4dp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/button_background"
+                android:background="@drawable/reaction_background"
                 android:clickable="true"/>
 
             <TextView
-                android:id="@+id/textViewLaugh"
+                android:id="@+id/textViewEmoji2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="😂 0"
+                android:text="🤬 2.2k"
                 android:padding="4dp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/button_background"
+                android:background="@drawable/reaction_background"
                 android:clickable="true"/>
 
             <TextView
-                android:id="@+id/textViewCry"
+                android:id="@+id/textViewEmoji3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="😢 0"
+                android:text="😊 2.2k"
                 android:padding="4dp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/button_background"
+                android:background="@drawable/reaction_background"
                 android:clickable="true"/>
 
             <TextView
-                android:id="@+id/textViewTroll"
+                android:id="@+id/textViewEmoji4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🏏 0"
+                android:text="😊 2.2k"
                 android:padding="4dp"
-                android:background="@drawable/button_background"
+                android:background="@drawable/reaction_background"
                 android:clickable="true"/>
         </LinearLayout>
 
@@ -116,33 +124,42 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+            android:layout_marginTop="12dp">
 
-            <Button
+            <TextView
                 android:id="@+id/buttonHit"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Hit 0"
-                android:layout_marginEnd="4dp"/>
+                android:text="🔥 5.5K"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/hit_button_background"
+                android:padding="10dp"
+                android:layout_marginEnd="8dp"
+                android:clickable="true"/>
 
-            <Button
+            <TextView
                 android:id="@+id/buttonMiss"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Miss 0"
-                android:layout_marginStart="4dp"/>
-        </LinearLayout>
+                android:text="❌ 1.1K"
+                android:textColor="#FF0000"
+                android:background="@drawable/miss_button_background"
+                android:padding="10dp"
+                android:layout_marginStart="4dp"
+                android:clickable="true"/>
 
-        <!-- Comments Button -->
-        <TextView
-            android:id="@+id/textViewComments"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="View Comments (0)"
-            android:textColor="@color/black"
-            android:clickable="true"/>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"/>
+
+            <ImageView
+                android:id="@+id/textViewComments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/comment_arrow"
+                android:layout_gravity="center_vertical"
+                android:clickable="true"/>
+        </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

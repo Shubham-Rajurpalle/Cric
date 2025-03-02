@@ -8,8 +8,9 @@ import android.widget.RadioButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.cricketApp.cric.R
-import com.cricketApp.cric.databinding.ItemChatBinding
 import com.cricketApp.cric.databinding.ItemPollMessageBinding
+import com.cricketApp.cric.databinding.ItemReceiveChatBinding
+import com.cricketApp.cric.databinding.ItemSendChatBinding
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -20,13 +21,14 @@ class ChatAdapter(private val items: List<Any>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
-        private const val VIEW_TYPE_CHAT = 0
-        private const val VIEW_TYPE_POLL = 1
+        private const val VIEW_TYPE_SEND_CHAT = 0
+        private const val VIEW_TYPE_RECEIVE_CHAT = 1
+        private const val VIEW_TYPE_POLL = 2
     }
 
     override fun getItemViewType(position: Int): Int {
         return when (items[position]) {
-            is ChatMessage -> VIEW_TYPE_CHAT
+            is ChatMessage -> if ((items[position] as ChatMessage).senderId == "currentUserId") VIEW_TYPE_SEND_CHAT else VIEW_TYPE_RECEIVE_CHAT
             is PollMessage -> VIEW_TYPE_POLL
             else -> throw IllegalArgumentException("Unknown view type")
         }
@@ -34,34 +36,36 @@ class ChatAdapter(private val items: List<Any>) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
-            VIEW_TYPE_CHAT -> {
-                val binding = ItemChatBinding.inflate(
+            VIEW_TYPE_SEND_CHAT -> {
+                val binding = ItemSendChatBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                ChatSendViewHolder(binding)
+            }
+            VIEW_TYPE_RECEIVE_CHAT -> {
+                val binding = ItemReceiveChatBinding.inflate(
                     LayoutInflater.from(parent.context), parent, false
                 )
-                ChatViewHolder(binding)
+                ChatReceiveViewHolder(binding)
             }
-
             VIEW_TYPE_POLL -> {
                 val binding = ItemPollMessageBinding.inflate(
                     LayoutInflater.from(parent.context), parent, false
                 )
                 PollViewHolder(binding)
             }
-
             else -> throw IllegalArgumentException("Unknown view type")
         }
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is ChatViewHolder -> holder.bind(items[position] as ChatMessage)
+            is ChatSendViewHolder -> holder.bind(items[position] as ChatMessage)
             is PollViewHolder -> holder.bind(items[position] as PollMessage)
         }
     }
 
     override fun getItemCount(): Int = items.size
 
-    inner class ChatViewHolder(private val binding: ItemChatBinding) :
+    inner class ChatSendViewHolder(private val binding: ItemSendChatBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(chat: ChatMessage) {
@@ -71,23 +75,23 @@ class ChatAdapter(private val items: List<Any>) :
                 textViewMessage.text = chat.message
 
                 // Set reactions
-                textViewFire.text = "🔥 ${chat.reactions["fire"] ?: 0}"
-                textViewLaugh.text = "😂 ${chat.reactions["laugh"] ?: 0}"
-                textViewCry.text = "😢 ${chat.reactions["cry"] ?: 0}"
-                textViewTroll.text = "🏏 ${chat.reactions["troll"] ?: 0}"
+                tvAngryEmoji.text = "🤬 ${chat.reactions["fire"] ?: 0}"
+                tvHappyEmoji.text = "😁 ${chat.reactions["laugh"] ?: 0}"
+                tvCryingEmoji.text = "😭 ${chat.reactions["cry"] ?: 0}"
+                tvSadEmoji.text ="💔 ${chat.reactions["troll"] ?: 0}"
 
                 // Set hit/miss counts
-                buttonHit.text = "Hit ${chat.hit}"
-                buttonMiss.text = "Miss ${chat.miss}"
+                buttonHit.text = "🔥 ${chat.hit}"
+                buttonMiss.text = "❌ ${chat.miss}"
 
                 // Set comment count
                 textViewComments.text = "View Comments (${chat.comments.size})"
 
                 // Set reaction click listeners
-                textViewFire.setOnClickListener { addReaction(chat, "fire") }
-                textViewLaugh.setOnClickListener { addReaction(chat, "laugh") }
-                textViewCry.setOnClickListener { addReaction(chat, "cry") }
-                textViewTroll.setOnClickListener { addReaction(chat, "troll") }
+                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire") }
+                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh") }
+                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry") }
+                tvSadEmoji.setOnClickListener { addReaction(chat, "troll") }
 
                 // Set hit/miss click listeners
                 buttonHit.setOnClickListener { addHit(chat) }
@@ -115,7 +119,7 @@ class ChatAdapter(private val items: List<Any>) :
                     committed: Boolean,
                     currentData: DataSnapshot?
                 ) {
-                    // Handle completion
+                    TODO("Not yet implemented")
                 }
             })
         }
@@ -172,7 +176,117 @@ class ChatAdapter(private val items: List<Any>) :
             }
             context.startActivity(intent)
         }
+    }
 
+    inner class ChatReceiveViewHolder(private val binding: ItemReceiveChatBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(chat: ChatMessage) {
+            binding.apply {
+                textViewName.text = chat.senderName
+                textViewTeam.text = chat.team
+                textViewMessage.text = chat.message
+                // Set reactions
+                tvAngryEmoji.text = "🤬 ${chat.reactions["fire"] ?: 0}"
+                tvHappyEmoji.text = "😁 ${chat.reactions["laugh"] ?: 0}"
+                tvCryingEmoji.text = "😭 ${chat.reactions["cry"] ?: 0}"
+                tvSadEmoji.text ="💔 ${chat.reactions["troll"] ?: 0}"
+
+                // Set hit/miss counts
+                buttonHit.text = "🔥 ${chat.hit}"
+                buttonMiss.text = "❌ ${chat.miss}"
+
+
+                // Set reaction click listeners
+                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire") }
+                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh") }
+                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry") }
+                tvSadEmoji.setOnClickListener { addReaction(chat, "troll") }
+
+                // Set hit/miss click listeners
+                buttonHit.setOnClickListener { addHit(chat) }
+                buttonMiss.setOnClickListener { addMiss(chat) }
+
+                // Set comment click listener
+                textViewComments.setOnClickListener { showComments(chat) }
+            }
+        }
+
+        private fun addReaction(chat: ChatMessage, reactionType: String) {
+            val chatRef = FirebaseDatabase.getInstance()
+                .getReference("NoBallZone/chats/${chat.id}/reactions/$reactionType")
+
+            // Increment reaction count
+            chatRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                    mutableData.value = currentValue + 1
+                    return Transaction.success(mutableData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+                    TODO("Not yet implemented")
+                }
+
+            })
+        }
+
+        private fun addHit(chat: ChatMessage) {
+            val chatRef = FirebaseDatabase.getInstance()
+                .getReference("NoBallZone/chats/${chat.id}/hit")
+
+            // Increment hit count
+            chatRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                    mutableData.value = currentValue + 1
+                    return Transaction.success(mutableData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+                    // Handle completion
+                }
+            })
+        }
+
+        private fun addMiss(chat: ChatMessage) {
+            val chatRef = FirebaseDatabase.getInstance()
+                .getReference("NoBallZone/chats/${chat.id}/miss")
+
+            // Increment miss count
+            chatRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                    mutableData.value = currentValue + 1
+                    return Transaction.success(mutableData)
+                }
+
+                override fun onComplete(
+                    error: DatabaseError?,
+                    committed: Boolean,
+                    currentData: DataSnapshot?
+                ) {
+                    // Handle completion
+                }
+            })
+        }
+
+        private fun showComments(chat: ChatMessage) {
+            val context = itemView.context
+            val intent = Intent(context, CommentActivity::class.java).apply {
+                putExtra("MESSAGE_ID", chat.id)
+                putExtra("MESSAGE_TYPE", "chat")
+            }
+            context.startActivity(intent)
+        }
     }
 
     inner class PollViewHolder(private val binding: ItemPollMessageBinding) :
@@ -180,39 +294,36 @@ class ChatAdapter(private val items: List<Any>) :
 
         fun bind(poll: PollMessage) {
             binding.apply {
-                textViewPollName.text = poll.senderName
-                textViewPollTeam.text = poll.team
-                textViewPollQuestion.text = poll.question
+                textViewName.text = poll.senderName
+                textViewTeam.text = poll.team
+                textViewMessage.text = poll.question
 
                 // Set reactions
-                textViewPollFire.text = "🔥 ${poll.reactions["fire"] ?: 0}"
-                textViewPollLaugh.text = "😂 ${poll.reactions["laugh"] ?: 0}"
-                textViewPollCry.text = "😢 ${poll.reactions["cry"] ?: 0}"
-                textViewPollTroll.text = "🏏 ${poll.reactions["troll"] ?: 0}"
+                tvAngryEmoji.text = "🤬 ${poll.reactions["fire"] ?: 0}"
+                tvHappyEmoji.text = "😁 ${poll.reactions["laugh"] ?: 0}"
+                tvCryingEmoji.text = "😭 ${poll.reactions["cry"] ?: 0}"
+                tvSadEmoji.text ="💔 ${poll.reactions["troll"] ?: 0}"
 
                 // Set hit/miss counts
-                buttonPollHit.text = "Hit ${poll.hit}"
-                buttonPollMiss.text = "Miss ${poll.miss}"
-
-                // Set comment count
-                textViewPollComments.text = "View Comments (${poll.comments.size})"
+                buttonHit.text = "🔥 ${poll.hit}"
+                buttonMiss.text = "❌ ${poll.miss}"
 
                 // Set up poll options
                 linearLayoutOptions.removeAllViews()
                 setupPollOptions(poll)
 
                 // Set reaction click listeners
-                textViewPollFire.setOnClickListener { addReaction(poll, "fire") }
-                textViewPollLaugh.setOnClickListener { addReaction(poll, "laugh") }
-                textViewPollCry.setOnClickListener { addReaction(poll, "cry") }
-                textViewPollTroll.setOnClickListener { addReaction(poll, "troll") }
+                tvAngryEmoji.setOnClickListener { addReaction(poll, "fire") }
+                tvHappyEmoji.setOnClickListener { addReaction(poll, "laugh") }
+                tvCryingEmoji.setOnClickListener { addReaction(poll, "cry") }
+                tvSadEmoji.setOnClickListener { addReaction(poll, "troll") }
 
                 // Set hit/miss click listeners
-                buttonPollHit.setOnClickListener { addHit(poll) }
-                buttonPollMiss.setOnClickListener { addMiss(poll) }
+                buttonHit.setOnClickListener { addHit(poll) }
+                buttonMiss.setOnClickListener { addMiss(poll) }
 
                 // Set comment click listener
-                textViewPollComments.setOnClickListener { showComments(poll) }
+                textViewComments.setOnClickListener { showComments(poll) }
             }
         }
 
