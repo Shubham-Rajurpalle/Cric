@@ -15,14 +15,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
-            android:id="@+id/btnBack"
-            android:layout_width="@dimen/_25sdp"
-            android:layout_height="@dimen/_25sdp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/arrow_back"
-            android:tint="#FFFFFF" />
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -49,17 +49,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:textColor="@color/white"
-            android:textColorHint="#434343"
+            android:textColorHint="@color/white"
             android:hint="Write a comment..."
             android:padding="12dp"
-            android:background="@drawable/background_chat_type"
+            android:background="@drawable/button_background"
             android:inputType="textMultiLine"/>
 
         <ImageButton
             android:id="@+id/buttonSendComment"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/send_button"
+            android:src="@drawable/facebook_logo"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Send Comment"/>
     </LinearLayout>

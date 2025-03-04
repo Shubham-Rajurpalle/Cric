@@ -12,14 +12,20 @@
         android:background="@color/backgroud_bottom"
         android:layout_height="@dimen/_40sdp">
 
-        <ImageView
-            android:layout_width="@dimen/_25sdp"
-            android:layout_height="@dimen/_25sdp"
-            android:src="@drawable/profile_empty"
+        <androidx.cardview.widget.CardView
+            android:layout_width="@dimen/_24sdp"
+            app:cardCornerRadius="@dimen/_12sdp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:contentDescription="Back"/>
+              android:layout_height="@dimen/_24sdp">
+            <ImageView
+                android:id="@+id/profilePhoto"
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:scaleType="centerCrop"
+                android:background="@drawable/profile_empty"
+                android:layout_marginBottom="8dp"
+                android:contentDescription="Back" />
+        </androidx.cardview.widget.CardView>
 
         <ImageView
             android:layout_width="match_parent"
@@ -31,6 +37,8 @@
             android:layout_weight="1"/>
 
         <ImageView
+            android:id="@+id/leaderBoardIcon"
+            android:clickable="true"
             android:layout_width="@dimen/_25sdp"
             android:layout_height="@dimen/_25sdp"
             android:layout_marginRight="@dimen/_10sdp"
@@ -40,48 +48,164 @@
     <!-- Filter Options -->
     <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="8dp">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/_35sdp"
             android:orientation="horizontal">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipAll"
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroup"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="All"
-                android:layout_marginEnd="8dp"
-                app:chipBackgroundColor="@color/black"
-                app:chipStrokeWidth="1dp"
-                android:textColor="@android:color/white"/>
+                android:layout_height="@dimen/_35sdp">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipTopHits"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Top Hits"
-                android:layout_marginEnd="8dp"
-                app:chipStrokeWidth="1dp"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="All"
+                    android:textSize="@dimen/_10sdp"
+                    app:chipBackgroundColor="@color/black"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@android:color/white"/>
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipPolls"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Polls"
-                android:layout_marginEnd="8dp"
-                app:chipStrokeWidth="1dp"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipTopHits"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="Top Hits"/>
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCSK"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CSK"
-                app:chipStrokeWidth="1dp"/>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipTopMiss"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="Top Miss"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipPolls"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="Polls"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCSK"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="CSK"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMI"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="MI"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipRCB"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="RCB"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipGT"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="GT"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSRH"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="SRH"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipLSG"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="LSG"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipDC"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="DC"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipPBKS"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="PBKS"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipKKR"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:text="KKR"/>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipRR"
+                    android:layout_width="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:layout_height="@dimen/_35sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:textColor="@color/white"
+                    android:text="RR"/>
+
+            </com.google.android.material.chip.ChipGroup>
+
         </LinearLayout>
     </HorizontalScrollView>
+
 
     <!-- Messages RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
@@ -93,12 +217,12 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="@dimen/_3sdp"
             android:background="@drawable/background_chat_type"
             android:layout_weight="1"
             >
@@ -108,8 +232,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_marginTop="@dimen/_3sdp"
+                android:layout_marginBottom="@dimen/_3sdp"
                 android:hint="Type a message..."
                 android:padding="12dp"
+                android:textSize="@dimen/_10sdp"
                 android:background="@android:color/transparent"
                 android:textColorHint="#7E7D7D"
                 android:inputType="textMultiLine"/>
@@ -118,6 +245,7 @@
                 android:id="@+id/buttonMeme"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:padding="@dimen/_10sdp"
                 android:src="@drawable/image_picker"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Create Poll"/>
@@ -126,6 +254,7 @@
                 android:id="@+id/buttonPoll"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:padding="@dimen/_10sdp"
                 android:src="@drawable/poll_btn"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Create Poll"/>

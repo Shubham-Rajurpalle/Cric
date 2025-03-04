@@ -57,14 +57,14 @@
                     android:layout_height="wrap_content"
                     android:text="CSK"
                     android:textStyle="bold"
-                    android:textSize="@dimen/_10sdp"
+                    android:textSize="@dimen/_8sdp"
                     android:layout_marginRight="@dimen/_5sdp"
                     android:textColor="#FFD300"/>
 
                 <ImageView
                     android:id="@+id/imageViewTeam"
-                    android:layout_width="@dimen/_15sdp"
-                    android:layout_height="@dimen/_15sdp"
+                    android:layout_width="@dimen/_12sdp"
+                    android:layout_height="@dimen/_12sdp"
                     android:src="@drawable/icc_logo"
                     android:background="@drawable/circular_background"
                     android:padding="2dp"/>

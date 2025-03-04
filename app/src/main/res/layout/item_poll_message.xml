@@ -27,8 +27,8 @@ app:cardBackgroundColor="#34FF0000">
 
         <ImageView
             android:id="@+id/imageViewProfile"
-            android:layout_width="@dimen/_25sdp"
-            android:layout_height="@dimen/_25sdp"
+            android:layout_width="@dimen/_15sdp"
+            android:layout_height="@dimen/_15sdp"
             android:src="@drawable/profile_empty"/>
 
         <LinearLayout
@@ -43,6 +43,7 @@ app:cardBackgroundColor="#34FF0000">
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Shubham R"
+                android:textSize="@dimen/_11sdp"
                 android:textStyle="bold"
                 android:textColor="#00A3FF"/>
         </LinearLayout>
@@ -53,13 +54,14 @@ app:cardBackgroundColor="#34FF0000">
             android:layout_height="wrap_content"
             android:text="CSK"
             android:textStyle="bold"
+            android:textSize="@dimen/_10sdp"
             android:layout_marginRight="@dimen/_5sdp"
             android:textColor="#FFD300"/>
 
         <ImageView
             android:id="@+id/imageViewTeam"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="@dimen/_15sdp"
+            android:layout_height="@dimen/_15sdp"
             android:src="@drawable/icc_logo"
             android:background="@drawable/circular_background"
             android:padding="2dp"/>
@@ -72,7 +74,7 @@ app:cardBackgroundColor="#34FF0000">
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="I am doing well. Can we meet up tomorrow?"
-        android:textSize="16sp"
+        android:textSize="@dimen/_10sdp"
         android:textColor="#FFFFFF"/>
 
     <LinearLayout
@@ -98,6 +100,7 @@ app:cardBackgroundColor="#34FF0000">
             android:text="😁 2.2k"
             android:padding="4dp"
             android:gravity="center"
+            android:textSize="@dimen/_8sdp"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:background="@drawable/reaction_background"
@@ -109,6 +112,7 @@ app:cardBackgroundColor="#34FF0000">
             android:layout_height="wrap_content"
             android:text="🤬 2.2k"
             android:padding="4dp"
+            android:textSize="@dimen/_10sdp"
             android:gravity="center"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
@@ -121,6 +125,7 @@ app:cardBackgroundColor="#34FF0000">
             android:layout_height="wrap_content"
             android:text="💔 2.2k"
             android:gravity="center"
+            android:textSize="@dimen/_10sdp"
             android:padding="4dp"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
@@ -133,10 +138,12 @@ app:cardBackgroundColor="#34FF0000">
             android:layout_height="wrap_content"
             android:text="😭 2.2k"
             android:gravity="center"
+            android:textSize="@dimen/_10sdp"
             android:layout_weight="1"
             android:padding="4dp"
             android:background="@drawable/reaction_background"
             android:clickable="true"/>
+
     </LinearLayout>
 
     <!-- Hit/Miss Buttons -->
@@ -153,8 +160,9 @@ app:cardBackgroundColor="#34FF0000">
             android:layout_height="wrap_content"
             android:text="🔥 5.5K"
             android:textColor="#FFFFFF"
+            android:textSize="@dimen/_10sdp"
             android:background="@drawable/hit_button_background"
-            android:padding="10dp"
+            android:padding="@dimen/_5sdp"
             android:layout_marginEnd="8dp"
             android:clickable="true"/>
 
@@ -165,23 +173,29 @@ app:cardBackgroundColor="#34FF0000">
             android:layout_height="wrap_content"
             android:text="❌ 1.1K"
             android:textColor="#FF0000"
+            android:textSize="@dimen/_10sdp"
             android:background="@drawable/miss_button_background"
-            android:padding="10dp"
+            android:padding="@dimen/_5sdp"
             android:layout_marginStart="4dp"
             android:clickable="true"/>
+
+
 
         <View
             android:layout_width="0dp"
             android:layout_height="1dp"
             android:layout_weight="1"/>
 
-        <ImageView
+        <TextView
             android:id="@+id/textViewComments"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/comment_arrow"
+            android:text="Comments →"
+            android:textSize="@dimen/_10sdp"
+            android:textColor="#00A3FF"
             android:layout_gravity="center_vertical"
             android:clickable="true"/>
     </LinearLayout>
 </LinearLayout>
 </androidx.cardview.widget.CardView>
+

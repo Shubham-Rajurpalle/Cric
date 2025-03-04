@@ -23,7 +23,7 @@ import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 
 class ChatAdapter(private val items: List<Any>) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    RecyclerView.Adapter<RecyclerView.ViewHolder>(ChatDiffCallback()) {
 
     companion object {
         private const val VIEW_TYPE_SEND_CHAT = 0
@@ -87,7 +87,7 @@ class ChatAdapter(private val items: List<Any>) :
                 loadTeamLogo(chat.team, binding.imageViewTeam)
 
                 // Set reactions with real-time updates
-                setupReactionUpdates(chat)
+                //setupReactionUpdates(chat)
 
                 // Set hit/miss counts
                 buttonHit.text = "🔥 ${chat.hit}"
@@ -215,10 +215,10 @@ class ChatAdapter(private val items: List<Any>) :
         }
     }
 
-//    class ChatDiffCallback:DiffUtil.ItemCallback<ChatMessage>() {
-//        override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage)= oldItem.id == newItem.id
-//        override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage) = oldItem.id == newItem.id
-//    }
+    class ChatDiffCallback:DiffUtil.ItemCallback<ChatMessage>() {
+        override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage)= oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage) = oldItem.id == newItem.id
+    }
 
     inner class ChatReceiveViewHolder(private val binding: ItemReceiveChatBinding) :
         RecyclerView.ViewHolder(binding.root) {

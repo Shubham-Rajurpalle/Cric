@@ -204,12 +204,12 @@ class ChatFragment : Fragment() {
             selectedFilter.remove(filter)
             chip?.isChecked = false
             chip?.isSelected = false
-            chip?.chipStrokeWidth = 2f
+            chip?.chipStrokeWidth = 0f
         } else {
             selectedFilter.add(filter)
             chip?.isChecked = true
             chip?.isSelected = true
-            chip?.chipStrokeWidth = 1f
+            chip?.chipStrokeWidth = 4f
         }
 
         applyFilters()
@@ -245,7 +245,7 @@ class ChatFragment : Fragment() {
         allChips.forEach { chip ->
             chip.isChecked = false
             chip.isSelected = false
-            chip.chipStrokeWidth = 2f
+            chip.chipStrokeWidth = 0f
         }
 
         loadMessages()

@@ -72,6 +72,7 @@ class hitsFragment : Fragment() {
     }
 
     private fun updateUI() {
+        if(_binding==null)return
         if (allTeams.size >= 3) {
             val firstPlace = allTeams[0]
             val secondPlace = allTeams[1]
