@@ -489,6 +489,15 @@ class ChatAdapter(private val items: List<Any>) :
         })
     }
 
+    private fun openCommentsActivity(messageId: String, type: String) {
+        val context = itemView.context
+        val intent = Intent(context, CommentActivity::class.java).apply {
+            putExtra("MESSAGE_ID", messageId)
+            putExtra("MESSAGE_TYPE", type)
+        }
+        context.startActivity(intent)
+    }
+
     // Common utility methods
     private fun loadProfilePicture(userId: String, imageView: ImageView) {
         val userRef = FirebaseDatabase.getInstance().getReference("Users/$userId/profilePhoto")
