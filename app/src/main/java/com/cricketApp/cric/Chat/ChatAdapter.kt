@@ -7,7 +7,6 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.R
@@ -26,9 +25,14 @@ class ChatAdapter(private val items: List<Any>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
-        private const val VIEW_TYPE_SEND_CHAT = 0
-        private const val VIEW_TYPE_RECEIVE_CHAT = 1
-        private const val VIEW_TYPE_POLL = 2
+        private const val VIEW_TYPE_SEND_CHAT = 1
+        private const val VIEW_TYPE_RECEIVE_CHAT = 2
+        private const val VIEW_TYPE_POLL = 3
+
+        // Payload constants
+        private const val PAYLOAD_REACTION = "reaction"
+        private const val PAYLOAD_HIT_MISS = "hit_miss"
+        private const val PAYLOAD_COMMENTS = "comments"
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -40,24 +44,21 @@ class ChatAdapter(private val items: List<Any>) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             VIEW_TYPE_SEND_CHAT -> {
-                val binding = ItemSendChatBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                val binding = ItemSendChatBinding.inflate(inflater, parent, false)
                 ChatSendViewHolder(binding)
             }
             VIEW_TYPE_RECEIVE_CHAT -> {
-                val binding = ItemReceiveChatBinding.inflate(
-                    LayoutInflater.from(parent.context), parent, false
-                )
+                val binding = ItemReceiveChatBinding.inflate(inflater, parent, false)
                 ChatReceiveViewHolder(binding)
             }
             VIEW_TYPE_POLL -> {
-                val binding = ItemPollMessageBinding.inflate(
-                    LayoutInflater.from(parent.context), parent, false
-                )
+                val binding = ItemPollMessageBinding.inflate(inflater, parent, false)
                 PollViewHolder(binding)
             }
-            else -> throw IllegalArgumentException("Unknown view type")
+            else -> throw IllegalArgumentException("Invalid view type")
         }
     }
 
@@ -69,13 +70,50 @@ class ChatAdapter(private val items: List<Any>) :
         }
     }
 
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: List<Any>) {
+        if (payloads.isEmpty()) {
+            // No payload, do full bind
+            onBindViewHolder(holder, position)
+            return
+        }
+
+        // Handle partial updates
+        for (payload in payloads) {
+            if (payload is String) {
+                when (payload) {
+                    PAYLOAD_REACTION -> {
+                        when (holder) {
+                            is ChatSendViewHolder -> holder.updateReactions(items[position] as ChatMessage)
+                            is ChatReceiveViewHolder -> holder.updateReactions(items[position] as ChatMessage)
+                            is PollViewHolder -> holder.updateReactions(items[position] as PollMessage)
+                        }
+                    }
+                    PAYLOAD_HIT_MISS -> {
+                        when (holder) {
+                            is ChatSendViewHolder -> holder.updateHitMiss(items[position] as ChatMessage)
+                            is ChatReceiveViewHolder -> holder.updateHitMiss(items[position] as ChatMessage)
+                            is PollViewHolder -> holder.updateHitMiss(items[position] as PollMessage)
+                        }
+                    }
+                    PAYLOAD_COMMENTS -> {
+                        when (holder) {
+                            is ChatSendViewHolder -> holder.updateComments(items[position] as ChatMessage)
+                            is ChatReceiveViewHolder -> holder.updateComments(items[position] as ChatMessage)
+                            is PollViewHolder -> holder.updateComments(items[position] as PollMessage)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     override fun getItemCount(): Int = items.size
 
     inner class ChatSendViewHolder(private val binding: ItemSendChatBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(chat: ChatMessage) {
-            binding.apply {
+            with(binding) {
                 textViewName.text = chat.senderName
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
@@ -86,145 +124,52 @@ class ChatAdapter(private val items: List<Any>) :
                 // Load team logo
                 loadTeamLogo(chat.team, binding.imageViewTeam)
 
-                // Set reactions with real-time updates
-                setupReactionUpdates(chat)
+                // Set reaction values
+                updateReactions(chat)
 
                 // Set hit/miss counts
-                buttonHit.text = "🔥 ${chat.hit}"
-                buttonMiss.text = "❌ ${chat.miss}"
+                updateHitMiss(chat)
 
                 // Set comment count
-                textViewComments.text = "View Comments (${chat.comments.size})"
+                updateComments(chat)
 
-                // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire") }
-                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh") }
-                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry") }
-                tvSadEmoji.setOnClickListener { addReaction(chat, "troll") }
+                // Set reaction click listeners without reloading
+                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire", adapterPosition) }
+                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh", adapterPosition) }
+                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry", adapterPosition) }
+                tvSadEmoji.setOnClickListener { addReaction(chat, "troll", adapterPosition) }
 
                 // Set hit/miss click listeners
-                buttonHit.setOnClickListener { addHit(chat) }
-                buttonMiss.setOnClickListener { addMiss(chat) }
+                buttonHit.setOnClickListener { updateHitOrMiss(chat, "hit", adapterPosition) }
+                buttonMiss.setOnClickListener { updateHitOrMiss(chat, "miss", adapterPosition) }
 
                 // Set comment click listener
-                textViewComments.setOnClickListener { showComments(chat) }
+                //textViewComments.setOnClickListener { openCommentsActivity(chat.id, "chat") }
             }
         }
 
-        private fun setupReactionUpdates(chat: ChatMessage) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}")
-
-            chatRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val updatedChat = snapshot.getValue(ChatMessage::class.java) ?: return
-
-                    // Update UI with latest reaction counts
-                    binding.tvAngryEmoji.text = "🤬 ${updatedChat.reactions["fire"] ?: 0}"
-                    binding.tvHappyEmoji.text = "😁 ${updatedChat.reactions["laugh"] ?: 0}"
-                    binding.tvCryingEmoji.text = "😭 ${updatedChat.reactions["cry"] ?: 0}"
-                    binding.tvSadEmoji.text = "💔 ${updatedChat.reactions["troll"] ?: 0}"
-
-                    // Update hit/miss counts
-                    binding.buttonHit.text = "🔥 ${updatedChat.hit}"
-                    binding.buttonMiss.text = "❌ ${updatedChat.miss}"
-
-                    // Update comment count
-                    binding.textViewComments.text = "View Comments (${updatedChat.comments.size})"
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Handle error
-                }
-            })
+        fun updateReactions(chat: ChatMessage) {
+            binding.tvAngryEmoji.text = "🤬 ${chat.reactions["fire"] ?: 0}"
+            binding.tvHappyEmoji.text = "😁 ${chat.reactions["laugh"] ?: 0}"
+            binding.tvCryingEmoji.text = "😭 ${chat.reactions["cry"] ?: 0}"
+            binding.tvSadEmoji.text = "💔 ${chat.reactions["troll"] ?: 0}"
         }
 
-        private fun addReaction(chat: ChatMessage, reactionType: String) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}/reactions/$reactionType")
-
-            // Increment reaction count
-            chatRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-                    // Handle completion - fixed from TODO
-                }
-            })
+        fun updateHitMiss(chat: ChatMessage) {
+            binding.buttonHit.text = "🔥 ${chat.hit}"
+            binding.buttonMiss.text = "❌ ${chat.miss}"
         }
 
-        private fun addHit(chat: ChatMessage) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}/hit")
-
-            // Increment hit count
-            chatRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun addMiss(chat: ChatMessage) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}/miss")
-
-            // Increment miss count
-            chatRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun showComments(chat: ChatMessage) {
-            val context = itemView.context
-            val intent = Intent(context, CommentActivity::class.java).apply {
-                putExtra("MESSAGE_ID", chat.id)
-                putExtra("MESSAGE_TYPE", "chat")
-            }
-            context.startActivity(intent)
+        fun updateComments(chat: ChatMessage) {
+            binding.textViewComments.text = "View Comments (${chat.comments.size})"
         }
     }
-
-//    class ChatDiffCallback:DiffUtil.ItemCallback<ChatMessage>() {
-//        override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage)= oldItem.id == newItem.id
-//        override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage) = oldItem.id == newItem.id
-//    }
 
     inner class ChatReceiveViewHolder(private val binding: ItemReceiveChatBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(chat: ChatMessage) {
-            binding.apply {
+            with(binding) {
                 textViewName.text = chat.senderName
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
@@ -235,129 +180,44 @@ class ChatAdapter(private val items: List<Any>) :
                 // Load team logo
                 loadTeamLogo(chat.team, binding.imageViewTeam)
 
-                // Setup real-time reaction updates
-                setupReactionUpdates(chat)
+                // Set reaction values
+                updateReactions(chat)
 
                 // Set hit/miss counts
-                buttonHit.text = "🔥 ${chat.hit}"
-                buttonMiss.text = "❌ ${chat.miss}"
+                updateHitMiss(chat)
+
+                // Set comment count
+                updateComments(chat)
 
                 // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire") }
-                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh") }
-                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry") }
-                tvSadEmoji.setOnClickListener { addReaction(chat, "troll") }
+                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire", adapterPosition) }
+                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh", adapterPosition) }
+                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry", adapterPosition) }
+                tvSadEmoji.setOnClickListener { addReaction(chat, "troll", adapterPosition) }
 
                 // Set hit/miss click listeners
-                buttonHit.setOnClickListener { addHit(chat) }
-                buttonMiss.setOnClickListener { addMiss(chat) }
+                buttonHit.setOnClickListener { updateHitOrMiss(chat, "hit", adapterPosition) }
+                buttonMiss.setOnClickListener { updateHitOrMiss(chat, "miss", adapterPosition) }
 
                 // Set comment click listener
-                textViewComments.setOnClickListener { showComments(chat) }
+                //textViewComments.setOnClickListener { openCommentsActivity(chat.id, "chat") }
             }
         }
 
-        private fun setupReactionUpdates(chat: ChatMessage) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}")
-
-            chatRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val updatedChat = snapshot.getValue(ChatMessage::class.java) ?: return
-
-                    // Update UI with latest reaction counts
-                    binding.tvAngryEmoji.text = "🤬 ${updatedChat.reactions["fire"] ?: 0}"
-                    binding.tvHappyEmoji.text = "😁 ${updatedChat.reactions["laugh"] ?: 0}"
-                    binding.tvCryingEmoji.text = "😭 ${updatedChat.reactions["cry"] ?: 0}"
-                    binding.tvSadEmoji.text = "💔 ${updatedChat.reactions["troll"] ?: 0}"
-
-                    // Update hit/miss counts
-                    binding.buttonHit.text = "🔥 ${updatedChat.hit}"
-                    binding.buttonMiss.text = "❌ ${updatedChat.miss}"
-
-                    // Update comment count
-                    binding.textViewComments.text = "View Comments (${updatedChat.comments.size})"
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Handle error
-                }
-            })
+        fun updateReactions(chat: ChatMessage) {
+            binding.tvAngryEmoji.text = "🤬 ${chat.reactions["fire"] ?: 0}"
+            binding.tvHappyEmoji.text = "😁 ${chat.reactions["laugh"] ?: 0}"
+            binding.tvCryingEmoji.text = "😭 ${chat.reactions["cry"] ?: 0}"
+            binding.tvSadEmoji.text = "💔 ${chat.reactions["troll"] ?: 0}"
         }
 
-        private fun addReaction(chat: ChatMessage, reactionType: String) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}/reactions/$reactionType")
-
-            // Increment reaction count
-            chatRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-                    // Fixed from TODO
-                }
-            })
+        fun updateHitMiss(chat: ChatMessage) {
+            binding.buttonHit.text = "🔥 ${chat.hit}"
+            binding.buttonMiss.text = "❌ ${chat.miss}"
         }
 
-        private fun addHit(chat: ChatMessage) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}/hit")
-
-            // Increment hit count
-            chatRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun addMiss(chat: ChatMessage) {
-            val chatRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/chats/${chat.id}/miss")
-
-            // Increment miss count
-            chatRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(
-                    error: DatabaseError?,
-                    committed: Boolean,
-                    currentData: DataSnapshot?
-                ) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun showComments(chat: ChatMessage) {
-            val context = itemView.context
-            val intent = Intent(context, CommentActivity::class.java).apply {
-                putExtra("MESSAGE_ID", chat.id)
-                putExtra("MESSAGE_TYPE", "chat")
-            }
-            context.startActivity(intent)
+        fun updateComments(chat: ChatMessage) {
+            binding.textViewComments.text = "View Comments (${chat.comments.size})"
         }
     }
 
@@ -365,7 +225,7 @@ class ChatAdapter(private val items: List<Any>) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(poll: PollMessage) {
-            binding.apply {
+            with(binding) {
                 textViewName.text = poll.senderName
                 textViewTeam.text = poll.team
                 textViewMessage.text = poll.question
@@ -376,82 +236,69 @@ class ChatAdapter(private val items: List<Any>) :
                 // Load team logo
                 loadTeamLogo(poll.team, binding.imageViewTeam)
 
-                // Setup real-time reaction updates
-                setupReactionUpdates(poll)
+                // Set reaction values
+                updateReactions(poll)
+
+                // Set hit/miss counts
+                updateHitMiss(poll)
+
+                // Set comment count
+                updateComments(poll)
 
                 // Set up poll options
-                linearLayoutOptions.removeAllViews()
                 setupPollOptions(poll)
 
                 // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(poll, "fire") }
-                tvHappyEmoji.setOnClickListener { addReaction(poll, "laugh") }
-                tvCryingEmoji.setOnClickListener { addReaction(poll, "cry") }
-                tvSadEmoji.setOnClickListener { addReaction(poll, "troll") }
+                tvAngryEmoji.setOnClickListener { addReaction(poll, "fire", adapterPosition) }
+                tvHappyEmoji.setOnClickListener { addReaction(poll, "laugh", adapterPosition) }
+                tvCryingEmoji.setOnClickListener { addReaction(poll, "cry", adapterPosition) }
+                tvSadEmoji.setOnClickListener { addReaction(poll, "troll", adapterPosition) }
 
                 // Set hit/miss click listeners
-                buttonHit.setOnClickListener { addHit(poll) }
-                buttonMiss.setOnClickListener { addMiss(poll) }
+                buttonHit.setOnClickListener { updateHitOrMiss(poll, "hit", adapterPosition) }
+                buttonMiss.setOnClickListener { updateHitOrMiss(poll, "miss", adapterPosition) }
 
                 // Set comment click listener
-                textViewComments.setOnClickListener { showComments(poll) }
+               // textViewComments.setOnClickListener { openCommentsActivity(poll.id, "poll") }
             }
         }
 
-        private fun setupReactionUpdates(poll: PollMessage) {
-            val pollRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/polls/${poll.id}")
-
-            pollRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val updatedPoll = snapshot.getValue(PollMessage::class.java) ?: return
-
-                    // Update UI with latest reaction counts
-                    binding.tvAngryEmoji.text = "🤬 ${updatedPoll.reactions["fire"] ?: 0}"
-                    binding.tvHappyEmoji.text = "😁 ${updatedPoll.reactions["laugh"] ?: 0}"
-                    binding.tvCryingEmoji.text = "😭 ${updatedPoll.reactions["cry"] ?: 0}"
-                    binding.tvSadEmoji.text = "💔 ${updatedPoll.reactions["troll"] ?: 0}"
-
-                    // Update hit/miss counts
-                    binding.buttonHit.text = "🔥 ${updatedPoll.hit}"
-                    binding.buttonMiss.text = "❌ ${updatedPoll.miss}"
-
-                    // Update poll options
-                    binding.linearLayoutOptions.removeAllViews()
-                    setupPollOptions(updatedPoll)
-
-                    // Update comment count
-                    binding.textViewComments.text = "View Comments (${updatedPoll.comments.size})"
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Handle error
-                }
-            })
+        fun updateReactions(poll: PollMessage) {
+            binding.tvAngryEmoji.text = "🤬 ${poll.reactions["fire"] ?: 0}"
+            binding.tvHappyEmoji.text = "😁 ${poll.reactions["laugh"] ?: 0}"
+            binding.tvCryingEmoji.text = "😭 ${poll.reactions["cry"] ?: 0}"
+            binding.tvSadEmoji.text = "💔 ${poll.reactions["troll"] ?: 0}"
         }
 
-        private fun setupPollOptions(poll: PollMessage) {
+        fun updateHitMiss(poll: PollMessage) {
+            binding.buttonHit.text = "🔥 ${poll.hit}"
+            binding.buttonMiss.text = "❌ ${poll.miss}"
+        }
+
+        fun updateComments(poll: PollMessage) {
+            binding.textViewComments.text = "View Comments (${poll.comments.size})"
+        }
+
+        fun setupPollOptions(poll: PollMessage) {
             val context = itemView.context
             val layoutInflater = LayoutInflater.from(context)
 
+            // Clear previous options
+            binding.linearLayoutOptions.removeAllViews()
+
             // Calculate total votes
-            val totalVotes = poll.options.values.sum().coerceAtLeast(1)
+            val totalVotes = poll.options.values.sum()
 
-            // Add each option
-            poll.options.forEach { (option, votes) ->
-                val optionView = layoutInflater.inflate(
-                    R.layout.item_poll_option,
-                    binding.linearLayoutOptions,
-                    false
-                )
-
+            // Add options
+            for ((option, votes) in poll.options) {
+                val optionView = layoutInflater.inflate(R.layout.item_poll_option, binding.linearLayoutOptions, false)
                 val radioButton = optionView.findViewById<RadioButton>(R.id.radioButtonOption)
                 val textOption = optionView.findViewById<TextView>(R.id.textViewOption)
                 val textPercentage = optionView.findViewById<TextView>(R.id.textViewPercentage)
                 val progressBar = optionView.findViewById<ProgressBar>(R.id.progressBarOption)
 
                 // Calculate percentage
-                val percentage = (votes * 100 / totalVotes)
+                val percentage = if (totalVotes > 0) (votes * 100 / totalVotes) else 0
 
                 // Set views
                 radioButton.text = ""  // Clear default text
@@ -465,94 +312,173 @@ class ChatAdapter(private val items: List<Any>) :
 
                 // Set click listener for option selection
                 radioButton.setOnClickListener {
-                    voteForOption(poll.id, option)
+                    votePollOption(poll, option, adapterPosition)
                 }
 
                 binding.linearLayoutOptions.addView(optionView)
             }
         }
 
-        private fun voteForOption(pollId: String, option: String) {
-            val optionRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/polls/$pollId/options/$option")
+        private fun votePollOption(poll: PollMessage, option: String, position: Int) {
+            val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+            val userId = currentUser.uid
 
-            // Increment vote count
-            optionRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
+            // Check if user already voted
+            val pollRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${poll.id}")
+            val votersRef = pollRef.child("voters")
+
+            votersRef.child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        // User already voted
+                        val previousVote = snapshot.getValue(String::class.java)
+                        if (previousVote != null && previousVote != option) {
+                            // Change vote
+                            pollRef.child("options").child(previousVote).addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    val currentVotes = snapshot.getValue(Int::class.java) ?: 0
+                                    if (currentVotes > 0) {
+                                        pollRef.child("options").child(previousVote).setValue(currentVotes - 1)
+
+                                        // Increment new option
+                                        pollRef.child("options").child(option).addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(snapshot: DataSnapshot) {
+                                                val newOptionVotes = snapshot.getValue(Int::class.java) ?: 0
+                                                pollRef.child("options").child(option).setValue(newOptionVotes + 1)
+                                                votersRef.child(userId).setValue(option)
+                                            }
+
+                                            override fun onCancelled(error: DatabaseError) {}
+                                        })
+                                    }
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {}
+                            })
+                        }
+                    } else {
+                        // New vote
+                        pollRef.child("options").child(option).addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val currentVotes = snapshot.getValue(Int::class.java) ?: 0
+                                pollRef.child("options").child(option).setValue(currentVotes + 1)
+                                votersRef.child(userId).setValue(option)
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {}
+                        })
+                    }
                 }
 
-                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                    // Handle completion
-                }
+                override fun onCancelled(error: DatabaseError) {}
             })
-        }
-
-        private fun addReaction(poll: PollMessage, reactionType: String) {
-            val pollRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/polls/${poll.id}/reactions/$reactionType")
-
-            // Increment reaction count
-            pollRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun addHit(poll: PollMessage) {
-            val pollRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/polls/${poll.id}/hit")
-
-            // Increment hit count
-            pollRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun addMiss(poll: PollMessage) {
-            val pollRef = FirebaseDatabase.getInstance()
-                .getReference("NoBallZone/polls/${poll.id}/miss")
-
-            // Increment miss count
-            pollRef.runTransaction(object : Transaction.Handler {
-                override fun doTransaction(mutableData: MutableData): Transaction.Result {
-                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
-                    mutableData.value = currentValue + 1
-                    return Transaction.success(mutableData)
-                }
-
-                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                    // Handle completion
-                }
-            })
-        }
-
-        private fun showComments(poll: PollMessage) {
-            val context = itemView.context
-            val intent = Intent(context, CommentActivity::class.java).apply {
-                putExtra("MESSAGE_ID", poll.id)
-                putExtra("MESSAGE_TYPE", "poll")
-            }
-            context.startActivity(intent)
         }
     }
+
+    // Utility method to update a reaction (without reloading)
+    private fun addReaction(message: Any, reactionType: String, position: Int) {
+        if (position == RecyclerView.NO_POSITION) return
+
+        val messageId: String
+        val dbPath: String
+
+        when (message) {
+            is ChatMessage -> {
+                messageId = message.id
+                dbPath = "NoBallZone/chats"
+            }
+            is PollMessage -> {
+                messageId = message.id
+                dbPath = "NoBallZone/polls"
+            }
+            else -> return
+        }
+
+        val reactionRef = FirebaseDatabase.getInstance()
+            .getReference("$dbPath/$messageId/reactions/$reactionType")
+
+        reactionRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(currentData: MutableData): Transaction.Result {
+                val currentValue = currentData.getValue(Int::class.java) ?: 0
+                currentData.value = currentValue + 1
+                return Transaction.success(currentData)
+            }
+
+            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                if (committed && error == null) {
+                    // Update was successful, now update the item in our local data
+                    when (message) {
+                        is ChatMessage -> {
+                            val currentValue = message.reactions[reactionType] ?: 0
+                            message.reactions[reactionType] = currentValue + 1
+                            notifyItemChanged(position, PAYLOAD_REACTION)
+                        }
+                        is PollMessage -> {
+                            val currentValue = message.reactions[reactionType] ?: 0
+                            message.reactions[reactionType] = currentValue + 1
+                            notifyItemChanged(position, PAYLOAD_REACTION)
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    // Utility method to update hit or miss counts
+    private fun updateHitOrMiss(message: Any, type: String, position: Int) {
+        if (position == RecyclerView.NO_POSITION) return
+
+        val messageId: String
+        val dbPath: String
+
+        when (message) {
+            is ChatMessage -> {
+                messageId = message.id
+                dbPath = "NoBallZone/chats"
+            }
+            is PollMessage -> {
+                messageId = message.id
+                dbPath = "NoBallZone/polls"
+            }
+            else -> return
+        }
+
+        val hitMissRef = FirebaseDatabase.getInstance().getReference("$dbPath/$messageId/$type")
+
+        hitMissRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(currentData: MutableData): Transaction.Result {
+                val currentValue = currentData.getValue(Int::class.java) ?: 0
+                currentData.value = currentValue + 1
+                return Transaction.success(currentData)
+            }
+
+            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                if (committed && error == null) {
+                    // Update was successful, update local data
+                    when (message) {
+                        is ChatMessage -> {
+                            if (type == "hit") message.hit += 1 else message.miss += 1
+                            notifyItemChanged(position, PAYLOAD_HIT_MISS)
+                        }
+                        is PollMessage -> {
+                            if (type == "hit") message.hit += 1 else message.miss += 1
+                            notifyItemChanged(position, PAYLOAD_HIT_MISS)
+                        }
+                    }
+                }
+            }
+        })
+    }
+
+    // Common utility method to open comments
+//    private fun openCommentsActivity(messageId: String, type: String) {
+//        val context = itemView.context
+//        val intent = Intent(context, CommentActivity::class.java).apply {
+//            putExtra("MESSAGE_ID", messageId)
+//            putExtra("MESSAGE_TYPE", type)
+//        }
+//        context.startActivity(intent)
+//    }
 
     // Common utility methods
     private fun loadProfilePicture(userId: String, imageView: ImageView) {

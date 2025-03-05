@@ -7,14 +7,14 @@ data class PollMessage(
     val team: String = "",
     val question: String = "",
     val options: MutableMap<String, Int> = mutableMapOf(),
-    val reactions: MutableMap<String, Int> = mutableMapOf(
+    var reactions: MutableMap<String, Int> = mutableMapOf(
         "fire" to 0,
         "laugh" to 0,
         "cry" to 0,
         "troll" to 0
     ),
-    val hit: Int = 0,
-    val miss: Int = 0,
+    var hit: Int = 0,
+    var miss: Int = 0,
     val timestamp: Long = System.currentTimeMillis(),
-    val comments: MutableMap<String, CommentMessage> = mutableMapOf()
+    var comments: MutableList<CommentMessage> = mutableListOf()
 )

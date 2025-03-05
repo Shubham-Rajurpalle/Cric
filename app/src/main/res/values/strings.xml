@@ -9,6 +9,20 @@
     <string name="facebook_client_token">66a042f35386db292671307e8da8a684</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="reaction_fire">🤬 %d</string>
+    <string name="reaction_laugh">😁 %d</string>
+    <string name="reaction_cry">😭 %d</string>
+    <string name="reaction_troll">💔 %d</string>
+
+    <!-- String resources for hit/miss counts -->
+    <string name="hit_count">🔥 %d</string>
+    <string name="miss_count">❌ %d</string>
+
+    <!-- String resource for comments count -->
+    <string name="comments_count">View Comments (%d)</string>
+
+    <!-- String resource for poll option percentage -->
+    <string name="percentage_format">%d%%</string>
 
 
 </resources>
