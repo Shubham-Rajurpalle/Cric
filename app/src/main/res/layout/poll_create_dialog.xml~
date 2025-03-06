@@ -26,14 +26,32 @@
         android:textStyle="bold"
         android:layout_marginBottom="8dp"/>
 
-    <!-- Initial options will be added dynamically -->
-    <LinearLayout
-        android:id="@+id/layoutOptions"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"/>
+        android:layout_marginBottom="8dp">
 
-    <!-- Additional options will be added here -->
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextOption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Option 1"
+            android:inputType="text"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextOption2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Option 2"
+            android:inputType="text"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
     <LinearLayout
         android:id="@+id/layoutAdditionalOptions"
         android:layout_width="match_parent"
@@ -44,7 +62,7 @@
         android:id="@+id/buttonAddOption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="+ Add another option"
-        android:layout_marginTop="8dp"/>
+        android:text="+ Add another option"/>
+
 
 </LinearLayout>

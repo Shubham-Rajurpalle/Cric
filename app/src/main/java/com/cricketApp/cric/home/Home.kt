@@ -12,9 +12,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.Chat.ChatFragment
+import com.cricketApp.cric.Meme.MemeFragment
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivityHomeBinding
-import com.cricketApp.cric.Meme.memeFragment
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.database.DataSnapshot
@@ -72,7 +72,7 @@ class Home : AppCompatActivity() {
             when (item.itemId) {
                 R.id.homeIcon -> switchFragment(HomeFragment(), "Home")
                 R.id.chatIcon -> switchFragment(ChatFragment(), "Chat")
-                R.id.memeIcon -> switchFragment(memeFragment(), "Meme")
+                R.id.memeIcon -> switchFragment(MemeFragment(), "Meme")
                 R.id.leaderboardIcon -> switchFragment(LeaderboardFragment(), "Leaderboard")
                 R.id.profileIcon -> switchFragment(ProfileFragment(), "Profile")
                 else -> false

@@ -7,7 +7,7 @@
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="#000000">
+    app:cardBackgroundColor="#7C2A2A2A">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -50,8 +50,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CSK"
-                android:textSize="@dimen/_10sdp"
                 android:textStyle="bold"
+                android:textSize="@dimen/_10sdp"
                 android:layout_marginRight="@dimen/_5sdp"
                 android:textColor="#FFD300"/>
 
@@ -64,16 +64,6 @@
                 android:padding="2dp"/>
         </LinearLayout>
 
-        <!-- Message Content -->
-        <TextView
-            android:id="@+id/textViewMessage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="I am doing well. Can we meet up tomorrow?"
-            android:textSize="@dimen/_10sdp"
-            android:textColor="#FFFFFF"/>
-
         <ImageView
             android:id="@+id/imageViewContent"
             android:layout_width="match_parent"
@@ -82,9 +72,8 @@
             android:adjustViewBounds="true"
             android:scaleType="centerCrop"
             android:maxHeight="@dimen/_150sdp"
-            android:visibility="gone" />
+            android:visibility="visible" />
 
-        <!-- Reactions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -177,11 +166,22 @@
                 android:layout_marginStart="4dp"
                 android:clickable="true"/>
 
+
+
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1"/>
 
+            <TextView
+                android:id="@+id/textViewComments"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Comments →"
+                android:textSize="@dimen/_8sdp"
+                android:textColor="#00A3FF"
+                android:layout_gravity="center_vertical"
+                android:clickable="true"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

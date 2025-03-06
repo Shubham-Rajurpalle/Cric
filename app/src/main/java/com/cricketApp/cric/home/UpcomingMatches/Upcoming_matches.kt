@@ -34,8 +34,39 @@ class Upcoming_matches : Fragment() {
     }
 
     private fun observeUpcomingMatches() {
+        // Show progress bar before loading
+        binding.progressBar.visibility = View.VISIBLE
+        binding.upcomingMatchesRecyclerView.visibility = View.GONE
+
         viewModel.matches.observe(viewLifecycleOwner) { matches ->
+            // Hide progress bar
+            binding.progressBar.visibility = View.GONE
+
+            // Show RecyclerView
+            binding.upcomingMatchesRecyclerView.visibility = View.VISIBLE
+
+            // Update adapter
             adapter.updateData(matches ?: emptyList())
+
+            // Handle empty state
+            if (matches.isNullOrEmpty()) {
+                binding.textViewNoMatches.visibility = View.VISIBLE
+                binding.upcomingMatchesRecyclerView.visibility = View.GONE
+            } else {
+                binding.textViewNoMatches.visibility = View.GONE
+                binding.upcomingMatchesRecyclerView.visibility = View.VISIBLE
+            }
+        }
+
+        // Handle any loading errors
+        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
+            // Hide progress bar
+            binding.progressBar.visibility = View.GONE
+
+            // Show error message
+            binding.textViewNoMatches.text = errorMessage
+            binding.textViewNoMatches.visibility = View.VISIBLE
+            binding.upcomingMatchesRecyclerView.visibility = View.GONE
         }
     }
 

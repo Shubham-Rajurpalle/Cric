@@ -7,6 +7,7 @@ data class ChatMessage(
     val team: String = "",
     val message: String = "",
     val timestamp: Long = 0,
+    val imageUrl: String = "", // Added field for image URL
     var reactions: MutableMap<String, Int> = mutableMapOf<String, Int>().apply {
         put("fire", 0)
         put("laugh", 0)
@@ -15,5 +16,6 @@ data class ChatMessage(
     },
     var hit: Int = 0,
     var miss: Int = 0,
+    var commentCount: Int = 0,
     var comments: MutableList<CommentMessage> = mutableListOf()
 )

@@ -8,19 +8,18 @@ class UpcomingMatchViewModel : ViewModel() {
     private val repository = UpcomingMatchRepository()
     private val _matches = MutableLiveData<List<MatchData>>()
     val matches: LiveData<List<MatchData>> get() = _matches
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
 
     init {
         loadUpcomingMatches()
     }
 
     private fun loadUpcomingMatches() {
-
+        repository.fetchUpcomingMatches { matchList ->
+            _matches.postValue(matchList ?: emptyList())
+        }
         try {
-            repository.fetchUpcomingMatches { matchList ->
-                _matches.postValue(matchList ?: emptyList())
-            }
+            // Fetch matches
+            _matches.value = // your match list
         } catch (e: Exception) {
             _error.value = "Failed to load matches. Please try again."
         }

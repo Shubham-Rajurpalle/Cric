@@ -1,13 +1,20 @@
 package com.cricketApp.cric.Chat
 
+import android.animation.ObjectAnimator
+import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
-import androidx.recyclerview.widget.LinearLayoutManager
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.R
@@ -110,6 +117,14 @@ class ChatAdapter(private val items: List<Any>) :
 
     override fun getItemCount(): Int = items.size
 
+    // Add this helper method for showing full screen images
+    private fun showFullScreenImage(context: Context, imageUrl: String) {
+        val intent = Intent(context, ActivityImageViewer::class.java).apply {
+            putExtra("IMAGE_URL", imageUrl)
+        }
+        context.startActivity(intent)
+    }
+
     inner class ChatSendViewHolder(private val binding: ItemSendChatBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -118,6 +133,22 @@ class ChatAdapter(private val items: List<Any>) :
                 textViewName.text = chat.senderName
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
+
+                // Handle image content
+                if (chat.imageUrl.isNotEmpty()) {
+                    imageViewContent.visibility = View.VISIBLE
+                    // Load image with Glide
+                    Glide.with(itemView.context)
+                        .load(chat.imageUrl)
+                        .into(imageViewContent)
+
+                    // Make image clickable for full screen view
+                    imageViewContent.setOnClickListener {
+                        showFullScreenImage(itemView.context, chat.imageUrl)
+                    }
+                } else {
+                    imageViewContent.visibility = View.GONE
+                }
 
                 // Load profile picture
                 loadProfilePicture(chat.senderId, binding.imageViewProfile)
@@ -148,7 +179,7 @@ class ChatAdapter(private val items: List<Any>) :
                     val context = itemView.context
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", chat.id)
-                        putExtra("MESSAGE_TYPE", "poll")
+                        putExtra("MESSAGE_TYPE", "chat")
                     }
                     context.startActivity(intent)
                 }
@@ -168,7 +199,9 @@ class ChatAdapter(private val items: List<Any>) :
         }
 
         fun updateComments(chat: ChatMessage) {
-            binding.textViewComments.text = "View Comments (${chat.comments.size})"
+            // First check if commentCount is greater than 0, use that if available
+            val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
+            binding.textViewComments.text = "View Comments ($count)"
         }
     }
 
@@ -180,6 +213,22 @@ class ChatAdapter(private val items: List<Any>) :
                 textViewName.text = chat.senderName
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
+
+                // Handle image content
+                if (chat.imageUrl.isNotEmpty()) {
+                    imageViewContent.visibility = View.VISIBLE
+                    // Load image with Glide
+                    Glide.with(itemView.context)
+                        .load(chat.imageUrl)
+                        .into(imageViewContent)
+
+                    // Make image clickable for full screen view
+                    imageViewContent.setOnClickListener {
+                        showFullScreenImage(itemView.context, chat.imageUrl)
+                    }
+                } else {
+                    imageViewContent.visibility = View.GONE
+                }
 
                 // Load profile picture
                 loadProfilePicture(chat.senderId, binding.imageViewProfile)
@@ -210,7 +259,7 @@ class ChatAdapter(private val items: List<Any>) :
                     val context = itemView.context
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", chat.id)
-                        putExtra("MESSAGE_TYPE", "poll")
+                        putExtra("MESSAGE_TYPE", "chat")
                     }
                     context.startActivity(intent)
                 }
@@ -230,7 +279,8 @@ class ChatAdapter(private val items: List<Any>) :
         }
 
         fun updateComments(chat: ChatMessage) {
-            binding.textViewComments.text = "View Comments (${chat.comments.size})"
+            val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
+            binding.textViewComments.text = "View Comments ($count)"
         }
     }
 
@@ -294,19 +344,29 @@ class ChatAdapter(private val items: List<Any>) :
             binding.buttonMiss.text = "❌ ${poll.miss}"
         }
 
-        fun updateComments(poll: PollMessage) {
-            binding.textViewComments.text = "View Comments (${poll.comments.size})"
+        fun updateComments(chat: PollMessage) {
+            val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
+            binding.textViewComments.text = "View Comments ($count)"
         }
 
         fun setupPollOptions(poll: PollMessage) {
             val context = itemView.context
             val layoutInflater = LayoutInflater.from(context)
+            val currentUser = FirebaseAuth.getInstance().currentUser
 
             // Clear previous options
             binding.linearLayoutOptions.removeAllViews()
 
             // Calculate total votes
             val totalVotes = poll.options.values.sum()
+
+            // Check if current user has voted
+            val currentUserVote = if (currentUser != null && poll.voters != null) {
+                poll.voters!![currentUser.uid]
+            } else null
+
+            // Keep track of all radio buttons to enforce mutual exclusivity
+            val allRadioButtons = mutableListOf<RadioButton>()
 
             // Add options
             for ((option, votes) in poll.options) {
@@ -316,6 +376,9 @@ class ChatAdapter(private val items: List<Any>) :
                 val textPercentage = optionView.findViewById<TextView>(R.id.textViewPercentage)
                 val progressBar = optionView.findViewById<ProgressBar>(R.id.progressBarOption)
 
+                // Add this radio button to our list
+                allRadioButtons.add(radioButton)
+
                 // Calculate percentage
                 val percentage = if (totalVotes > 0) (votes * 100 / totalVotes) else 0
 
@@ -324,77 +387,125 @@ class ChatAdapter(private val items: List<Any>) :
                 textOption.text = option
                 textPercentage.text = "$percentage%"
 
-                // Fix progress bar to show percentage instead of loading state
+                // Check if this is the user's selection
+                val isUserChoice = option == currentUserVote
+                radioButton.isChecked = isUserChoice
+
+                // Style the selected option differently
+                if (isUserChoice) {
+                    textOption.setTextColor(ContextCompat.getColor(context, R.color.grey))
+                    textOption.setTypeface(null, Typeface.BOLD)
+                } else {
+                    textOption.setTextColor(ContextCompat.getColor(context, R.color.white))
+                    textOption.setTypeface(null, Typeface.NORMAL)
+                }
+
+                // Set up progress bar
                 progressBar.isIndeterminate = false
                 progressBar.max = 100
                 progressBar.progress = percentage
 
-                // Set click listener for option selection
+                // Set direct click listener for the radio button
                 radioButton.setOnClickListener {
-                    votePollOption(poll, option, adapterPosition)
+                    if (currentUser != null && option != currentUserVote) {
+                        // Update UI immediately
+                        for (rb in allRadioButtons) {
+                            rb.isChecked = false
+                        }
+                        radioButton.isChecked = true
+
+                        // Update Firebase and refresh UI
+                        votePoll(poll, option, adapterPosition)
+                    }
+                }
+
+                // Set click listener for the whole row
+                optionView.setOnClickListener {
+                    if (currentUser != null) {
+                        if (option != currentUserVote) {
+                            // Update UI immediately
+                            for (rb in allRadioButtons) {
+                                rb.isChecked = false
+                            }
+                            radioButton.isChecked = true
+
+                            // Update Firebase and refresh UI
+                            votePoll(poll, option, adapterPosition)
+                        }
+                    } else {
+                        Toast.makeText(context, "Please log in to vote", Toast.LENGTH_SHORT).show()
+                    }
                 }
 
                 binding.linearLayoutOptions.addView(optionView)
             }
         }
+    }
 
-        private fun votePollOption(poll: PollMessage, option: String, position: Int) {
-            val currentUser = FirebaseAuth.getInstance().currentUser ?: return
-            val userId = currentUser.uid
+    // Add this function at the same level as addReaction and updateHitOrMiss
+    private fun votePoll(poll: PollMessage, selectedOption: String, position: Int) {
+        if (position == RecyclerView.NO_POSITION) return
 
-            // Check if user already voted
-            val pollRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${poll.id}")
-            val votersRef = pollRef.child("voters")
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val userId = currentUser.uid
 
-            votersRef.child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        // User already voted
-                        val previousVote = snapshot.getValue(String::class.java)
-                        if (previousVote != null && previousVote != option) {
-                            // Change vote
-                            pollRef.child("options").child(previousVote).addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(snapshot: DataSnapshot) {
-                                    val currentVotes = snapshot.getValue(Int::class.java) ?: 0
-                                    if (currentVotes > 0) {
-                                        pollRef.child("options").child(previousVote).setValue(currentVotes - 1)
+        // Get poll reference
+        val pollRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${poll.id}")
 
-                                        // Increment new option
-                                        pollRef.child("options").child(option).addListenerForSingleValueEvent(object : ValueEventListener {
-                                            override fun onDataChange(snapshot: DataSnapshot) {
-                                                val newOptionVotes = snapshot.getValue(Int::class.java) ?: 0
-                                                pollRef.child("options").child(option).setValue(newOptionVotes + 1)
-                                                votersRef.child(userId).setValue(option)
-                                            }
+        // Get previous vote if any
+        val previousVote = poll.voters?.get(userId)
 
-                                            override fun onCancelled(error: DatabaseError) {}
-                                        })
-                                    }
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {}
-                            })
-                        }
-                    } else {
-                        // New vote
-                        pollRef.child("options").child(option).addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                val currentVotes = snapshot.getValue(Int::class.java) ?: 0
-                                pollRef.child("options").child(option).setValue(currentVotes + 1)
-                                votersRef.child(userId).setValue(option)
-                            }
-
-                            override fun onCancelled(error: DatabaseError) {}
-                        })
+        // Update options map
+        if (previousVote != null && previousVote != selectedOption) {
+            // Handle previous vote
+            val prevRef = pollRef.child("options").child(previousVote)
+            prevRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                    if (currentValue > 0) {
+                        mutableData.value = currentValue - 1
                     }
+                    return Transaction.success(mutableData)
                 }
 
-                override fun onCancelled(error: DatabaseError) {}
+                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                    // Just log completion
+                    if (error != null) {
+                        Log.e("PollVoting", "Error decrementing previous vote: ${error.message}")
+                    }
+                }
             })
         }
+
+        // Increment selected option
+        val selectedRef = pollRef.child("options").child(selectedOption)
+        selectedRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                mutableData.value = currentValue + 1
+                return Transaction.success(mutableData)
+            }
+
+            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                if (committed && error == null) {
+                    // Once option is updated, update voters map
+                    pollRef.child("voters").child(userId).setValue(selectedOption)
+                        .addOnSuccessListener {
+                            // On success, trigger UI refresh by notifying the adapter
+                            // This will do a full bind for all fields
+                            if (position < items.size) {
+                                notifyItemChanged(position)
+                            }
+                        }
+                } else if (error != null) {
+                    Log.e("PollVoting", "Error updating vote: ${error.message}")
+                }
+            }
+        })
     }
 
     // Utility method to update a reaction (without reloading)
+    // Utility method to update a reaction (fixed to prevent double counting)
     private fun addReaction(message: Any, reactionType: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
@@ -424,17 +535,18 @@ class ChatAdapter(private val items: List<Any>) :
             }
 
             override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null) {
-                    // Update was successful, now update the item in our local data
+                if (committed && error == null && currentData != null) {
+                    // Only update the local model with the value from Firebase
+                    // This prevents any possibility of double counting
+                    val newValue = currentData.getValue(Int::class.java) ?: 0
+
                     when (message) {
                         is ChatMessage -> {
-                            val currentValue = message.reactions[reactionType] ?: 0
-                            message.reactions[reactionType] = currentValue + 1
+                            message.reactions[reactionType] = newValue
                             notifyItemChanged(position, PAYLOAD_REACTION)
                         }
                         is PollMessage -> {
-                            val currentValue = message.reactions[reactionType] ?: 0
-                            message.reactions[reactionType] = currentValue + 1
+                            message.reactions[reactionType] = newValue
                             notifyItemChanged(position, PAYLOAD_REACTION)
                         }
                     }
@@ -443,7 +555,7 @@ class ChatAdapter(private val items: List<Any>) :
         })
     }
 
-    // Utility method to update hit or miss counts
+    // Utility method to update hit or miss counts (fixed to prevent double counting)
     private fun updateHitOrMiss(message: Any, type: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
@@ -472,15 +584,17 @@ class ChatAdapter(private val items: List<Any>) :
             }
 
             override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null) {
-                    // Update was successful, update local data
+                if (committed && error == null && currentData != null) {
+                    // Only update local model with the value from Firebase
+                    val newValue = currentData.getValue(Int::class.java) ?: 0
+
                     when (message) {
                         is ChatMessage -> {
-                            if (type == "hit") message.hit += 1 else message.miss += 1
+                            if (type == "hit") message.hit = newValue else message.miss = newValue
                             notifyItemChanged(position, PAYLOAD_HIT_MISS)
                         }
                         is PollMessage -> {
-                            if (type == "hit") message.hit += 1 else message.miss += 1
+                            if (type == "hit") message.hit = newValue else message.miss = newValue
                             notifyItemChanged(position, PAYLOAD_HIT_MISS)
                         }
                     }
@@ -512,7 +626,6 @@ class ChatAdapter(private val items: List<Any>) :
             }
         })
     }
-
 
     private fun loadTeamLogo(teamName: String, imageView: ImageView) {
         val teamLogoMap = mapOf(

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -8,7 +7,7 @@
     android:layout_height="wrap_content">
 
     <androidx.cardview.widget.CardView
-      android:layout_width="@dimen/_240sdp"
+        android:layout_width="@dimen/_240sdp"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         app:cardCornerRadius="12dp"
@@ -57,28 +56,28 @@
                     android:layout_height="wrap_content"
                     android:text="CSK"
                     android:textStyle="bold"
-                    android:textSize="@dimen/_8sdp"
+                    android:textSize="@dimen/_10sdp"
                     android:layout_marginRight="@dimen/_5sdp"
                     android:textColor="#FFD300"/>
 
                 <ImageView
                     android:id="@+id/imageViewTeam"
-                    android:layout_width="@dimen/_12sdp"
-                    android:layout_height="@dimen/_12sdp"
+                    android:layout_width="@dimen/_15sdp"
+                    android:layout_height="@dimen/_15sdp"
                     android:src="@drawable/icc_logo"
                     android:background="@drawable/circular_background"
                     android:padding="2dp"/>
             </LinearLayout>
 
-            <!-- Message Content -->
-            <TextView
-                android:id="@+id/textViewMessage"
+            <ImageView
+                android:id="@+id/imageViewContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="I am doing well. Can we meet up tomorrow?"
-                android:textSize="@dimen/_10sdp"
-                android:textColor="#FFFFFF"/>
+                android:adjustViewBounds="true"
+                android:scaleType="centerCrop"
+                android:maxHeight="@dimen/_150sdp"
+                android:visibility="visible" />
 
             <!-- Reactions -->
             <LinearLayout
@@ -178,8 +177,16 @@
                     android:layout_height="1dp"
                     android:layout_weight="1"/>
 
+                <TextView
+                    android:id="@+id/textViewComments"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Comments →"
+                    android:textSize="@dimen/_8sdp"
+                    android:textColor="#00A3FF"
+                    android:layout_gravity="center_vertical"
+                    android:clickable="true"/>
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 </LinearLayout>
-

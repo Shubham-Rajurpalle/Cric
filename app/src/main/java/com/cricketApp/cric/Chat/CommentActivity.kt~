@@ -262,12 +262,10 @@ class CommentActivity : AppCompatActivity() {
         // Load image into preview with enhanced Glide configuration
         Glide.with(this)
             .load(selectedImageUri)
-            .apply(
-                RequestOptions()
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.loading)
-                    .error(R.drawable.loading)
-            )
+            .apply(RequestOptions()
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.loading)
+                .error(R.drawable.loading))
             .into(imagePreview)
 
         // Show dialog with preview and send button
@@ -279,8 +277,7 @@ class CommentActivity : AppCompatActivity() {
 
                 // Show loading indicator
                 val progressView = View.inflate(this, R.layout.loading_indicator, null)
-                val progressIndicator =
-                    progressView.findViewById<CircularProgressIndicator>(R.id.progressIndicator)
+                val progressIndicator = progressView.findViewById<CircularProgressIndicator>(R.id.progressIndicator)
 
                 val progressDialog = MaterialAlertDialogBuilder(this)
                     .setView(progressView)
@@ -291,8 +288,7 @@ class CommentActivity : AppCompatActivity() {
                 progressDialog.show()
 
                 // Create a reference to the image file in Firebase Storage
-                val imageRef =
-                    storageRef.child("comment_images/${System.currentTimeMillis()}_${currentUser.uid}.jpg")
+                val imageRef = storageRef.child("comment_images/${System.currentTimeMillis()}_${currentUser.uid}.jpg")
 
                 // Upload the image
                 imageRef.putFile(selectedImageUri!!)
@@ -312,21 +308,13 @@ class CommentActivity : AppCompatActivity() {
                         }
                             .addOnFailureListener { e ->
                                 // Handle error getting download URL
-                                Toast.makeText(
-                                    this,
-                                    "Failed to get download URL: ${e.message}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(this, "Failed to get download URL: ${e.message}", Toast.LENGTH_SHORT).show()
                                 progressDialog.dismiss()
                             }
                     }
                     .addOnFailureListener { e ->
                         // Handle error with upload
-                        Toast.makeText(
-                            this,
-                            "Failed to upload image: ${e.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(this, "Failed to upload image: ${e.message}", Toast.LENGTH_SHORT).show()
                         progressDialog.dismiss()
                     }
             }
@@ -402,11 +390,7 @@ class CommentActivity : AppCompatActivity() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Fallback to Firebase Auth display name
-                sendCommentWithUserInfo(
-                    commentText,
-                    currentUser.displayName ?: "Anonymous",
-                    "No Team"
-                )
+                sendCommentWithUserInfo(commentText, currentUser.displayName ?: "Anonymous", "No Team")
             }
         })
     }
@@ -460,16 +444,9 @@ class CommentActivity : AppCompatActivity() {
                         return Transaction.success(mutableData)
                     }
 
-                    override fun onComplete(
-                        error: DatabaseError?,
-                        committed: Boolean,
-                        dataSnapshot: DataSnapshot?
-                    ) {
+                    override fun onComplete(error: DatabaseError?, committed: Boolean, dataSnapshot: DataSnapshot?) {
                         if (error != null) {
-                            Log.e(
-                                "CommentActivity",
-                                "Error updating comment count: ${error.message}"
-                            )
+                            Log.e("CommentActivity", "Error updating comment count: ${error.message}")
                         }
                     }
                 })

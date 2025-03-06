@@ -2,6 +2,7 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:background="@color/black"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
@@ -10,7 +11,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:background="@color/black">
+        android:background="@color/backgroud_bottom">
 
         <ImageButton
             android:id="@+id/buttonBack"
@@ -43,23 +44,36 @@
         android:orientation="horizontal"
         android:padding="8dp">
 
-        <EditText
-            android:id="@+id/editTextComment"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/white"
-            android:textColorHint="@color/white"
-            android:hint="Write a comment..."
-            android:padding="12dp"
-            android:background="@drawable/button_background"
-            android:inputType="textMultiLine"/>
+       <LinearLayout
+           android:layout_width="match_parent"
+           wig
+           android:background="@drawable/background_chat_type"
+           android:layout_height="match_parent">
+           <EditText
+               android:id="@+id/editTextComment"
+               android:layout_width="0dp"
+               android:layout_height="wrap_content"
+               android:layout_weight="1"
+               android:textColor="@color/white"
+               android:textColorHint="#434343"
+               android:hint="Write a comment..."
+               android:padding="@dimen/_10sdp"
+               android:inputType="textMultiLine"/>
+           <ImageButton
+               android:id="@+id/buttonMeme"
+               android:layout_width="48dp"
+               android:layout_height="48dp"
+               android:padding="@dimen/_10sdp"
+               android:src="@drawable/image_picker"
+               android:background="?attr/selectableItemBackgroundBorderless"
+               android:contentDescription="Create Poll"/>
+       </LinearLayout>
 
         <ImageButton
             android:id="@+id/buttonSendComment"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/facebook_logo"
+            android:src="@drawable/send_button"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Send Comment"/>
     </LinearLayout>

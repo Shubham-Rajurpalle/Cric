@@ -2,7 +2,6 @@ import android.util.Log
 import com.cricketApp.cric.Chat.ChatMessage
 import com.cricketApp.cric.Chat.CommentMessage
 import com.cricketApp.cric.Chat.PollMessage
-import com.cricketApp.cric.Meme.MemeMessage
 import com.google.firebase.database.DataSnapshot
 
 object FirebaseDataHelper {
@@ -279,76 +278,6 @@ object FirebaseDataHelper {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing poll message: ${e.message}")
-        }
-
-        return null
-    }
-
-    fun getMemeMessageFromSnapshot(snapshot: DataSnapshot): MemeMessage? {
-        try {
-            // Get the basic data as a Map
-            val messageMap = snapshot.value as? Map<*, *>
-            if (messageMap != null) {
-                val id = snapshot.key ?: ""
-                val senderId = messageMap["senderId"] as? String ?: ""
-                val senderName = messageMap["senderName"] as? String ?: ""
-                val team = messageMap["team"] as? String ?: ""
-                val memeUrl = messageMap["memeUrl"] as? String ?: ""
-                val timestamp = (messageMap["timestamp"] as? Number)?.toLong() ?: 0L
-
-                // Get comment count
-                val commentCount = (messageMap["commentCount"] as? Number)?.toInt() ?: 0
-
-                // Handle reactions map
-                val reactionsMap = mutableMapOf(
-                    "fire" to 0,
-                    "laugh" to 0,
-                    "cry" to 0,
-                    "troll" to 0
-                )
-
-                if (messageMap.containsKey("reactions")) {
-                    val reactions = messageMap["reactions"] as? Map<*, *>
-                    if (reactions != null) {
-                        for (key in reactionsMap.keys) {
-                            reactionsMap[key] = (reactions[key] as? Number)?.toInt() ?: 0
-                        }
-                    }
-                }
-
-                // Handle hit and miss counts
-                val hit = (messageMap["hit"] as? Number)?.toInt() ?: 0
-                val miss = (messageMap["miss"] as? Number)?.toInt() ?: 0
-
-                // Create the meme message
-                val meme = MemeMessage(
-                    id = id,
-                    senderId = senderId,
-                    senderName = senderName,
-                    team = team,
-                    memeUrl = memeUrl,
-                    timestamp = timestamp,
-                    reactions = reactionsMap,
-                    hit = hit,
-                    miss = miss,
-                    commentCount = commentCount
-                )
-
-                // Handle comments separately
-                meme.comments = getCommentsFromSnapshot(snapshot)
-
-                return meme
-            } else {
-                // Try standard getValue as fallback
-                val meme = snapshot.getValue(MemeMessage::class.java)
-                if (meme != null) {
-                    meme.id = snapshot.key ?: meme.id
-                    meme.comments = getCommentsFromSnapshot(snapshot)
-                    return meme
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error parsing meme message: ${e.message}")
         }
 
         return null
