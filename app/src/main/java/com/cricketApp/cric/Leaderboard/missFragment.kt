@@ -23,6 +23,9 @@ class missFragment : Fragment() {
     private lateinit var adapter: MissLeaderboardAdapter
     private val allTeams = mutableListOf<TeamData>()
 
+    // Add a flag to track whether the fragment is attached
+    private var isFragmentActive = false
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -33,6 +36,9 @@ class missFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Set flag to true when fragment is active
+        isFragmentActive = true
 
         // Initialize Firebase
         databaseRef = FirebaseDatabase.getInstance().getReference("teams")
@@ -45,10 +51,21 @@ class missFragment : Fragment() {
         loadLeaderboardData()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Set flag to false when fragment view is destroyed
+        isFragmentActive = false
+        _binding = null
+    }
+
     private fun loadLeaderboardData() {
         databaseRef.orderByChild("misses").limitToLast(10).addValueEventListener(object :
             ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Check if fragment is still active before processing data
+                if (!isFragmentActive) return
+
                 allTeams.clear()
 
                 for (dataSnapshot in snapshot.children) {
@@ -65,12 +82,18 @@ class missFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
+                // Check if fragment is still active before showing toast
+                if (!isFragmentActive) return
+
                 Toast.makeText(requireContext(), "Failed to load data", Toast.LENGTH_SHORT).show()
             }
         })
     }
 
     private fun updateUI() {
+        // Check if binding is null or fragment is not active
+        if (_binding == null || !isFragmentActive) return
+
         if (allTeams.size >= 3) {
             val firstPlace = allTeams[0]
             val secondPlace = allTeams[1]
@@ -83,26 +106,27 @@ class missFragment : Fragment() {
             binding.secondMisses.text = secondPlace.misses.toString()
             binding.thirdMisses.text = thirdPlace.misses.toString()
 
-            Glide.with(this)
-                .load(firstPlace.logoUrl)
-                .into(binding.firstTeamLogo)
+            try {
+                // Use requireView() to ensure we only load images when the view exists
+                Glide.with(requireView())
+                    .load(firstPlace.logoUrl)
+                    .into(binding.firstTeamLogo)
 
-            Glide.with(this)
-                .load(secondPlace.logoUrl)
-                .into(binding.secondTeamLogo)
+                Glide.with(requireView())
+                    .load(secondPlace.logoUrl)
+                    .into(binding.secondTeamLogo)
 
-            Glide.with(this)
-                .load(thirdPlace.logoUrl)
-                .into(binding.thirdTeamLogo)
+                Glide.with(requireView())
+                    .load(thirdPlace.logoUrl)
+                    .into(binding.thirdTeamLogo)
+            } catch (e: Exception) {
+                // Handle any exceptions that might occur during image loading
+                e.printStackTrace()
+            }
 
             adapter.submitList(allTeams.subList(3, allTeams.size))
         } else {
             adapter.submitList(allTeams)
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

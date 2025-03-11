@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.cricketApp.cric.R
+import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemSendCommentBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -258,36 +259,36 @@ class CommentAdapter(
     private fun updateHitOrMiss(comment: CommentMessage, type: String, position: Int) {
         if (position == RecyclerView.NO_POSITION || position >= comments.size) return
 
-        val path = if (messageType == "chat") {
-            "NoBallZone/chats/$messageId/comments/${comment.id}/$type"
-        } else {
-            "NoBallZone/polls/$messageId/comments/${comment.id}/$type"
+        val isHit = type == "hit"
+
+        // Determine the parent content type based on messageType
+        val contentType = when (messageType) {
+            "chat" -> "chats"
+            "poll" -> "polls"
+            "meme" -> "memes"
+            else -> return
         }
 
-        val hitMissRef = FirebaseDatabase.getInstance().getReference(path)
-
-        hitMissRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null && currentData != null) {
-                    // Only update local model with the value from Firebase
-                    val newValue = currentData.getValue(Int::class.java) ?: 0
-                    if (type == "hit") {
-                        comment.hit = newValue
-                    } else {
-                        comment.miss = newValue
-                    }
-
-                    if (position < comments.size) {
-                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                    }
+        // Update comment stats and team stats
+        TeamStatsUtility.updateContentAndTeamStats(
+            contentType = contentType,
+            contentId = "", // Not used for comments
+            team = comment.team,
+            isHit = isHit,
+            commentId = comment.id,
+            parentId = messageId
+        ) { success, newValue ->
+            if (success && position < comments.size) {
+                // Update local model with received value
+                if (isHit) {
+                    comment.hit = newValue
+                } else {
+                    comment.miss = newValue
                 }
+
+                // Notify adapter of the change
+                notifyItemChanged(position, PAYLOAD_HIT_MISS)
             }
-        })
+        }
     }
 }

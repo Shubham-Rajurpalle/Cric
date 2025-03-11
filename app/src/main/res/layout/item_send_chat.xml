@@ -79,16 +79,21 @@
                 android:textSize="@dimen/_10sdp"
                 android:textColor="#FFFFFF"/>
 
-            <!-- Image Content (ADDED) -->
-            <ImageView
-                android:id="@+id/imageViewContent"
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+
                 android:layout_marginTop="8dp"
-                android:adjustViewBounds="true"
-                android:scaleType="centerCrop"
-                android:maxHeight="@dimen/_150sdp"
-                android:visibility="gone" />
+                app:cardCornerRadius="@dimen/_20sdp"
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:id="@+id/imageViewContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:scaleType="centerCrop"
+                    android:maxHeight="@dimen/_150sdp"
+                    android:visibility="gone" />
+            </androidx.cardview.widget.CardView>
 
             <!-- Reactions -->
             <LinearLayout

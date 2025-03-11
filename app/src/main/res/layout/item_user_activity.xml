@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="@dimen/_250sdp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="#7C2A2A2A">
+    app:cardBackgroundColor="#4A011C6B">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,12 +17,12 @@
         <!-- User Info -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <ImageView
-                android:id="@+id/imageViewProfile"
+                android:id="@+id/userIcon"
                 android:layout_width="@dimen/_15sdp"
                 android:layout_height="@dimen/_15sdp"
                 android:src="@drawable/profile_empty"/>
@@ -36,17 +35,17 @@
                 android:layout_marginStart="8dp">
 
                 <TextView
-                    android:id="@+id/textViewName"
+                    android:id="@+id/activityUsername"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Shubham R"
+                    android:text="Username"
                     android:textSize="@dimen/_11sdp"
                     android:textStyle="bold"
                     android:textColor="#00A3FF"/>
             </LinearLayout>
 
             <TextView
-                android:id="@+id/textViewTeam"
+                android:id="@+id/teamName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CSK"
@@ -56,7 +55,7 @@
                 android:textColor="#FFD300"/>
 
             <ImageView
-                android:id="@+id/imageViewTeam"
+                android:id="@+id/teamIcon"
                 android:layout_width="@dimen/_15sdp"
                 android:layout_height="@dimen/_15sdp"
                 android:src="@drawable/icc_logo"
@@ -64,13 +63,13 @@
                 android:padding="2dp"/>
         </LinearLayout>
 
-        <!-- Message Content -->
+        <!-- Activity Content -->
         <TextView
-            android:id="@+id/textViewMessage"
+            android:id="@+id/activityContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="I am doing well. Can we meet up tomorrow?"
+            android:text="Activity content goes here"
             android:textSize="@dimen/_10sdp"
             android:textColor="#FFFFFF"/>
 
@@ -81,7 +80,7 @@
             android:layout_marginTop="8dp"
             android:layout_height="wrap_content">
             <ImageView
-                android:id="@+id/imageViewContent"
+                android:id="@+id/activityImage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
@@ -89,6 +88,15 @@
                 android:maxHeight="@dimen/_150sdp"
                 android:visibility="gone" />
         </androidx.cardview.widget.CardView>
+
+        <!-- Poll Options Container (for polls) -->
+        <LinearLayout
+            android:id="@+id/pollOptionsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
 
         <!-- Reactions -->
         <LinearLayout
@@ -147,7 +155,6 @@
                 android:padding="4dp"
                 android:background="@drawable/reaction_background"
                 android:clickable="true"/>
-
         </LinearLayout>
 
         <!-- Hit/Miss Buttons -->
@@ -183,22 +190,11 @@
                 android:layout_marginStart="4dp"
                 android:clickable="true"/>
 
-
-
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1"/>
 
-            <TextView
-                android:id="@+id/textViewComments"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Comments →"
-                android:textSize="@dimen/_8sdp"
-                android:textColor="#00A3FF"
-                android:layout_gravity="center_vertical"
-                android:clickable="true"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

@@ -19,7 +19,6 @@ import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.Chat.FirebaseDataHelper
 import com.cricketApp.cric.Chat.PollMessage
 import com.cricketApp.cric.LogIn.SignIn
-import com.cricketApp.cric.LogIn.UserInfo
 import com.cricketApp.cric.Meme.MemeMessage
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.FragmentProfileBinding
@@ -66,7 +65,7 @@ class ProfileFragment : Fragment() {
 
         // Setup profile edit button
         binding.editProfileButton.setOnClickListener {
-            startActivity(Intent(requireContext(), UserInfo::class.java))
+            openImagePicker()
         }
 
         // Setup RecyclerView for activities

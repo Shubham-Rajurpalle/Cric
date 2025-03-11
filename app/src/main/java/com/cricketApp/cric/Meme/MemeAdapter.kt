@@ -11,6 +11,7 @@ import com.bumptech.glide.Glide
 import com.cricketApp.cric.Chat.ActivityImageViewer
 import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.R
+import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemMemeReceiveBinding
 import com.cricketApp.cric.databinding.ItemMemeSendBinding
 import com.google.firebase.auth.FirebaseAuth
@@ -164,8 +165,9 @@ class MemeAdapter(
                     val context = itemView.context
                     onCommentClickListener?.invoke(meme) ?: run {
                         val intent = Intent(context, CommentActivity::class.java).apply {
-                            putExtra("MESSAGE_ID", meme.id)
-                            putExtra("MESSAGE_TYPE", "meme")
+                            // Change the key names to match what CommentActivity expects
+                            putExtra("ITEM_ID", meme.id)
+                            putExtra("ITEM_TYPE", "meme")
                         }
                         context.startActivity(intent)
                     }
@@ -243,8 +245,9 @@ class MemeAdapter(
                     val context = itemView.context
                     onCommentClickListener?.invoke(meme) ?: run {
                         val intent = Intent(context, CommentActivity::class.java).apply {
-                            putExtra("MESSAGE_ID", meme.id)
-                            putExtra("MESSAGE_TYPE", "meme")
+                            // Change the key names to match what CommentActivity expects
+                            putExtra("ITEM_ID", meme.id)
+                            putExtra("ITEM_TYPE", "meme")
                         }
                         context.startActivity(intent)
                     }
@@ -296,24 +299,23 @@ class MemeAdapter(
     private fun updateHitOrMiss(meme: MemeMessage, type: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
-        val hitMissRef = FirebaseDatabase.getInstance()
-            .getReference("NoBallZone/memes/${meme.id}/$type")
+        val isHit = type == "hit"
 
-        hitMissRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
+        // Use the TeamStatsUtility to update both the meme stats and team stats
+        TeamStatsUtility.updateContentAndTeamStats(
+            contentType = "memes",
+            contentId = meme.id,
+            team = meme.team,
+            isHit = isHit
+        ) { success, newValue ->
+            if (success) {
+                // Update local model with the received value from Firebase
+                if (isHit) meme.hit = newValue else meme.miss = newValue
 
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null && currentData != null) {
-                    val newValue = currentData.getValue(Int::class.java) ?: 0
-                    if (type == "hit") meme.hit = newValue else meme.miss = newValue
-                    notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                }
+                // Notify adapter of the change
+                notifyItemChanged(position, PAYLOAD_HIT_MISS)
             }
-        })
+        }
     }
 
     private fun loadProfilePicture(userId: String, imageView: ImageView) {

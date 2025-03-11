@@ -1,10 +1,12 @@
+package com.cricketApp.cric.Chat
+
 import android.util.Log
-import com.cricketApp.cric.Chat.ChatMessage
-import com.cricketApp.cric.Chat.CommentMessage
-import com.cricketApp.cric.Chat.PollMessage
 import com.cricketApp.cric.Meme.MemeMessage
 import com.google.firebase.database.DataSnapshot
 
+/**
+ * Helper class for parsing Firebase data into proper model objects
+ */
 object FirebaseDataHelper {
 
     private const val TAG = "FirebaseDataHelper"
@@ -284,6 +286,10 @@ object FirebaseDataHelper {
         return null
     }
 
+    /**
+     * Create a complete MemeMessage object from a DataSnapshot
+     * This handles proper deserialization of all fields, including comments
+     */
     fun getMemeMessageFromSnapshot(snapshot: DataSnapshot): MemeMessage? {
         try {
             // Get the basic data as a Map

@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.R
+import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemPollMessageBinding
 import com.cricketApp.cric.databinding.ItemReceiveChatBinding
 import com.cricketApp.cric.databinding.ItemSendChatBinding
@@ -559,48 +560,44 @@ class ChatAdapter(private val items: List<Any>) :
     private fun updateHitOrMiss(message: Any, type: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
-        val messageId: String
-        val dbPath: String
+        val isHit = type == "hit"
 
         when (message) {
             is ChatMessage -> {
-                messageId = message.id
-                dbPath = "NoBallZone/chats"
-            }
-            is PollMessage -> {
-                messageId = message.id
-                dbPath = "NoBallZone/polls"
-            }
-            else -> return
-        }
+                // Update chat message stats and team stats
+                TeamStatsUtility.updateContentAndTeamStats(
+                    contentType = "chats",
+                    contentId = message.id,
+                    team = message.team,
+                    isHit = isHit
+                ) { success, newValue ->
+                    if (success) {
+                        // Update local model with received value
+                        if (isHit) message.hit = newValue else message.miss = newValue
 
-        val hitMissRef = FirebaseDatabase.getInstance().getReference("$dbPath/$messageId/$type")
-
-        hitMissRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null && currentData != null) {
-                    // Only update local model with the value from Firebase
-                    val newValue = currentData.getValue(Int::class.java) ?: 0
-
-                    when (message) {
-                        is ChatMessage -> {
-                            if (type == "hit") message.hit = newValue else message.miss = newValue
-                            notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                        }
-                        is PollMessage -> {
-                            if (type == "hit") message.hit = newValue else message.miss = newValue
-                            notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                        }
+                        // Notify adapter of the change
+                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
                     }
                 }
             }
-        })
+            is PollMessage -> {
+                // Update poll message stats and team stats
+                TeamStatsUtility.updateContentAndTeamStats(
+                    contentType = "polls",
+                    contentId = message.id,
+                    team = message.team,
+                    isHit = isHit
+                ) { success, newValue ->
+                    if (success) {
+                        // Update local model with received value
+                        if (isHit) message.hit = newValue else message.miss = newValue
+
+                        // Notify adapter of the change
+                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
+                    }
+                }
+            }
+        }
     }
 
     // Common utility methods
