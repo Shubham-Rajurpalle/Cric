@@ -4,6 +4,8 @@ import android.animation.ObjectAnimator
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -30,7 +32,7 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 
-class ChatAdapter(private val items: List<Any>) :
+class ChatAdapter(private val items: MutableList<Any>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -43,6 +45,9 @@ class ChatAdapter(private val items: List<Any>) :
         private const val PAYLOAD_HIT_MISS = "hit_miss"
         private const val PAYLOAD_COMMENTS = "comments"
     }
+
+    // Map to keep track of message positions for efficient updates
+    private val messagePositions = mutableMapOf<String, Int>()
 
     override fun getItemViewType(position: Int): Int {
         return when (items[position]) {
@@ -118,7 +123,74 @@ class ChatAdapter(private val items: List<Any>) :
 
     override fun getItemCount(): Int = items.size
 
-    // Add this helper method for showing full screen images
+    /**
+     * Find a message's position by its ID
+     */
+    fun findPositionById(messageId: String): Int {
+        for (i in 0 until items.size) {
+            val itemId = when (val item = items[i]) {
+                is ChatMessage -> item.id
+                is PollMessage -> item.id
+                else -> null
+            }
+
+            if (itemId == messageId) {
+                return i
+            }
+        }
+        return -1  // Not found
+    }
+
+    /**
+     * Remove a message at the specified position
+     * Optional expectedId parameter to verify we're removing the correct message
+     */
+    fun removeMessage(position: Int, expectedId: String? = null) {
+        if (position < 0 || position >= items.size) {
+            Log.e("ChatAdapter", "Invalid position for removal: $position, size: ${items.size}")
+            return
+        }
+
+        // Get the message ID before removing it
+        val actualId = when (val message = items[position]) {
+            is ChatMessage -> message.id
+            is PollMessage -> message.id
+            else -> null
+        } ?: return
+
+        // Log before removal
+        Log.d("ChatAdapter", "About to remove message at position $position, ID: $actualId")
+
+        // If an expected ID was provided and doesn't match, find the correct position
+        if (expectedId != null && expectedId != actualId) {
+            Log.e("ChatAdapter", "ID mismatch during removal! Expected: $expectedId, Actual: $actualId")
+
+            // Try to find the correct position for the expected ID
+            val correctPosition = findPositionById(expectedId)
+            if (correctPosition != -1) {
+                Log.d("ChatAdapter", "Found expected message at position $correctPosition, removing from there")
+                removeMessage(correctPosition)
+                return
+            } else {
+                Log.w("ChatAdapter", "Expected message $expectedId not found in list")
+                return
+            }
+        }
+
+        // Remove the item
+        items.removeAt(position)
+
+        // Update position mappings
+        updatePositionsMap()
+
+        // Only notify about the specific removal - no range changes
+        notifyItemRemoved(position)
+
+        Log.d("ChatAdapter", "Removed message at position $position, ID: $actualId")
+        Log.d("ChatAdapter", "New item count: ${items.size}")
+    }
+
+    // Helper method for showing full screen images
     private fun showFullScreenImage(context: Context, imageUrl: String) {
         val intent = Intent(context, ActivityImageViewer::class.java).apply {
             putExtra("IMAGE_URL", imageUrl)
@@ -183,6 +255,21 @@ class ChatAdapter(private val items: List<Any>) :
                         putExtra("MESSAGE_TYPE", "chat")
                     }
                     context.startActivity(intent)
+                }
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        chat,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMessage(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
                 }
             }
         }
@@ -264,6 +351,21 @@ class ChatAdapter(private val items: List<Any>) :
                     }
                     context.startActivity(intent)
                 }
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        chat,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMessage(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
+                }
             }
         }
 
@@ -329,6 +431,21 @@ class ChatAdapter(private val items: List<Any>) :
                         putExtra("MESSAGE_TYPE", "poll")
                     }
                     context.startActivity(intent)
+                }
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        poll,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMessage(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
                 }
             }
         }
@@ -505,7 +622,6 @@ class ChatAdapter(private val items: List<Any>) :
         })
     }
 
-    // Utility method to update a reaction (without reloading)
     // Utility method to update a reaction (fixed to prevent double counting)
     private fun addReaction(message: Any, reactionType: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
@@ -639,5 +755,17 @@ class ChatAdapter(private val items: List<Any>) :
         )
         val logoResource = teamLogoMap[teamName] ?: R.drawable.icc_logo
         imageView.setImageResource(logoResource)
+    }
+
+
+    // Update the positions map (called after any list changes)
+    fun updatePositionsMap() {
+        messagePositions.clear()
+        items.forEachIndexed { index, message ->
+            when (message) {
+                is ChatMessage -> messagePositions[message.id] = index
+                is PollMessage -> messagePositions[message.id] = index
+            }
+        }
     }
 }

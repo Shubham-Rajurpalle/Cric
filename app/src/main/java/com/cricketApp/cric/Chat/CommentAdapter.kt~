@@ -25,7 +25,7 @@ import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 
 class CommentAdapter(
-    private val comments: ArrayList<CommentMessage>,
+    private val comments: MutableList<CommentMessage>,
     private val messageId: String,
     private val messageType: String
 ) : RecyclerView.Adapter<CommentAdapter.CommentViewHolder>() {
@@ -35,6 +35,9 @@ class CommentAdapter(
         private const val PAYLOAD_HIT_MISS = "hit_miss"
         private const val TAG = "CommentAdapter"
     }
+
+    // Map to keep track of comment positions for efficient updates
+    private val commentPositions = mutableMapOf<String, Int>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentViewHolder {
         val binding = ItemSendCommentBinding.inflate(
@@ -58,8 +61,8 @@ class CommentAdapter(
         for (payload in payloads) {
             if (payload is String) {
                 when (payload) {
-                    "reaction" -> holder.updateReactions(comments[position])
-                    "hit_miss" -> holder.updateHitMiss(comments[position])
+                    PAYLOAD_REACTION -> holder.updateReactions(comments[position])
+                    PAYLOAD_HIT_MISS -> holder.updateHitMiss(comments[position])
                 }
             }
         }
@@ -68,17 +71,68 @@ class CommentAdapter(
     override fun getItemCount(): Int = comments.size
 
     /**
-     * Remove a comment at the specified position
+     * Find a comment's position by its ID
      */
-    fun removeComment(position: Int) {
+    fun findPositionById(commentId: String): Int {
+        for (i in 0 until comments.size) {
+            if (comments[i].id == commentId) {
+                return i
+            }
+        }
+        return -1  // Not found
+    }
+
+    /**
+     * Remove a comment at the specified position
+     * Optional expectedId parameter to verify we're removing the correct comment
+     */
+    fun removeComment(position: Int, expectedId: String? = null) {
         if (position < 0 || position >= comments.size) {
             Log.e(TAG, "Invalid position for removal: $position, size: ${comments.size}")
             return
         }
 
+        // Get the comment ID before removing it
+        val actualId = comments[position].id
+
+        // Log before removal
+        Log.d(TAG, "About to remove comment at position $position, ID: $actualId")
+
+        // If an expected ID was provided and doesn't match, find the correct position
+        if (expectedId != null && expectedId != actualId) {
+            Log.e(TAG, "ID mismatch during removal! Expected: $expectedId, Actual: $actualId")
+
+            // Try to find the correct position for the expected ID
+            val correctPosition = findPositionById(expectedId)
+            if (correctPosition != -1) {
+                Log.d(TAG, "Found expected comment at position $correctPosition, removing from there")
+                removeComment(correctPosition)
+                return
+            } else {
+                Log.w(TAG, "Expected comment $expectedId not found in list")
+                return
+            }
+        }
+
+        // Remove the item
         comments.removeAt(position)
+
+        // Update position mappings
+        updatePositionsMap()
+
+        // Only notify about the specific removal
         notifyItemRemoved(position)
-        Log.d(TAG, "Removed comment at position $position")
+
+        Log.d(TAG, "Removed comment at position $position, ID: $actualId")
+        Log.d(TAG, "New item count: ${comments.size}")
+    }
+
+    // Update the positions map (called after any list changes)
+    private fun updatePositionsMap() {
+        commentPositions.clear()
+        comments.forEachIndexed { index, comment ->
+            commentPositions[comment.id] = index
+        }
     }
 
     inner class CommentViewHolder(private val binding: ItemSendCommentBinding) :
@@ -154,9 +208,9 @@ class CommentAdapter(
                         comment,
                         adapterPosition
                     ) { message, position, commentId ->
-                        // Handle deletion in the adapter
-                        if (position != RecyclerView.NO_POSITION && position < comments.size) {
-                            removeComment(position)
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeComment(position, commentId)
                         }
                     }
                     true // Consume the long click
@@ -179,7 +233,7 @@ class CommentAdapter(
                     if (position != RecyclerView.NO_POSITION && position < comments.size) {
                         try {
                             val comment = comments[position]
-                            // Update the team value
+                            // Update the team value directly - no need for reflection since team is var
                             comment.team = team
                         } catch (e: Exception) {
                             // If this fails, it's not critical since the UI is already updated
@@ -253,11 +307,10 @@ class CommentAdapter(
     private fun addReaction(comment: CommentMessage, reactionType: String, position: Int) {
         if (position == RecyclerView.NO_POSITION || position >= comments.size) return
 
-        val path = when (messageType) {
-            "chat" -> "NoBallZone/chats/$messageId/comments/${comment.id}/reactions/$reactionType"
-            "poll" -> "NoBallZone/polls/$messageId/comments/${comment.id}/reactions/$reactionType"
-            "meme" -> "NoBallZone/memes/$messageId/comments/${comment.id}/reactions/$reactionType"
-            else -> return
+        val path = if (messageType == "chat") {
+            "NoBallZone/chats/$messageId/comments/${comment.id}/reactions/$reactionType"
+        } else {
+            "NoBallZone/polls/$messageId/comments/${comment.id}/reactions/$reactionType"
         }
 
         val reactionRef = FirebaseDatabase.getInstance().getReference(path)
@@ -277,14 +330,14 @@ class CommentAdapter(
                     comment.reactions[reactionType] = newValue
 
                     if (position < comments.size) {
-                        notifyItemChanged(position, "reaction")
+                        notifyItemChanged(position, PAYLOAD_REACTION)
                     }
                 }
             }
         })
     }
 
-    // Utility method to update hit or miss counts
+    // Utility method to update hit or miss counts - fixed to prevent double counting
     private fun updateHitOrMiss(comment: CommentMessage, type: String, position: Int) {
         if (position == RecyclerView.NO_POSITION || position >= comments.size) return
 
@@ -316,7 +369,7 @@ class CommentAdapter(
                 }
 
                 // Notify adapter of the change
-                notifyItemChanged(position, "hit_miss")
+                notifyItemChanged(position, PAYLOAD_HIT_MISS)
             }
         }
     }

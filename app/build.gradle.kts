@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.core)
+    implementation(libs.vision.common)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -112,5 +113,28 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
     implementation ("androidx.core:core-ktx:1.12.0")
+
+    // ML Kit for Image Labeling
+    implementation("com.google.mlkit:image-labeling:17.0.7")
+
+    // ML Kit for Face Detection
+    implementation ("com.google.mlkit:face-detection:16.1.5")
+
+    // ML Kit Object Detection (optional, but useful for additional checks)
+    implementation ("com.google.mlkit:object-detection:17.0.0")
+
+    // Task API
+    implementation ("com.google.android.gms:play-services-tasks:18.0.2")
+
+    // OkHttp for network requests
+    implementation ("com.squareup.okhttp3:okhttp:4.10.0")
+
+    // Gson for JSON parsing
+    implementation ("com.google.code.gson:gson:2.9.0")
+
+    // Coroutines for async work
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+
 
 }

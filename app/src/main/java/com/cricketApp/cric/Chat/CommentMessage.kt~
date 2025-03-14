@@ -4,7 +4,7 @@ data class CommentMessage(
     var id: String = "",
     val senderId: String = "",
     val senderName: String = "",
-    var team: String = "",
+    val team: String = "",
     val message: String = "",
     val imageUrl: String = "", // For sharing images in comments
     var reactions: MutableMap<String, Int> = mutableMapOf(

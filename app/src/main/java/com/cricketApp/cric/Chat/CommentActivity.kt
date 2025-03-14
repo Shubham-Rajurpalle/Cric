@@ -39,8 +39,10 @@ class CommentActivity : AppCompatActivity() {
     private lateinit var database: FirebaseDatabase
     private lateinit var storageRef: StorageReference
 
-    private var messageId: String = ""
-    private var messageType: String = ""
+    // Make these properties public so MessageActionsHandler can access them
+    var messageId: String = ""
+    var messageType: String = ""
+
     private var selectedImageUri: Uri? = null
     private val PICK_IMAGE_REQUEST = 1
 

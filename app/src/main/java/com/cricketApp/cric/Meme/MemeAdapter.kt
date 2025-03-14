@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.Chat.ActivityImageViewer
 import com.cricketApp.cric.Chat.CommentActivity
+import com.cricketApp.cric.Chat.MessageActionsHandler
 import com.cricketApp.cric.R
 import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemMemeReceiveBinding
@@ -21,9 +22,10 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
+import android.util.Log
 
 class MemeAdapter(
-    private val items: List<MemeMessage>,
+    private val items: MutableList<MemeMessage>,
     private val onCommentClickListener: ((MemeMessage) -> Unit)? = null
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -36,7 +38,11 @@ class MemeAdapter(
         private const val PAYLOAD_REACTION = "reaction"
         private const val PAYLOAD_HIT_MISS = "hit_miss"
         private const val PAYLOAD_COMMENTS = "comments"
+        private const val TAG = "MemeAdapter"
     }
+
+    // Map to keep track of meme positions
+    private val memePositions = mutableMapOf<String, Int>()
 
     override fun getItemViewType(position: Int): Int {
         return if (items[position].senderId == FirebaseAuth.getInstance().currentUser?.uid)
@@ -49,7 +55,7 @@ class MemeAdapter(
         val inflater = LayoutInflater.from(parent.context)
         return when (viewType) {
             VIEW_TYPE_SEND_MEME -> {
-                val binding =ItemMemeSendBinding.inflate(inflater, parent, false)
+                val binding = ItemMemeSendBinding.inflate(inflater, parent, false)
                 MemeSendViewHolder(binding)
             }
             VIEW_TYPE_RECEIVE_MEME -> {
@@ -105,6 +111,72 @@ class MemeAdapter(
     }
 
     override fun getItemCount(): Int = items.size
+
+    /**
+     * Find a meme's position by its ID
+     */
+    fun findPositionById(memeId: String): Int {
+        for (i in 0 until items.size) {
+            if (items[i].id == memeId) {
+                return i
+            }
+        }
+        return -1  // Not found
+    }
+
+    /**
+     * Remove a meme at the specified position
+     */
+    fun removeMeme(position: Int, expectedId: String? = null) {
+        if (position < 0 || position >= items.size) {
+            Log.e(TAG, "Invalid position for removal: $position, size: ${items.size}")
+            return
+        }
+
+        // Get the meme ID before removing it
+        val actualId = items[position].id
+
+        // Log before removal
+        Log.d(TAG, "About to remove meme at position $position, ID: $actualId")
+
+        // If an expected ID was provided and doesn't match, find the correct position
+        if (expectedId != null && expectedId != actualId) {
+            Log.e(TAG, "ID mismatch during removal! Expected: $expectedId, Actual: $actualId")
+
+            // Try to find the correct position for the expected ID
+            val correctPosition = findPositionById(expectedId)
+            if (correctPosition != -1) {
+                Log.d(TAG, "Found expected meme at position $correctPosition, removing from there")
+                removeMeme(correctPosition)
+                return
+            } else {
+                Log.w(TAG, "Expected meme $expectedId not found in list")
+                return
+            }
+        }
+
+        // Remove the item
+        items.removeAt(position)
+
+        // Update position mappings
+        updatePositionsMap()
+
+        // Notify about the specific removal
+        notifyItemRemoved(position)
+
+        Log.d(TAG, "Removed meme at position $position, ID: $actualId")
+        Log.d(TAG, "New item count: ${items.size}")
+    }
+
+    /**
+     * Update the positions map (called after list changes)
+     */
+    private fun updatePositionsMap() {
+        memePositions.clear()
+        items.forEachIndexed { index, meme ->
+            memePositions[meme.id] = index
+        }
+    }
 
     private fun showFullScreenImage(context: Context, imageUrl: String) {
         val intent = Intent(context, ActivityImageViewer::class.java).apply {
@@ -165,12 +237,26 @@ class MemeAdapter(
                     val context = itemView.context
                     onCommentClickListener?.invoke(meme) ?: run {
                         val intent = Intent(context, CommentActivity::class.java).apply {
-                            // Change the key names to match what CommentActivity expects
-                            putExtra("ITEM_ID", meme.id)
-                            putExtra("ITEM_TYPE", "meme")
+                            putExtra("MESSAGE_ID", meme.id)
+                            putExtra("MESSAGE_TYPE", "meme")
                         }
                         context.startActivity(intent)
                     }
+                }
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        meme,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMeme(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
                 }
             }
         }
@@ -245,12 +331,26 @@ class MemeAdapter(
                     val context = itemView.context
                     onCommentClickListener?.invoke(meme) ?: run {
                         val intent = Intent(context, CommentActivity::class.java).apply {
-                            // Change the key names to match what CommentActivity expects
-                            putExtra("ITEM_ID", meme.id)
-                            putExtra("ITEM_TYPE", "meme")
+                            putExtra("MESSAGE_ID", meme.id)
+                            putExtra("MESSAGE_TYPE", "meme")
                         }
                         context.startActivity(intent)
                     }
+                }
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        meme,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMeme(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
                 }
             }
         }
