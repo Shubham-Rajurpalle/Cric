@@ -39,7 +39,7 @@ class MemeFragment : Fragment() {
     private val memes = mutableListOf<MemeMessage>()
     private var selectedImageUri: Uri? = null
     private val currentUser = FirebaseAuth.getInstance().currentUser
-    private var userTeam: String = "CSK" // Default team, will be updated from user profile
+    private var userTeam: String = "None"
     private lateinit var safetyChecker: CloudVisionSafetyChecker
 
     // Map to keep track of meme positions for efficient updates

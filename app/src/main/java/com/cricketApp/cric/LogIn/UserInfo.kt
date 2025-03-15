@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,13 +60,13 @@ class UserInfo : AppCompatActivity() {
             FirebaseApp.initializeApp(this)
             auth = FirebaseAuth.getInstance()
 
-            // Setup UI Elements
             setupUI()
         }
 
         private fun setupUI() {
             binding.backBtn.setOnClickListener {
                 startActivity(Intent(this@UserInfo, SignIn::class.java))
+                finish()
             }
 
             binding.profileImgSetup.setOnClickListener {
@@ -109,7 +108,7 @@ class UserInfo : AppCompatActivity() {
                     isValid = false
                 }
 
-                if (iplTeamTxt.selectedItem == "Select your com.cricketApp.cric.home.liveMatch.Team") {
+                if (iplTeamTxt.selectedItem == "Select your Team") {
                     errorSpinnerIpl.visibility = View.VISIBLE
                     isValid = false
                 }
@@ -185,18 +184,18 @@ class UserInfo : AppCompatActivity() {
             )
         }
 
-        private fun setIplTeams() {
-            val iplTeams = arrayOf(
-                "Select your team", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
-            )
-            val adapter = ArrayAdapter(this, R.layout.spinner_item, iplTeams)
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            binding.iplTeamTxt.adapter = adapter
-        }
+    private fun setIplTeams() {
+        val iplTeams = mutableListOf(
+            "Select your team", "None", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
+        )
+        val adapter = CustomSpinnerAdapter(this, R.layout.spinner_item, iplTeams)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.iplTeamTxt.adapter = adapter
+    }
 
         private fun setCountries() {
             val countries = readCountriesFromFile()
-            val adapter = ArrayAdapter(this, R.layout.spinner_item, countries)
+            val adapter = CustomSpinnerAdapter(this, R.layout.spinner_item, countries)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             binding.countryTxt.adapter = adapter
         }
@@ -222,4 +221,5 @@ class UserInfo : AppCompatActivity() {
             super.onDestroy()
             coroutineScope.cancel()
         }
-    }
+}
+
