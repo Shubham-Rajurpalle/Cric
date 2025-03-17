@@ -24,16 +24,24 @@ class MainActivity : AppCompatActivity() {
 
         // For splash screen and user logging info fetching
         splashScreenSetup()
+
     }
 
     private fun splashScreenSetup() {
         Handler(Looper.getMainLooper()).postDelayed({
-            // We'll directly go to Home regardless of login status
-            // Login status will be checked in Home activity for specific actions
-            startActivity(Intent(this@MainActivity, Home::class.java))
+
+            // Checking for the Login info
+            val sharedPreference=getSharedPreferences("user_login_info", MODE_PRIVATE)
+            val isLoggedIn=sharedPreference.getBoolean("isLoggedIn",false)
+
+            if(isLoggedIn){
+                startActivity(Intent(this@MainActivity, Home::class.java))
+            }else{
+                startActivity(Intent(this@MainActivity, SignIn::class.java))
+            }
 
             // Removing current activity from stack
             finish()
-        }, 2000)
+        },2000)
     }
 }

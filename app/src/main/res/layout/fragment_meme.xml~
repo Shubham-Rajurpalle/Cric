@@ -218,12 +218,13 @@
     </LinearLayout>
 
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <ImageButton
         android:id="@+id/buttonUploadMeme"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
+        android:backgroundTint="@null"
         app:srcCompat="@drawable/send_button"
         app:fabSize="normal"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

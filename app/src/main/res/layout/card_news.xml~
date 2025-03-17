@@ -7,7 +7,8 @@
     app:cardCornerRadius="@dimen/_12sdp"
     app:cardElevation="4dp"
     app:cardUseCompatPadding="true"
-    app:cardPreventCornerOverlap="true">
+    app:cardPreventCornerOverlap="true"
+    android:background="@drawable/gradient_border_background">
 
 <RelativeLayout
 android:layout_width="match_parent"
@@ -25,6 +26,7 @@ android:layout_height="match_parent">
     android:id="@+id/imagePlayer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="2dp"
     android:contentDescription="Cricket player image"
     android:scaleType="centerCrop"
     android:src="@drawable/loading"

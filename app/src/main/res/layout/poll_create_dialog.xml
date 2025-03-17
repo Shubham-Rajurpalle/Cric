@@ -15,6 +15,9 @@
             android:id="@+id/editTextPollQuestion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textColorLink="@color/white"
+            android:textColorHint="@color/white"
             android:hint="Question"
             android:inputType="textCapSentences"/>
     </com.google.android.material.textfield.TextInputLayout>
@@ -23,6 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Options"
+        android:textColor="@color/white"
         android:textStyle="bold"
         android:layout_marginBottom="8dp"/>
 
@@ -44,6 +48,7 @@
         android:id="@+id/buttonAddOption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/white"
         android:text="+ Add another option"
         android:layout_marginTop="8dp"/>
 

@@ -2,6 +2,7 @@ package com.cricketApp.cric.Chat
 
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -22,6 +23,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
+import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.Moderation.ChatModerationService
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.cricketApp.cric.R
@@ -46,9 +48,10 @@ class ChatFragment : Fragment() {
     private lateinit var database: FirebaseDatabase
     private lateinit var storageRef: StorageReference
     private lateinit var moderationService: ChatModerationService
-    private val currentUser = FirebaseAuth.getInstance().currentUser
+    private var currentUser = FirebaseAuth.getInstance().currentUser
     private var userTeam: String = "CSK" // Default team, will be updated from user profile
     private val PICK_IMAGE_REQUEST = 1
+    private val LOGIN_REQUEST_CODE = 1001
     private var selectedImageUri: Uri? = null
 
     // Map to keep track of message positions for efficient updates
@@ -92,11 +95,16 @@ class ChatFragment : Fragment() {
         val storage = FirebaseStorage.getInstance()
         storageRef = storage.reference
 
-        // Load profile photo
-        loadProfilePhoto()
+        // Update UI based on login status
+        updateUIBasedOnLoginStatus()
 
-        // Fetch user's team
-        fetchUserTeam()
+        // Load profile photo if logged in
+        if (isUserLoggedIn()) {
+            loadProfilePhoto()
+            fetchUserTeam()
+        } else {
+            binding.profilePhoto.setImageResource(R.drawable.profile_icon)
+        }
 
         // Setup RecyclerView
         messages = ArrayList()
@@ -113,21 +121,36 @@ class ChatFragment : Fragment() {
         // Setup Firebase listeners
         setupFirebaseListeners()
 
-        // Setup send message button with moderation
+        // Setup send message button with moderation and login check
         binding.buttonSend.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to send messages")
+                return@setOnClickListener
+            }
+
             val messageText = binding.editTextMessage.text.toString().trim()
             if (messageText.isNotEmpty()) {
                 checkAndSendMessage(messageText)
             }
         }
 
-        // Setup image attachment button
+        // Setup image attachment button with login check
         binding.buttonMeme.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to share images")
+                return@setOnClickListener
+            }
+
             openImagePicker()
         }
 
-        // Setup poll button
+        // Setup poll button with login check
         binding.buttonPoll.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to create polls")
+                return@setOnClickListener
+            }
+
             showCreatePollDialog()
         }
 
@@ -143,6 +166,11 @@ class ChatFragment : Fragment() {
         }
 
         binding.profilePhoto.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to view your profile")
+                return@setOnClickListener
+            }
+
             val bottomNavigation: BottomNavigationView = requireActivity().findViewById(R.id.bottomNavigation)
             bottomNavigation.selectedItemId = R.id.profileIcon
             val fragmentManager = parentFragmentManager
@@ -150,6 +178,41 @@ class ChatFragment : Fragment() {
             transaction.replace(R.id.navHost, ProfileFragment())
             transaction.addToBackStack(null)
             transaction.commit()
+        }
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    private fun showLoginPrompt(message: String) {
+        AlertDialog.Builder(requireContext(),R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(requireContext(), SignIn::class.java)
+                startActivityForResult(intent, LOGIN_REQUEST_CODE)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateUIBasedOnLoginStatus() {
+        val isLoggedIn = isUserLoggedIn()
+
+        // Show hint text for non-logged in users in the message input
+        if (!isLoggedIn) {
+            binding.editTextMessage.hint = "Login to send messages"
+            // Disable buttons for non-logged in users
+            binding.buttonSend.alpha = 0.5f
+            binding.buttonMeme.alpha = 0.5f
+            binding.buttonPoll.alpha = 0.5f
+        } else {
+            binding.editTextMessage.hint = "Type a message"
+            // Enable buttons for logged in users
+            binding.buttonSend.alpha = 1.0f
+            binding.buttonMeme.alpha = 1.0f
+            binding.buttonPoll.alpha = 1.0f
         }
     }
 
@@ -302,16 +365,16 @@ class ChatFragment : Fragment() {
         val chatId = chatRef.key ?: return
 
         // Get user's display name and profile picture
-        val userRef = database.getReference("Users/${currentUser.uid}")
+        val userRef = database.getReference("Users/${currentUser!!.uid}")
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val userName = snapshot.child("username").getValue(String::class.java)
-                    ?: currentUser.displayName
+                    ?: currentUser!!.displayName
                     ?: "Anonymous"
 
                 val chatMessage = ChatMessage(
                     id = chatId,
-                    senderId = currentUser.uid,
+                    senderId = currentUser!!.uid,
                     senderName = userName,
                     team = userTeam,
                     message = messageText,
@@ -335,6 +398,7 @@ class ChatFragment : Fragment() {
             }
         })
     }
+
 
     private fun uploadAndSendImage(caption: String, onComplete: ((Boolean) -> Unit)? = null) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
@@ -399,18 +463,18 @@ class ChatFragment : Fragment() {
         val chatId = chatRef.key ?: return
 
         // Get user's display name and profile picture
-        val userRef = database.getReference("Users/${currentUser.uid}")
+        val userRef = database.getReference("Users/${currentUser!!.uid}")
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val userName = snapshot.child("username").getValue(String::class.java)
-                    ?: currentUser.displayName
+                    ?: currentUser!!.displayName
                     ?: "Anonymous"
                 val userTeam = snapshot.child("iplTeam").getValue(String::class.java)
                     ?: "No Team"
 
                 val chatMessage = ChatMessage(
                     id = chatId,
-                    senderId = currentUser.uid,
+                    senderId = currentUser!!.uid,
                     senderName = userName,
                     team = userTeam,
                     message = message,
@@ -437,11 +501,33 @@ class ChatFragment : Fragment() {
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
+
+        if (requestCode == LOGIN_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            // User successfully logged in
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
+            updateUIBasedOnLoginStatus()
+
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+        } else if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
             selectedImageUri = data.data
             showImagePreviewDialog()
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        updateUIBasedOnLoginStatus()
+
+        // Refresh profile photo if user just logged in
+        if (isUserLoggedIn() && currentUser != FirebaseAuth.getInstance().currentUser) {
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
+        }
+    }
+
 
     private fun setupFilters() {
         binding.chipAll.setOnClickListener { resetFilters() }
@@ -1356,4 +1442,5 @@ class ChatFragment : Fragment() {
             }
         })
     }
+
 }

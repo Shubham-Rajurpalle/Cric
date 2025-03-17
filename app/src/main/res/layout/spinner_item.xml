@@ -7,4 +7,4 @@
     android:padding="10dp"
     android:text="Select Option"
     android:textSize="16sp"
-    android:textColor="#FFFFFF" />
+    android:textColor="@color/white" />

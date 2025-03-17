@@ -8,6 +8,9 @@
     <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/editTextOption"
         android:layout_width="match_parent"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"
+        android:textColorHighlight="@color/white"
         android:layout_height="wrap_content"
         android:hint="Enter poll option"
         android:inputType="text"/>

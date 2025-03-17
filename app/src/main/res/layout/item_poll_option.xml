@@ -19,6 +19,7 @@
             android:id="@+id/textViewOption"
             android:layout_width="0dp"
             android:textSize="@dimen/_10sdp"
+            android:textColor="@color/white"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Option"/>
@@ -26,6 +27,7 @@
         <TextView
             android:id="@+id/textViewPercentage"
             android:layout_width="wrap_content"
+            android:textColor="@color/white"
             android:textSize="@dimen/_10sdp"
             android:layout_height="wrap_content"
             android:text="0%"/>

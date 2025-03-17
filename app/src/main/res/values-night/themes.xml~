@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Base.Theme.Cric" parent="Theme.Material3.Dark.NoActionBar">
-        <!-- Background Colors -->
+    <style name="Base.Theme.Cric" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Background Colors (Same for Light & Dark Mode) -->
         <item name="android:colorBackground">@color/background</item>
         <item name="android:windowBackground">@color/background</item>
 

@@ -8,11 +8,13 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
+import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
 import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemSendCommentBinding
@@ -81,6 +83,29 @@ class CommentAdapter(
         Log.d(TAG, "Removed comment at position $position")
     }
 
+    /**
+     * Check if the user is logged in
+     */
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    /**
+     * Show login prompt dialog
+     */
+    private fun showLoginPrompt(view: View, message: String) {
+        val context = view.context
+        AlertDialog.Builder(context)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(context, SignIn::class.java)
+                context.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     inner class CommentViewHolder(private val binding: ItemSendCommentBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -137,27 +162,71 @@ class CommentAdapter(
                 // Set hit/miss counts
                 updateHitMiss(comment)
 
-                // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(comment, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(comment, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(comment, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(comment, "troll", adapterPosition) }
+                // Set reaction click listeners with login check
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(comment, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView, "Login to react to comments")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(comment, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(comment, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(comment, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView, "Login to react to comments")
+                    }
+                }
 
-                // Add long-press listener for comment options (delete/report)
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(comment, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView, "Login to react to comments")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(comment, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView, "Login to react to comments")
+                    }
+                }
+
+                // Set hit/miss click listeners with login check
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(comment, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView, "Login to rate comments")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(comment, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView, "Login to rate comments")
+                    }
+                }
+
+                // Add long-press listener for comment options (delete/report) with login check
                 itemView.setOnLongClickListener {
-                    MessageActionsHandler.showMessageOptionsBottomSheet(
-                        itemView.context,
-                        comment,
-                        adapterPosition
-                    ) { message, position, commentId ->
-                        // Handle deletion in the adapter
-                        if (position != RecyclerView.NO_POSITION && position < comments.size) {
-                            removeComment(position)
+                    if (isUserLoggedIn()) {
+                        MessageActionsHandler.showMessageOptionsBottomSheet(
+                            itemView.context,
+                            comment,
+                            adapterPosition
+                        ) { message, position, commentId ->
+                            // Handle deletion in the adapter
+                            if (position != RecyclerView.NO_POSITION && position < comments.size) {
+                                removeComment(position)
+                            }
                         }
+                    } else {
+                        showLoginPrompt(itemView, "Login to access comment options")
                     }
                     true // Consume the long click
                 }

@@ -9,6 +9,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -18,6 +20,7 @@ import com.bumptech.glide.Glide
 import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.Chat.FirebaseDataHelper
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
+import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.FragmentMemeBinding
@@ -38,8 +41,10 @@ class MemeFragment : Fragment() {
     private lateinit var memeAdapter: MemeAdapter
     private val memes = mutableListOf<MemeMessage>()
     private var selectedImageUri: Uri? = null
-    private val currentUser = FirebaseAuth.getInstance().currentUser
+    private var currentUser = FirebaseAuth.getInstance().currentUser
     private var userTeam: String = "None"
+    private val PICK_MEME_REQUEST = 1
+    private val LOGIN_REQUEST_CODE = 1001
     private lateinit var safetyChecker: CloudVisionSafetyChecker
 
     // Map to keep track of meme positions for efficient updates
@@ -48,7 +53,25 @@ class MemeFragment : Fragment() {
     // Selected filters
     private var selectedFilter = mutableSetOf<String>()
 
-    private val PICK_MEME_REQUEST = 1
+    // Register activity result launchers
+    private val memePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            selectedImageUri = it
+            showMemePreviewDialog()
+        }
+    }
+
+    private val loginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // User successfully logged in
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
+            updateUIBasedOnLoginStatus()
+
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -77,13 +100,19 @@ class MemeFragment : Fragment() {
         // Initialize safety checker
         safetyChecker = CloudVisionSafetyChecker(requireContext())
 
-        // Load profile photo
-        loadProfilePhoto()
+        // Check if user is logged in and update UI accordingly
+        updateUIBasedOnLoginStatus()
 
-        // Fetch user's team
-        fetchUserTeam()
+        // Load profile photo if logged in
+        if (isUserLoggedIn()) {
+            loadProfilePhoto()
+            fetchUserTeam()
+        } else {
+            // Set default profile photo for non-logged in users
+            binding.profilePhoto.setImageResource(R.drawable.profile_icon)
+        }
 
-        // Setup RecyclerView
+        // Setup RecyclerView with custom click handler for comments
         memeAdapter = MemeAdapter(memes) { meme ->
             openMemeComments(meme)
         }
@@ -94,18 +123,23 @@ class MemeFragment : Fragment() {
             adapter = memeAdapter
         }
 
-        // Setup filters
+        // Setup filters - no login required for filters
         setupFilters()
 
         // Setup Firebase listeners
         setupFirebaseListeners()
 
-        // Setup meme upload button
+        // Setup meme upload button - requires login
         binding.buttonUploadMeme.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to upload memes")
+                return@setOnClickListener
+            }
+
             openMemePicker()
         }
 
-        // Setup navigation buttons
+        // Setup navigation buttons - Leaderboard doesn't require login
         binding.leaderBoardIcon.setOnClickListener {
             val bottomNavigation: BottomNavigationView = requireActivity().findViewById(R.id.bottomNavigation)
             bottomNavigation.selectedItemId = R.id.leaderboardIcon
@@ -116,7 +150,13 @@ class MemeFragment : Fragment() {
             transaction.commit()
         }
 
+        // Profile button requires login
         binding.profilePhoto.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to view your profile")
+                return@setOnClickListener
+            }
+
             val bottomNavigation: BottomNavigationView = requireActivity().findViewById(R.id.bottomNavigation)
             bottomNavigation.selectedItemId = R.id.profileIcon
             val fragmentManager = parentFragmentManager
@@ -124,6 +164,35 @@ class MemeFragment : Fragment() {
             transaction.replace(R.id.navHost, ProfileFragment())
             transaction.addToBackStack(null)
             transaction.commit()
+        }
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    private fun showLoginPrompt(message: String) {
+        AlertDialog.Builder(requireContext(),R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(requireContext(), SignIn::class.java)
+                // Use the activity result launcher instead of deprecated startActivityForResult
+                loginLauncher.launch(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun updateUIBasedOnLoginStatus() {
+        val isLoggedIn = isUserLoggedIn()
+
+        // Update upload button visibility or text based on login status
+        if (!isLoggedIn) {
+            // Use direct string instead of resource if resource doesn't exist
+            binding.buttonUploadMeme.text = "Login to Upload"
+        } else {
+            binding.buttonUploadMeme.text = "Upload Meme"
         }
     }
 
@@ -570,14 +639,28 @@ class MemeFragment : Fragment() {
         })
     }
 
+    private fun openMemeComments(meme: MemeMessage) {
+        if (!isUserLoggedIn()) {
+            showLoginPrompt("Login to view and add comments")
+            return
+        }
+
+        try {
+            Log.d("MemeFragment", "Opening comments for meme ID: ${meme.id}")
+            val intent = Intent(requireContext(), CommentActivity::class.java).apply {
+                putExtra("MESSAGE_ID", meme.id)
+                putExtra("MESSAGE_TYPE", "meme")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("MemeFragment", "Error opening comment activity: ${e.message}", e)
+            Toast.makeText(requireContext(), "Unable to open comments", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun openMemePicker() {
-        val intent = Intent()
-        intent.type = "image/*"
-        intent.action = Intent.ACTION_GET_CONTENT
-        startActivityForResult(
-            Intent.createChooser(intent, "Select Meme"),
-            PICK_MEME_REQUEST
-        )
+        // Use the activity result launcher instead of deprecated startActivityForResult
+        memePicker.launch("image/*")
     }
 
     private fun showMemePreviewDialog() {
@@ -730,18 +813,18 @@ class MemeFragment : Fragment() {
         val memeId = memeRef.key ?: return
 
         // Get user's display name and profile picture
-        val userRef = FirebaseDatabase.getInstance().getReference("Users/${currentUser.uid}")
+        val userRef = FirebaseDatabase.getInstance().getReference("Users/${currentUser!!.uid}")
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val userName = snapshot.child("username").getValue(String::class.java)
-                    ?: currentUser.displayName
+                    ?: currentUser!!.displayName
                     ?: "Anonymous"
                 val userTeam = snapshot.child("iplTeam").getValue(String::class.java)
                     ?: "No Team"
 
                 val memeMessage = MemeMessage(
                     id = memeId,
-                    senderId = currentUser.uid,
+                    senderId = currentUser!!.uid,
                     senderName = userName,
                     team = userTeam,
                     memeUrl = imageUrl,
@@ -764,20 +847,33 @@ class MemeFragment : Fragment() {
         })
     }
 
-    private fun openMemeComments(meme: MemeMessage) {
-        val intent = Intent(context, CommentActivity::class.java).apply {
-            putExtra("MESSAGE_ID", meme.id)
-            putExtra("MESSAGE_TYPE", "meme")
-        }
-        startActivity(intent)
-    }
-
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_MEME_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
+
+        if (requestCode == LOGIN_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            // User successfully logged in
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
+            updateUIBasedOnLoginStatus()
+
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+        } else if (requestCode == PICK_MEME_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
             selectedImageUri = data.data
             showMemePreviewDialog()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateUIBasedOnLoginStatus()
+
+        // Refresh profile photo if user just logged in
+        if (isUserLoggedIn() && currentUser != FirebaseAuth.getInstance().currentUser) {
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
         }
     }
 }

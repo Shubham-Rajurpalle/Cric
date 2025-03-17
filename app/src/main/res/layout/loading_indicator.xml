@@ -16,6 +16,7 @@
         android:id="@+id/progressText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/white"
         android:layout_marginTop="16dp"
         android:text="Please wait..."
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />

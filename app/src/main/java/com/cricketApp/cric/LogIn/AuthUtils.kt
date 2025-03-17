@@ -1,53 +1,99 @@
 package com.cricketApp.cric.Utils
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.cricketApp.cric.LogIn.SignIn
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 
 object AuthUtils {
 
     /**
-     * Checks if user is authenticated and proceeds with the action if logged in,
-     * otherwise shows a login dialog
+     * Check if the user is logged in
      */
-    fun checkAuthAndProceed(fragment: Fragment, action: () -> Unit) {
-        if (FirebaseAuth.getInstance().currentUser != null) {
-            // User is logged in, proceed with action
-            action.invoke()
-        } else {
-            // User is not logged in, show login dialog
-            showLoginRequiredDialog(fragment)
-        }
+    fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
     }
 
     /**
-     * Shows a dialog prompting the user to log in or cancel
+     * Get the current user ID, returns null if not logged in
      */
-    private fun showLoginRequiredDialog(fragment: Fragment) {
-        val context = fragment.requireContext()
-        MaterialAlertDialogBuilder(context)
+    fun getCurrentUserId(): String? {
+        return FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+    /**
+     * Show login dialog and handle redirection to login screen
+     * Returns true if user is already logged in, false otherwise
+     */
+    fun checkLoginAndPrompt(context: Context, message: String = "You need to login to access this feature"): Boolean {
+        if (isUserLoggedIn()) {
+            return true
+        }
+
+        AlertDialog.Builder(context)
             .setTitle("Login Required")
-            .setMessage("You need to log in to use this feature.")
-            .setPositiveButton("Log In") { _, _ ->
-                // Navigate to login screen with current class name as return destination
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
                 val intent = Intent(context, SignIn::class.java)
-                intent.putExtra("returnTo", fragment.requireActivity().javaClass.name)
-                fragment.startActivity(intent)
+                context.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+
+        return false
+    }
+
+    /**
+     * Check login with callback for result
+     */
+    fun checkLoginWithCallback(context: Context, onLoginSuccess: () -> Unit,
+                               message: String = "You need to login to access this feature") {
+        if (isUserLoggedIn()) {
+            onLoginSuccess()
+            return
+        }
+
+        AlertDialog.Builder(context)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(context, SignIn::class.java)
+                if (context is Activity) {
+                    context.startActivityForResult(intent, LOGIN_REQUEST_CODE)
+                } else {
+                    context.startActivity(intent)
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
     /**
-     * Saves the login state to shared preferences
+     * For use in fragment onClick events
      */
-    fun saveLoginState(context: Context, isLoggedIn: Boolean) {
-        val sharedRef = context.getSharedPreferences("user_login_info", Context.MODE_PRIVATE)
-        val editor = sharedRef.edit()
-        editor.putBoolean("isLoggedIn", isLoggedIn)
-        editor.apply()
+    fun checkLoginFromFragment(fragment: Fragment, onLoginSuccess: () -> Unit,
+                               message: String = "You need to login to access this feature") {
+        val context = fragment.context ?: return
+
+        if (isUserLoggedIn()) {
+            onLoginSuccess()
+            return
+        }
+
+        AlertDialog.Builder(context)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(context, SignIn::class.java)
+                fragment.startActivityForResult(intent, LOGIN_REQUEST_CODE)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
+
+    // Request code for login activity
+    const val LOGIN_REQUEST_CODE = 1001
 }

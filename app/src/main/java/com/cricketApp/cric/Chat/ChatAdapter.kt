@@ -1,6 +1,7 @@
 package com.cricketApp.cric.Chat
 
 import android.animation.ObjectAnimator
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
@@ -19,6 +20,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
 import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemPollMessageBinding
@@ -238,27 +240,79 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 // Set comment count
                 updateComments(chat)
 
-                // Set reaction click listeners without reloading
-                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(chat, "troll", adapterPosition) }
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(chat, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(chat, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+// Update hit/miss buttons:
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
 
                 textViewComments.setOnClickListener {
                     val context = itemView.context
+
+                    // Check if user is logged in first
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", chat.id)
-                        putExtra("MESSAGE_TYPE", "chat")
+                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
 
+
                 // Add long-press listener for message options
                 itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access message options")
+                        return@setOnLongClickListener true
+                    }
+
                     MessageActionsHandler.showMessageOptionsBottomSheet(
                         itemView.context,
                         chat,
@@ -291,6 +345,25 @@ class ChatAdapter(private val items: MutableList<Any>) :
             val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
             binding.textViewComments.text = "View Comments ($count)"
         }
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    /**
+     * Show login prompt
+     */
+    private fun showLoginPrompt(context: Context, message: String) {
+        AlertDialog.Builder(context,R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(context, SignIn::class.java)
+                context.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     inner class ChatReceiveViewHolder(private val binding: ItemReceiveChatBinding) :
@@ -333,27 +406,79 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 // Set comment count
                 updateComments(chat)
 
-                // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(chat, "troll", adapterPosition) }
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(chat, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(chat, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+// Update hit/miss buttons:
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
 
                 textViewComments.setOnClickListener {
                     val context = itemView.context
+
+                    // Check if user is logged in first
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", chat.id)
-                        putExtra("MESSAGE_TYPE", "chat")
+                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
 
+
                 // Add long-press listener for message options
                 itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access message options")
+                        return@setOnLongClickListener true
+                    }
+
                     MessageActionsHandler.showMessageOptionsBottomSheet(
                         itemView.context,
                         chat,
@@ -414,27 +539,78 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 // Set up poll options
                 setupPollOptions(poll)
 
-                // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(poll, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(poll, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(poll, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(poll, "troll", adapterPosition) }
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(poll, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(poll, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                // Update hit/miss buttons:
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(poll, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(poll, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
 
                 textViewComments.setOnClickListener {
                     val context = itemView.context
+
+                    // Check if user is logged in first
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", poll.id)
-                        putExtra("MESSAGE_TYPE", "poll")
+                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
 
                 // Add long-press listener for message options
                 itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access message options")
+                        return@setOnLongClickListener true
+                    }
+
                     MessageActionsHandler.showMessageOptionsBottomSheet(
                         itemView.context,
                         poll,
@@ -533,7 +709,7 @@ class ChatAdapter(private val items: MutableList<Any>) :
                         radioButton.isChecked = true
 
                         // Update Firebase and refresh UI
-                        votePoll(poll, option, adapterPosition)
+                        votePoll(itemView,poll, option, adapterPosition)
                     }
                 }
 
@@ -548,7 +724,7 @@ class ChatAdapter(private val items: MutableList<Any>) :
                             radioButton.isChecked = true
 
                             // Update Firebase and refresh UI
-                            votePoll(poll, option, adapterPosition)
+                            votePoll(itemView,poll, option, adapterPosition)
                         }
                     } else {
                         Toast.makeText(context, "Please log in to vote", Toast.LENGTH_SHORT).show()
@@ -561,8 +737,14 @@ class ChatAdapter(private val items: MutableList<Any>) :
     }
 
     // Add this function at the same level as addReaction and updateHitOrMiss
-    private fun votePoll(poll: PollMessage, selectedOption: String, position: Int) {
+    private fun votePoll(itemView:View,poll: PollMessage, selectedOption: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
+
+        // Check if user is logged in first
+        if (!isUserLoggedIn()) {
+            showLoginPrompt(itemView.context, "Login to vote in polls")
+            return
+        }
 
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return
         val userId = currentUser.uid

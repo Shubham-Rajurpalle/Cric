@@ -1,5 +1,6 @@
 package com.cricketApp.cric.Meme
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
@@ -22,6 +23,8 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import android.util.Log
+import android.widget.Toast
+import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.databinding.ItemMemeSendBinding
 
 class MemeAdapter(
@@ -185,6 +188,25 @@ class MemeAdapter(
         context.startActivity(intent)
     }
 
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    /**
+     * Show login prompt
+     */
+    private fun showLoginPrompt(context: Context, message: String) {
+        AlertDialog.Builder(context,R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(context, SignIn::class.java)
+                context.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     inner class MemeSendViewHolder(private val binding: ItemMemeSendBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -224,28 +246,88 @@ class MemeAdapter(
                 updateComments(meme)
 
                 // Set reaction click listeners without reloading
-                tvAngryEmoji.setOnClickListener { addReaction(meme, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(meme, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(meme, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(meme, "troll", adapterPosition) }
-
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(meme, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(meme, "miss", adapterPosition) }
-
-                textViewComments.setOnClickListener {
-                    val context = itemView.context
-                    onCommentClickListener?.invoke(meme) ?: run {
-                        val intent = Intent(context, CommentActivity::class.java).apply {
-                            putExtra("MESSAGE_ID", meme.id)
-                            putExtra("MESSAGE_TYPE", "meme")
-                        }
-                        context.startActivity(intent)
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
                     }
                 }
 
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
+                    }
+                }
+
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
+                    }
+                }
+
+                // Set hit/miss click listeners with login checks
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(meme, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate memes")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(meme, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate memes")
+                    }
+                }
+
+                textViewComments.setOnClickListener {
+                    val context = itemView.context
+
+                    // First check if the user is logged in
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
+                    // Either use the provided callback or open the comment activity directly
+                    if (onCommentClickListener != null) {
+                        onCommentClickListener.invoke(meme)
+                    } else {
+                        try {
+                            Log.d(TAG, "Opening comments for meme ID: ${meme.id}")
+                            val intent = Intent(context, CommentActivity::class.java).apply {
+                                putExtra("MESSAGE_ID", meme.id)
+                                putExtra("MESSAGE_TYPE", "meme")
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error opening comments: ${e.message}", e)
+                            Toast.makeText(context, "Unable to open comments", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
                 // Add long-press listener for message options
                 itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access meme options")
+                        return@setOnLongClickListener true
+                    }
+
                     MessageActionsHandler.showMessageOptionsBottomSheet(
                         itemView.context,
                         meme,
@@ -318,28 +400,88 @@ class MemeAdapter(
                 updateComments(meme)
 
                 // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(meme, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(meme, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(meme, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(meme, "troll", adapterPosition) }
-
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(meme, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(meme, "miss", adapterPosition) }
-
-                textViewComments.setOnClickListener {
-                    val context = itemView.context
-                    onCommentClickListener?.invoke(meme) ?: run {
-                        val intent = Intent(context, CommentActivity::class.java).apply {
-                            putExtra("MESSAGE_ID", meme.id)
-                            putExtra("MESSAGE_TYPE", "meme")
-                        }
-                        context.startActivity(intent)
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
                     }
                 }
 
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
+                    }
+                }
+
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(meme, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to memes")
+                    }
+                }
+
+                // Set hit/miss click listeners with login checks
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(meme, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate memes")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(meme, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate memes")
+                    }
+                }
+
+                textViewComments.setOnClickListener {
+                    val context = itemView.context
+
+                    // First check if the user is logged in
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
+                    // Either use the provided callback or open the comment activity directly
+                    if (onCommentClickListener != null) {
+                        onCommentClickListener.invoke(meme)
+                    } else {
+                        try {
+                            Log.d(TAG, "Opening comments for meme ID: ${meme.id}")
+                            val intent = Intent(context, CommentActivity::class.java).apply {
+                                putExtra("MESSAGE_ID", meme.id)
+                                putExtra("MESSAGE_TYPE", "meme")
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error opening comments: ${e.message}", e)
+                            Toast.makeText(context, "Unable to open comments", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
                 // Add long-press listener for message options
                 itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access meme options")
+                        return@setOnLongClickListener true
+                    }
+
                     MessageActionsHandler.showMessageOptionsBottomSheet(
                         itemView.context,
                         meme,
