@@ -1446,7 +1446,7 @@ class ChatFragment : Fragment() {
         }
 
         // Create and show dialog
-        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertForImagePreview)
+        val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Create Poll")
             .setView(dialogView)
             .setPositiveButton("Create") { _, _ ->

@@ -599,7 +599,7 @@ class ChatAdapter(private val items: MutableList<Any>) :
 
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", poll.id)
-                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
+                        putExtra("MESSAGE_TYPE", "poll") // Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
