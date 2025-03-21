@@ -25,7 +25,7 @@
                     android:layout_width="@dimen/_24sdp"
                     android:layout_height="@dimen/_24sdp"
                     android:scaleType="centerCrop"
-                    android:background="@drawable/profile_empty"
+                    android:background="@drawable/profile_icon"
                     android:layout_marginBottom="8dp"
                     android:contentDescription="Back" />
             </androidx.cardview.widget.CardView>
@@ -218,6 +218,17 @@
     </LinearLayout>
 
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <Button
         android:id="@+id/buttonUploadMeme"
         android:layout_width="wrap_content"
@@ -225,6 +236,9 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:backgroundTint="@null"
-        app:srcCompat="@drawable/send_button"
-        app:fabSize="normal"/>
+        android:textSize="12sp"
+        android:padding="4dp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/button_background"
+       />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

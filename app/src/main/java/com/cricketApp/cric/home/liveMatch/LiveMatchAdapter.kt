@@ -3,9 +3,12 @@ package com.cricketApp.cric.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.cricketApp.cric.databinding.CardLiveMatchBinding
 import com.cricketApp.cric.home.liveMatch.MatchData
 
@@ -35,65 +38,92 @@ class LiveMatchAdapter(private var matchList: List<MatchData>) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(match: MatchData) {
+            // Find all necessary views using direct IDs instead of dynamic resource lookups
             // League/Series info
             val leagueName = match.league?.name ?: "Unknown League"
-
-            // Find the league logo ImageView in your updated layout
-            val leagueLogoView = binding.root.findViewById<android.widget.ImageView>(
-                binding.root.resources.getIdentifier("league_logo", "id", binding.root.context.packageName)
+            val leagueLogoView = binding.root.findViewById<ImageView>(
+                binding.root.context.resources.getIdentifier("league_logo", "id", binding.root.context.packageName)
+            )
+            val leagueNameView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("league_name", "id", binding.root.context.packageName)
             )
 
-            // Load league logo if available
+            // Match number
+            val matchNumberView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("match_number", "id", binding.root.context.packageName)
+            )
+
+            // Team names
+            val team1NameView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("team1_name", "id", binding.root.context.packageName)
+            )
+            val team2NameView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("team2_name", "id", binding.root.context.packageName)
+            )
+
+            // Team logos
+            val team1LogoView = binding.root.findViewById<ImageView>(
+                binding.root.context.resources.getIdentifier("team1_logo", "id", binding.root.context.packageName)
+            )
+            val team2LogoView = binding.root.findViewById<ImageView>(
+                binding.root.context.resources.getIdentifier("team2_logo", "id", binding.root.context.packageName)
+            )
+
+            // Score TextViews
+            val team1ScoreView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("team1_score", "id", binding.root.context.packageName)
+            )
+            val team2ScoreView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("team2_score", "id", binding.root.context.packageName)
+            )
+
+            // Overs info
+            val oversView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("overs_text", "id", binding.root.context.packageName)
+            )
+
+            // Match status
+            val statusView = binding.root.findViewById<TextView>(
+                binding.root.context.resources.getIdentifier("match_status", "id", binding.root.context.packageName)
+            )
+
+            // Set data to views, handling null cases
+
+            // League info
+            leagueNameView?.text = leagueName
             leagueLogoView?.let { imageView ->
                 match.league?.image_path?.let { logoUrl ->
                     Glide.with(binding.root.context)
                         .load(logoUrl)
+                        .apply(RequestOptions().placeholder(android.R.drawable.ic_menu_report_image))
                         .centerCrop()
                         .into(imageView)
+                } ?: run {
+                    // Set a placeholder if logo URL is null
+                    imageView.setImageResource(android.R.drawable.ic_menu_report_image)
                 }
             }
 
-            // Find the league name TextView in your updated layout
-            val leagueNameView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("league_name", "id", binding.root.context.packageName)
-            )
-            leagueNameView?.text = leagueName
+            // Match number/round
+            matchNumberView?.text = "Match ${match.matchNumber ?: match.stage?.name ?: "?"}"
 
-            // Match number
-            val matchNumberView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("match_number", "id", binding.root.context.packageName)
-            )
-            matchNumberView?.text = "Match ${match.matchNumber ?: "?"}"
-
-            // Team names
+            // Team names - use code as fallback
             val team1Name = match.localteam?.name ?: match.localteam?.code ?: "Team 1"
             val team2Name = match.visitorteam?.name ?: match.visitorteam?.code ?: "Team 2"
-
-            // Find team name TextViews
-            val team1NameView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("team1_name", "id", binding.root.context.packageName)
-            )
-            val team2NameView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("team2_name", "id", binding.root.context.packageName)
-            )
 
             team1NameView?.text = team1Name
             team2NameView?.text = team2Name
 
-            // Load team logos
-            val team1LogoView = binding.root.findViewById<android.widget.ImageView>(
-                binding.root.resources.getIdentifier("team1_logo", "id", binding.root.context.packageName)
-            )
-            val team2LogoView = binding.root.findViewById<android.widget.ImageView>(
-                binding.root.resources.getIdentifier("team2_logo", "id", binding.root.context.packageName)
-            )
-
+            // Team logos with error handling and placeholders
             team1LogoView?.let { imageView ->
                 match.localteam?.image_path?.let { logoUrl ->
                     Glide.with(binding.root.context)
                         .load(logoUrl)
+                        .apply(RequestOptions().placeholder(android.R.drawable.ic_menu_report_image))
                         .centerCrop()
                         .into(imageView)
+                } ?: run {
+                    imageView.setImageResource(android.R.drawable.ic_menu_report_image)
                 }
             }
 
@@ -101,15 +131,18 @@ class LiveMatchAdapter(private var matchList: List<MatchData>) :
                 match.visitorteam?.image_path?.let { logoUrl ->
                     Glide.with(binding.root.context)
                         .load(logoUrl)
+                        .apply(RequestOptions().placeholder(android.R.drawable.ic_menu_report_image))
                         .centerCrop()
                         .into(imageView)
+                } ?: run {
+                    imageView.setImageResource(android.R.drawable.ic_menu_report_image)
                 }
             }
 
-            // Handle scores
+            // Handle scores with proper null checking
             val runs = match.runs ?: emptyList()
 
-            // Find scores for each team
+            // Find team IDs
             val team1Id = match.localteam?.id
             val team2Id = match.visitorteam?.id
 
@@ -118,39 +151,25 @@ class LiveMatchAdapter(private var matchList: List<MatchData>) :
             var currentOvers = "0.0"
 
             // Find scores for each team based on team_id
-            runs.forEach { score ->
-                when (score.team_id) {
-                    team1Id -> {
-                        team1Score = "${score.score}/${score.wickets}"
-                        currentOvers = score.overs.toString()
-                    }
-                    team2Id -> {
-                        team2Score = "${score.score}/${score.wickets}"
+            if (runs.isNotEmpty()) {
+                runs.forEach { score ->
+                    when (score.team_id) {
+                        team1Id -> {
+                            team1Score = "${score.score}/${score.wickets}"
+                            currentOvers = score.overs.toString()
+                        }
+                        team2Id -> {
+                            team2Score = "${score.score}/${score.wickets}"
+                        }
                     }
                 }
             }
 
-            // Find score TextViews
-            val team1ScoreView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("team1_score", "id", binding.root.context.packageName)
-            )
-            val team2ScoreView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("team2_score", "id", binding.root.context.packageName)
-            )
-
             team1ScoreView?.text = team1Score
             team2ScoreView?.text = team2Score
-
-            // Overs info
-            val oversView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("overs_text", "id", binding.root.context.packageName)
-            )
             oversView?.text = "$currentOvers Overs"
 
             // Match status
-            val statusView = binding.root.findViewById<android.widget.TextView>(
-                binding.root.resources.getIdentifier("match_status", "id", binding.root.context.packageName)
-            )
             statusView?.let {
                 it.text = if (match.isLive) "LIVE" else "Completed"
                 it.setTextColor(

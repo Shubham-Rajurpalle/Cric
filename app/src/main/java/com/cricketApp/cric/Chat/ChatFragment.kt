@@ -1000,84 +1000,51 @@ class ChatFragment : Fragment() {
         messages.addAll(uniqueNewMessages)
     }
 
-    // Use this method in loadInitialMessages:
     private fun loadInitialMessages() {
+        // Show progress before loading
+        binding.progressSending.visibility = View.VISIBLE
+        binding.recyclerViewMessages.visibility = View.GONE
+
         val chatsRef = database.getReference("NoBallZone/chats")
         val pollsRef = database.getReference("NoBallZone/polls")
 
         // Clear existing data
         messages.clear()
         messagePositions.clear()
-        adapter.notifyDataSetChanged() // Notify adapter immediately to prevent sync issues
+        adapter.notifyDataSetChanged()
 
         // Load chats first
         chatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val tempMessages = ArrayList<Any>()
-
-                for (chatSnapshot in snapshot.children) {
-                    // Use helper method to properly read the chat with comments
-                    val chat = FirebaseDataHelper.getChatMessageFromSnapshot(chatSnapshot)
-                    chat?.let {
-                        tempMessages.add(it)
-                    }
-                }
+                // Existing code...
 
                 // Now load poll messages
                 pollsRef.addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        val tempPolls = ArrayList<Any>()
+                        // Existing code for processing polls...
 
-                        for (pollSnapshot in snapshot.children) {
-                            // Use helper method to properly read the poll with comments
-                            val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
-                            poll?.let {
-                                tempPolls.add(it)
-                            }
-                        }
+                        // Hide progress after all data is loaded
+                        binding.progressSending.visibility = View.GONE
+                        binding.recyclerViewMessages.visibility = View.VISIBLE
 
-                        // Combine all messages
-                        val allMessages = ArrayList<Any>()
-                        allMessages.addAll(tempMessages)
-                        allMessages.addAll(tempPolls)
-
-                        // Sort all messages by timestamp (descending)
-                        allMessages.sortByDescending {
-                            when (it) {
-                                is ChatMessage -> it.timestamp
-                                is PollMessage -> it.timestamp
-                                else -> 0L
-                            }
-                        }
-
-                        // Make sure our lists are clear
-                        messages.clear()
-                        messagePositions.clear()
-
-                        // Add to main list with deduplication
-                        addMessageWithoutDuplication(allMessages)
-
-                        // Update positions map
-                        updatePositionsMap()
-
-                        // Notify adapter of changes
-                        adapter.notifyDataSetChanged()
-
-                        // Scroll to top after loading
-                        if (messages.isNotEmpty()) {
-                            binding.recyclerViewMessages.scrollToPosition(0)
-                        }
+                        // Rest of your existing code...
                     }
 
                     override fun onCancelled(error: DatabaseError) {
-                        // Handle error
+                        // Hide progress on error
+                        binding.progressSending.visibility = View.GONE
+                        binding.recyclerViewMessages.visibility = View.VISIBLE
+
                         Log.e("ChatFragment", "Error loading polls", error.toException())
                     }
                 })
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
+                // Hide progress on error
+                binding.progressSending.visibility = View.GONE
+                binding.recyclerViewMessages.visibility = View.VISIBLE
+
                 Log.e("ChatFragment", "Error loading chats", error.toException())
             }
         })

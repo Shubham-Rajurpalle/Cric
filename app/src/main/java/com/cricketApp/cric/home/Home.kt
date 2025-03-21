@@ -1,6 +1,7 @@
 package com.cricketApp.cric.home
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
 import android.os.Bundle
 import android.util.Log
@@ -13,6 +14,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.cricketApp.cric.Chat.ChatFragment
 import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.Meme.MemeFragment
@@ -23,6 +26,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class Home : AppCompatActivity() {
@@ -42,7 +46,10 @@ class Home : AppCompatActivity() {
             v.setPadding(0, systemBars.top, 0, systemBars.bottom)
             insets
         }
+
+        loadProfileImageForBottomNav()
         setupBottomNav()
+
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -70,6 +77,7 @@ class Home : AppCompatActivity() {
         }
     }
 
+
     private fun setupBottomNav() {
         binding.bottomNavigation.itemIconTintList = null
         binding.bottomNavigation.setOnItemSelectedListener { item ->
@@ -90,6 +98,42 @@ class Home : AppCompatActivity() {
                 else -> false
             }
             true
+        }
+    }
+
+    private fun loadProfileImageForBottomNav() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            val userRef = FirebaseDatabase.getInstance().getReference("Users/${currentUser.uid}/profilePhoto")
+            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val photoUrl = snapshot.getValue(String::class.java)
+                    if (!photoUrl.isNullOrEmpty()) {
+                        // Get the profile menu item view
+                        val profileMenuItem = binding.bottomNavigation.menu.findItem(R.id.profileIcon)
+
+                        // Load the image using Glide and set it as the icon
+                        Glide.with(this@Home)
+                            .load(photoUrl)
+                            .circleCrop()
+                            .placeholder(R.drawable.profile_icon)
+                            .error(R.drawable.profile_icon)
+                            .into(object : CustomTarget<Drawable>() {
+                                override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
+                                    profileMenuItem.setIcon(resource)
+                                }
+
+                                override fun onLoadCleared(placeholder: Drawable?) {
+                                    profileMenuItem.setIcon(R.drawable.profile_icon)
+                                }
+                            })
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Home", "Error loading profile photo", error.toException())
+                }
+            })
         }
     }
 

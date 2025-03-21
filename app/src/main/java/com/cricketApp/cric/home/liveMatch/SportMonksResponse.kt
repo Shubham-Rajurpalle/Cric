@@ -1,6 +1,5 @@
+// Response models
 package com.cricketApp.cric.home.liveMatch
-
-import com.google.gson.annotations.SerializedName
 
 data class SportMonksResponse(
     val data: List<MatchData>
@@ -8,13 +7,27 @@ data class SportMonksResponse(
 
 data class MatchData(
     val id: Int,
-    val league: League,
-    val localteam: Team,
-    val visitorteam: Team,
-    val runs: List<Score>?,
-    @SerializedName("live") val isLive: Boolean,
+    val league: League? = null,
+    val localteam: Team? = null,
+    val visitorteam: Team? = null,
+    val runs: List<Score>? = null,
+    val live: Boolean = false,
     val stage: Stage? = null,
-    @SerializedName("round") val matchNumber: String? = null
+    val round: String? = null,
+    val status: String? = null,
+    val note: String? = null
+) {
+    // Provide a more accessible property for isLive
+    val isLive: Boolean
+        get() = live || status?.contains("Innings", ignoreCase = true) == true
+
+    // Provide a more accessible property for matchNumber
+    val matchNumber: String?
+        get() = round
+}
+
+data class LeagueResponse(
+    val data: League
 )
 
 data class League(
@@ -34,22 +47,14 @@ data class Team(
     val image_path: String? = null
 )
 
-data class StageResponse(
-    val data: Stage
-)
-
 data class Stage(
     val id: Int,
-    val name: String
-)
-
-data class ScoreResponse(
-    val data: Score
+    val name: String? = null
 )
 
 data class Score(
     val team_id: Int,
-    val score: Int,
-    val wickets: Int,
-    val overs: Double
+    val score: Int = 0,
+    val wickets: Int = 0,
+    val overs: Double = 0.0
 )

@@ -1,22 +1,13 @@
-package com.cricketApp.cric.home.liveMatch
+// In your Live_matches fragment
+override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    _binding = FragmentLiveMatchesBinding.inflate(inflater, container, false)
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+    // Use the factory to create the ViewModel with context
+    viewModel = ViewModelProvider(this, MatchViewModelFactory(requireContext()))[MatchViewModel::class.java]
 
-class MatchViewModel : ViewModel() {
-    private val repository = MatchRepository()
-    private val _matches = MutableLiveData<List<MatchData>>()
-    val matches: LiveData<List<MatchData>> get() = _matches
+    setupRecyclerView()
+    setupSwipeRefresh()
+    observeViewModel()
 
-    init {
-        loadLiveMatches()
-    }
-
-    private fun loadLiveMatches() {
-        repository.fetchLiveMatches { matchList ->
-            _matches.postValue(matchList ?: emptyList()) // Use postValue for background updates
-        }
-    }
+    return binding.root
 }
-

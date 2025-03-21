@@ -373,13 +373,7 @@ class MemeFragment : Fragment() {
         loadInitialMemes()
     }
 
-    // In MemeFragment.kt, modify the loadInitialMemes() method:
-
     private fun loadInitialMemes() {
-        // Show progress before loading
-        binding.progressBar.visibility = View.VISIBLE
-        binding.recyclerViewMemes.visibility = View.GONE
-
         val memesRef = FirebaseDatabase.getInstance().getReference("NoBallZone/memes")
 
         memesRef.addListenerForSingleValueEvent(object : ValueEventListener {
@@ -406,10 +400,6 @@ class MemeFragment : Fragment() {
                 // Update positions map
                 updatePositionsMap()
 
-                // Hide progress after loading
-                binding.progressBar.visibility = View.GONE
-                binding.recyclerViewMemes.visibility = View.VISIBLE
-
                 // Notify adapter of changes
                 memeAdapter.notifyDataSetChanged()
 
@@ -420,10 +410,6 @@ class MemeFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Hide progress on error
-                binding.progressBar.visibility = View.GONE
-                binding.recyclerViewMemes.visibility = View.VISIBLE
-
                 Log.e("MemeFragment", "Error loading initial memes", error.toException())
             }
         })

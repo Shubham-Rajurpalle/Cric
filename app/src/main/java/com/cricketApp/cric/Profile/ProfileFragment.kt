@@ -163,8 +163,8 @@ class ProfileFragment : Fragment() {
 
     private fun loadUserProfile() {
         val userId = currentUser?.uid ?: return
-
         val userRef = FirebaseDatabase.getInstance().getReference("Users/$userId")
+
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 // Load username
@@ -547,7 +547,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun showLogoutConfirmationDialog() {
-        AlertDialog.Builder(requireContext())
+        AlertDialog.Builder(requireContext(),R.style.CustomAlertDialogTheme)
             .setTitle("Logout")
             .setMessage("Are you sure you want to logout?")
             .setPositiveButton("Yes") { _, _ ->

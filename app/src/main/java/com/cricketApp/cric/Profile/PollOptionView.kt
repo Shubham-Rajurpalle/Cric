@@ -12,9 +12,6 @@ import android.widget.RadioButton
 import android.widget.TextView
 import com.cricketApp.cric.R
 
-/**
- * Custom view for displaying a poll option with a progress bar and vote count
- */
 class PollOptionView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -38,16 +35,10 @@ class PollOptionView @JvmOverloads constructor(
         radioButton.isEnabled = false
     }
 
-    /**
-     * Set the text of the poll option
-     */
     fun setOptionText(text: String) {
         textViewOption.text = text
     }
 
-    /**
-     * Set the percentage of votes for this option and animate the progress bar
-     */
     fun setVotePercentage(percentage: Int) {
         textViewPercentage.text = "$percentage%"
 

@@ -160,11 +160,18 @@ class SignIn : AppCompatActivity() {
                     override fun onSuccess(result: LoginResult) {
                         val accessToken = result?.accessToken ?: return
                         val credential = FacebookAuthProvider.getCredential(accessToken.token)
+
+                        binding.progressBar.visibility = View.VISIBLE
+                        binding.creatingAcTxt.visibility = View.VISIBLE
+                        binding.creatingAcTxt.text = "Signing in with Facebook..."
+
                         auth.signInWithCredential(credential)
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
                                     checkUserInfo()
                                 } else {
+                                    binding.progressBar.visibility = View.INVISIBLE
+                                    binding.creatingAcTxt.visibility = View.INVISIBLE
                                     Toast.makeText(this@SignIn, "Facebook Authentication Failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -175,7 +182,12 @@ class SignIn : AppCompatActivity() {
     private fun checkExistingGoogleUser() {
         val account = GoogleSignIn.getLastSignedInAccount(this)
         if (account != null) {
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.creatingAcTxt.visibility = View.INVISIBLE
             checkUserInfo()
+        } else {
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.creatingAcTxt.visibility = View.INVISIBLE
         }
     }
 
@@ -209,6 +221,10 @@ class SignIn : AppCompatActivity() {
         val userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
 
         userRef.get().addOnSuccessListener { snapshot ->
+            binding.progressBar.visibility = View.VISIBLE
+            binding.creatingAcTxt.visibility = View.VISIBLE
+            binding.creatingAcTxt.text = "Checking account information..."
+
             if (snapshot.exists()) {
                 val username = snapshot.child("username").getValue(String::class.java)
                 val country = snapshot.child("country").getValue(String::class.java)
@@ -226,6 +242,10 @@ class SignIn : AppCompatActivity() {
             }
             finish()
         }.addOnFailureListener {
+            // Also hide progress bar on failure
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.creatingAcTxt.visibility = View.INVISIBLE
+
             Toast.makeText(this, "Failed to retrieve user data.", Toast.LENGTH_LONG).show()
         }
     }
@@ -247,12 +267,13 @@ class SignIn : AppCompatActivity() {
         FirebaseAuth.getInstance().signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
+                    binding.progressBar.visibility = View.VISIBLE
+                    binding.creatingAcTxt.visibility = View.VISIBLE
+                    binding.creatingAcTxt.text = "Signing in with Google..."
                     checkUserInfo()
                 } else {
                     Toast.makeText(this, "Authentication Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                 }
             }
     }
-
-
 }

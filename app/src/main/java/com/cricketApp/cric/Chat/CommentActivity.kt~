@@ -260,10 +260,6 @@ class CommentActivity : AppCompatActivity() {
     }
 
     private fun loadInitialComments() {
-        // Show progress before loading
-        binding.progressSending.visibility = View.VISIBLE
-        binding.recyclerViewComments.visibility = View.GONE
-
         val commentsRef = database.getReference(getCommentsPath())
         Log.d("CommentActivity", "Loading initial comments from path: ${getCommentsPath()}")
 
@@ -290,10 +286,6 @@ class CommentActivity : AppCompatActivity() {
                     commentPositions[comment.id] = index
                 }
 
-                // Hide progress after loading
-                binding.progressSending.visibility = View.GONE
-                binding.recyclerViewComments.visibility = View.VISIBLE
-
                 // Notify adapter about the dataset change
                 adapter.notifyDataSetChanged()
 
@@ -304,10 +296,6 @@ class CommentActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Hide progress on error
-                binding.progressSending.visibility = View.GONE
-                binding.recyclerViewComments.visibility = View.VISIBLE
-
                 Log.e("CommentActivity", "Error loading comments: ${error.message}")
                 Toast.makeText(this@CommentActivity, "Failed to load comments", Toast.LENGTH_SHORT).show()
             }

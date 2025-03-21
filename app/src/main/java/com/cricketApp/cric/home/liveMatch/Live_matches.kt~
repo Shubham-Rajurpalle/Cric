@@ -20,12 +20,9 @@ class Live_matches : Fragment() {
     private lateinit var adapter: LiveMatchAdapter
     private var swipeRefreshLayout: SwipeRefreshLayout? = null
 
-    // In your Live_matches fragment
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentLiveMatchesBinding.inflate(inflater, container, false)
-
-        // Use the factory to create the ViewModel with context
-        viewModel = ViewModelProvider(this, MatchViewModelFactory(requireContext()))[MatchViewModel::class.java]
+        viewModel = ViewModelProvider(this)[MatchViewModel::class.java]
 
         setupRecyclerView()
         setupSwipeRefresh()

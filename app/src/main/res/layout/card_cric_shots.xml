@@ -25,9 +25,10 @@
             android:id="@+id/imagePlayer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/black"
             android:contentDescription="Cricket player image"
             android:scaleType="centerCrop"
-            android:src="@drawable/loading"
+            android:src="@drawable/loading_shot"
             android:visibility="visible" />
 
         <View
@@ -47,7 +48,7 @@
             android:layout_marginBottom="@dimen/_5sdp"
             android:maxLines="3"
             android:ellipsize="end"
-            android:text="RCB Jitegi - Full Match Highlights of IPL Finals"
+            android:text="Title loading...."
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -67,7 +68,7 @@
                 android:id="@+id/viewCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="10K Views"
+                android:text="Views..."
                 android:textColor="#E0E0E0"
                 android:textSize="12sp" />
 
@@ -77,7 +78,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
-                android:text="1 hour ago"
+                android:text=""
                 android:maxLines="1"
                 android:textColor="#E0E0E0"
                 android:textSize="12sp"

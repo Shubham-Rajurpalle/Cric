@@ -346,7 +346,7 @@ object MessageActionsHandler {
             "Other"
         )
 
-        AlertDialog.Builder(context)
+        AlertDialog.Builder(context,R.style.CustomAlertDialogTheme)
             .setTitle("Report Message")
             .setItems(options) { dialog, which ->
                 val reportReason = options[which]

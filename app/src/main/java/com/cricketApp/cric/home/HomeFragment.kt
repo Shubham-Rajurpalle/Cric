@@ -52,6 +52,12 @@ class HomeFragment : Fragment() {
         setupTabLayout()
         database = FirebaseDatabase.getInstance()
 
+        if (isUserLoggedIn()) {
+            loadProfilePhoto()
+        } else {
+            binding.profilePhoto.setImageResource(R.drawable.profile_icon)
+        }
+
         binding.profilePhoto.setOnClickListener {
             if (!isUserLoggedIn()) {
                 showLoginPrompt("Login to view your profile")
@@ -86,14 +92,15 @@ class HomeFragment : Fragment() {
 
     private fun loadProfilePhoto(){
         val userId=currentUser?.uid?:return
-        val userRef = database.getReference("Users/$userId/profilePhoto")
+        val userRef = database.getReference("Users/$userId")
+
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val photoUrl=snapshot.getValue(String::class.java)
+                val photoUrl = snapshot.child("profilePhoto").getValue(String::class.java)
                 if (!photoUrl.isNullOrEmpty()) {
-                    Glide.with(context ?: return)
+                    Glide.with(this@HomeFragment)
                         .load(photoUrl)
-                        .placeholder(R.drawable.profile_icon)
+                        .placeholder(R.drawable.profile_empty)
                         .into(binding.profilePhoto)
                 } else {
                     Log.e("Profile", "No profile photo found")

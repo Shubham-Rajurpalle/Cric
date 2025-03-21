@@ -4,9 +4,12 @@ import android.util.Log
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.concurrent.ConcurrentHashMap
 
 class MatchRepository {
     private val api = RetrofitInstance.getApi()
+    private val teamCache = ConcurrentHashMap<Int, Team>()
+    private val leagueCache = ConcurrentHashMap<Int, League>()
 
     fun fetchLiveMatches(onResult: (List<MatchData>?) -> Unit) {
         FirebaseConfig.loadConfig {
@@ -19,7 +22,12 @@ class MatchRepository {
                 return@loadConfig
             }
 
-            val call: Call<SportMonksResponse> = api.getLiveMatches(endpoint, authToken)
+            val call: Call<SportMonksResponse> = api.getLiveMatches(
+                endpoint,
+                authToken,
+                // Request all the data we need in one call to reduce API requests
+                "localteam,visitorteam,league,runs,stage"
+            )
 
             call.enqueue(object : Callback<SportMonksResponse> {
                 override fun onResponse(
@@ -27,7 +35,16 @@ class MatchRepository {
                     response: Response<SportMonksResponse>
                 ) {
                     if (response.isSuccessful && response.body() != null) {
-                        onResult(response.body()?.data ?: emptyList())
+                        val matches = response.body()?.data ?: emptyList()
+
+                        if (matches.isNotEmpty()) {
+                            // Process matches to ensure we have all needed data
+                            completeMatchData(matches) { completedMatches ->
+                                onResult(completedMatches)
+                            }
+                        } else {
+                            onResult(emptyList())
+                        }
                     } else {
                         Log.e("API_ERROR", "Response unsuccessful: ${response.errorBody()?.string()}")
                         onResult(null)
@@ -36,6 +53,177 @@ class MatchRepository {
 
                 override fun onFailure(call: Call<SportMonksResponse>, t: Throwable) {
                     Log.e("API_ERROR", "Network call failed: ${t.message}")
+                    onResult(null)
+                }
+            })
+        }
+    }
+
+    private fun completeMatchData(matches: List<MatchData>, onComplete: (List<MatchData>) -> Unit) {
+        // Count how many asynchronous operations we need to wait for
+        var pendingOperations = 0
+        val processedMatches = matches.toMutableList()
+
+        // Function to check if all operations are complete
+        fun checkCompletion() {
+            if (pendingOperations == 0) {
+                onComplete(processedMatches)
+            }
+        }
+
+        // Initialize empty counters
+        pendingOperations = 0
+
+        // Process each match
+        for (i in matches.indices) {
+            val match = matches[i]
+
+            // Fetch team details if missing
+            match.localteam?.let { team ->
+                if (team.name.isNullOrEmpty() || team.image_path.isNullOrEmpty()) {
+                    // Check cache first
+                    teamCache[team.id]?.let { cachedTeam ->
+                        processedMatches[i] = processedMatches[i].copy(localteam = cachedTeam)
+                    } ?: run {
+                        pendingOperations++
+                        fetchTeamDetails(team.id) { teamDetails ->
+                            teamDetails?.let {
+                                // Store in cache
+                                teamCache[it.id] = it
+                                processedMatches[i] = processedMatches[i].copy(localteam = it)
+                            }
+                            pendingOperations--
+                            checkCompletion()
+                        }
+                    }
+                }
+            }
+
+            match.visitorteam?.let { team ->
+                if (team.name.isNullOrEmpty() || team.image_path.isNullOrEmpty()) {
+                    // Check cache first
+                    teamCache[team.id]?.let { cachedTeam ->
+                        processedMatches[i] = processedMatches[i].copy(visitorteam = cachedTeam)
+                    } ?: run {
+                        pendingOperations++
+                        fetchTeamDetails(team.id) { teamDetails ->
+                            teamDetails?.let {
+                                // Store in cache
+                                teamCache[it.id] = it
+                                processedMatches[i] = processedMatches[i].copy(visitorteam = it)
+                            }
+                            pendingOperations--
+                            checkCompletion()
+                        }
+                    }
+                }
+            }
+
+            // Fetch league details if missing
+            match.league?.let { league ->
+                if (league.name.isNullOrEmpty() || league.image_path.isNullOrEmpty()) {
+                    // Check cache first
+                    leagueCache[league.id]?.let { cachedLeague ->
+                        processedMatches[i] = processedMatches[i].copy(league = cachedLeague)
+                    } ?: run {
+                        pendingOperations++
+                        fetchLeagueDetails(league.id) { leagueDetails ->
+                            leagueDetails?.let {
+                                // Store in cache
+                                leagueCache[it.id] = it
+                                processedMatches[i] = processedMatches[i].copy(league = it)
+                            }
+                            pendingOperations--
+                            checkCompletion()
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no pending operations, complete immediately
+        if (pendingOperations == 0) {
+            onComplete(processedMatches)
+        }
+    }
+
+    fun fetchTeamDetails(teamId: Int, onResult: (Team?) -> Unit) {
+        // Check cache first
+        teamCache[teamId]?.let {
+            onResult(it)
+            return
+        }
+
+        FirebaseConfig.loadConfig {
+            val authToken = FirebaseConfig.authToken
+
+            if (authToken.isNullOrEmpty()) {
+                Log.e("API_ERROR", "Missing auth token")
+                onResult(null)
+                return@loadConfig
+            }
+
+            val call: Call<TeamResponse> = api.getTeamDetails(teamId, authToken)
+
+            call.enqueue(object : Callback<TeamResponse> {
+                override fun onResponse(call: Call<TeamResponse>, response: Response<TeamResponse>) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val team = response.body()?.data
+                        team?.let { teamCache[teamId] = it } // Cache the result
+                        onResult(team)
+                    } else {
+                        Log.e("API_ERROR", "Failed to fetch team $teamId: ${response.errorBody()?.string()}")
+                        onResult(null)
+                    }
+                }
+
+                override fun onFailure(call: Call<TeamResponse>, t: Throwable) {
+                    Log.e("API_ERROR", "Network call failed when fetching team $teamId: ${t.message}")
+                    onResult(null)
+                }
+            })
+        }
+    }
+
+    fun fetchLeagueDetails(leagueId: Int, onResult: (League?) -> Unit) {
+        // Check cache first
+        leagueCache[leagueId]?.let {
+            onResult(it)
+            return
+        }
+
+        FirebaseConfig.loadConfig {
+            val authToken = FirebaseConfig.authToken
+
+            if (authToken.isNullOrEmpty()) {
+                Log.e("API_ERROR", "Missing auth token")
+                onResult(null)
+                return@loadConfig
+            }
+
+            val call: Call<LeagueResponse> = api.getLeagueDetails(leagueId, authToken)
+
+            call.enqueue(object : Callback<LeagueResponse> {
+                override fun onResponse(call: Call<LeagueResponse>, response: Response<LeagueResponse>) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val league = response.body()?.data
+                        league?.let { leagueCache[leagueId] = it } // Cache the result
+                        onResult(league)
+                    } else {
+                        // Handle subscription error gracefully
+                        if (response.errorBody()?.string()?.contains("not accessible from your subscription") == true) {
+                            Log.w("API_ERROR", "League $leagueId is not accessible due to subscription limits")
+                            // Return a placeholder league with the ID but no other data
+                            onResult(League(leagueId, "League $leagueId", null))
+                        } else {
+                            Log.e("API_ERROR", "Failed to fetch league $leagueId: ${response.errorBody()?.string()}")
+                            onResult(null)
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<LeagueResponse>, t: Throwable) {
+                    Log.e("API_ERROR", "Network call failed when fetching league $leagueId: ${t.message}")
                     onResult(null)
                 }
             })

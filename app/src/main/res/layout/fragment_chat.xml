@@ -22,7 +22,7 @@
                 android:layout_width="@dimen/_24sdp"
                 android:layout_height="@dimen/_24sdp"
                 android:scaleType="centerCrop"
-                android:background="@drawable/profile_empty"
+                android:background="@drawable/profile_icon"
                 android:layout_marginBottom="8dp"
                 android:contentDescription="Back" />
         </androidx.cardview.widget.CardView>
@@ -211,14 +211,16 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewMessages"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:layout_weight="1"/>
+
 
     <ProgressBar
         android:id="@+id/progressSending"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginEnd="8dp"
+        android:layout_weight="1"
         android:layout_gravity="center"
         android:visibility="gone" />
 
@@ -267,6 +269,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Create Poll"/>
         </LinearLayout>
+
 
         <ImageButton
             android:id="@+id/buttonSend"

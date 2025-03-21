@@ -40,7 +40,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:text="Indian Premier League"
+                android:text="Series Name Loading..."
                 android:textSize="14sp"
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
@@ -50,7 +50,7 @@
                 android:id="@+id/match_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Match 78"
+                android:text="Match..."
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="#FFBF00"/>
@@ -94,7 +94,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Chennai Super Kings"
+                    android:text="Team loading..."
                     android:textSize="14sp"
                     android:textColor="@android:color/white"
                     android:paddingStart="8dp"/>
@@ -125,7 +125,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:text="Royal Challenger Banglore"
+                    android:text="Team loading..."
                     android:textSize="14sp"
                     android:textColor="@android:color/white"
                     android:paddingStart="8dp"/>
@@ -134,7 +134,7 @@
                     android:id="@+id/match_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Tomorrow\n09:00"
+                    android:text="Time.."
                     android:textSize="12sp"
                     android:textAlignment="center"
                     android:textColor="@android:color/white"/>
