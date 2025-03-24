@@ -23,8 +23,11 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 import android.util.Log
+import android.widget.TextView
 import android.widget.Toast
 import com.cricketApp.cric.LogIn.SignIn
+import com.cricketApp.cric.Utils.MilestoneBadgeHelper
+import com.cricketApp.cric.Utils.ReactionTracker
 import com.cricketApp.cric.databinding.ItemMemeSendBinding
 
 class MemeAdapter(
@@ -215,6 +218,18 @@ class MemeAdapter(
                 textViewName.text = meme.senderName
                 textViewTeam.text = meme.team
 
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = meme.hit,
+                        miss = meme.miss,
+                        reactions = meme.reactions
+                    )
+                }
+
+
                 // Handle meme image
                 if (meme.memeUrl.isNotEmpty()) {
                     imageViewContent.visibility = View.VISIBLE
@@ -369,6 +384,17 @@ class MemeAdapter(
                 textViewName.text = meme.senderName
                 textViewTeam.text = meme.team
 
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = meme.hit,
+                        miss = meme.miss,
+                        reactions = meme.reactions
+                    )
+                }
+
                 // Handle meme image
                 if (meme.memeUrl.isNotEmpty()) {
                     imageViewContent.visibility = View.VISIBLE
@@ -518,24 +544,17 @@ class MemeAdapter(
     private fun addReaction(meme: MemeMessage, reactionType: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
-        val reactionRef = FirebaseDatabase.getInstance()
-            .getReference("NoBallZone/memes/${meme.id}/reactions/$reactionType")
-
-        reactionRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
+        // Use ReactionTracker
+        ReactionTracker.addEmojiReaction(
+            contentType = ReactionTracker.ContentType.MEME,
+            contentId = meme.id,
+            reactionType = reactionType
+        ) { success, newValue ->
+            if (success) {
+                meme.reactions[reactionType] = newValue
+                notifyItemChanged(position, PAYLOAD_REACTION)
             }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null && currentData != null) {
-                    val newValue = currentData.getValue(Int::class.java) ?: 0
-                    meme.reactions[reactionType] = newValue
-                    notifyItemChanged(position, PAYLOAD_REACTION)
-                }
-            }
-        })
+        }
     }
 
     private fun updateHitOrMiss(meme: MemeMessage, type: String, position: Int) {
@@ -543,18 +562,14 @@ class MemeAdapter(
 
         val isHit = type == "hit"
 
-        // Use the TeamStatsUtility to update both the meme stats and team stats
-        TeamStatsUtility.updateContentAndTeamStats(
-            contentType = "memes",
+        // Use ReactionTracker
+        ReactionTracker.updateHitOrMiss(
+            contentType = ReactionTracker.ContentType.MEME,
             contentId = meme.id,
-            team = meme.team,
             isHit = isHit
         ) { success, newValue ->
             if (success) {
-                // Update local model with the received value from Firebase
                 if (isHit) meme.hit = newValue else meme.miss = newValue
-
-                // Notify adapter of the change
                 notifyItemChanged(position, PAYLOAD_HIT_MISS)
             }
         }

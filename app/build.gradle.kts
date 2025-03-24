@@ -54,7 +54,7 @@ dependencies {
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.androidx.ui.test.android)
+    androidTestImplementation(libs.androidx.ui.test.android)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.core)
@@ -135,6 +135,5 @@ dependencies {
     // Coroutines for async work
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
-
 
 }

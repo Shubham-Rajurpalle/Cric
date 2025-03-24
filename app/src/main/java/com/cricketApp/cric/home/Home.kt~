@@ -144,6 +144,9 @@ class Home : AppCompatActivity() {
         notificationService = NotificationService(this)
         notificationService.createNotificationChannel()
         notificationService.startListening()
+
+        // For testing notifications
+        notificationService.showTestNotification()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -1,5 +1,6 @@
 package com.cricketApp.cric.Chat
 
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,6 +17,8 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
+import com.cricketApp.cric.Utils.MilestoneBadgeHelper
+import com.cricketApp.cric.Utils.ReactionTracker
 import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemSendCommentBinding
 import com.google.firebase.auth.FirebaseAuth
@@ -114,6 +117,17 @@ class CommentAdapter(
                 textViewName.text = comment.senderName
                 textViewMessage.text = comment.message
 
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = comment.hit,
+                        miss = comment.miss,
+                        reactions = comment.reactions
+                    )
+                }
+
                 // Handle image content
                 if (comment.imageUrl.isNotEmpty()) {
                     imageViewContent.visibility = View.VISIBLE
@@ -165,7 +179,7 @@ class CommentAdapter(
                 // Set reaction click listeners with login check
                 tvAngryEmoji.setOnClickListener {
                     if (isUserLoggedIn()) {
-                        addReaction(comment, "fire", adapterPosition)
+                        addReaction(comment, "fire", adapterPosition,root.context)
                     } else {
                         showLoginPrompt(itemView, "Login to react to comments")
                     }
@@ -173,7 +187,7 @@ class CommentAdapter(
 
                 tvHappyEmoji.setOnClickListener {
                     if (isUserLoggedIn()) {
-                        addReaction(comment, "laugh", adapterPosition)
+                        addReaction(comment, "laugh", adapterPosition,root.context)
                     } else {
                         showLoginPrompt(itemView, "Login to react to comments")
                     }
@@ -181,7 +195,7 @@ class CommentAdapter(
 
                 tvCryingEmoji.setOnClickListener {
                     if (isUserLoggedIn()) {
-                        addReaction(comment, "cry", adapterPosition)
+                        addReaction(comment, "cry", adapterPosition,root.context)
                     } else {
                         showLoginPrompt(itemView, "Login to react to comments")
                     }
@@ -189,7 +203,7 @@ class CommentAdapter(
 
                 tvSadEmoji.setOnClickListener {
                     if (isUserLoggedIn()) {
-                        addReaction(comment, "troll", adapterPosition)
+                        addReaction(comment, "troll", adapterPosition,root.context)
                     } else {
                         showLoginPrompt(itemView, "Login to react to comments")
                     }
@@ -198,7 +212,7 @@ class CommentAdapter(
                 // Set hit/miss click listeners with login check
                 buttonHit.setOnClickListener {
                     if (isUserLoggedIn()) {
-                        updateHitOrMiss(comment, "hit", adapterPosition)
+                        updateHitOrMiss(comment, "hit", adapterPosition,root.context)
                     } else {
                         showLoginPrompt(itemView, "Login to rate comments")
                     }
@@ -206,7 +220,7 @@ class CommentAdapter(
 
                 buttonMiss.setOnClickListener {
                     if (isUserLoggedIn()) {
-                        updateHitOrMiss(comment, "miss", adapterPosition)
+                        updateHitOrMiss(comment, "miss", adapterPosition,root.context)
                     } else {
                         showLoginPrompt(itemView, "Login to rate comments")
                     }
@@ -319,72 +333,54 @@ class CommentAdapter(
     }
 
     // Utility method to update a reaction - fixed to prevent double counting
-    private fun addReaction(comment: CommentMessage, reactionType: String, position: Int) {
+    private fun addReaction(comment: CommentMessage, reactionType: String, position: Int,context: Context) {
         if (position == RecyclerView.NO_POSITION || position >= comments.size) return
 
-        val path = when (messageType) {
-            "chat" -> "NoBallZone/chats/$messageId/comments/${comment.id}/reactions/$reactionType"
-            "poll" -> "NoBallZone/polls/$messageId/comments/${comment.id}/reactions/$reactionType"
-            "meme" -> "NoBallZone/memes/$messageId/comments/${comment.id}/reactions/$reactionType"
-            else -> return
+        // For comments, we need parent info
+        val activity = context as? CommentActivity
+        val parentId = activity?.messageId ?: return
+        val parentType = activity.messageType ?: return
+
+        // Create parent ID with type prefix
+        val formattedParentId = "${parentType}_$parentId"
+
+        // Use ReactionTracker
+        ReactionTracker.addEmojiReaction(
+            contentType = ReactionTracker.ContentType.COMMENT,
+            contentId = comment.id,
+            parentId = formattedParentId,
+            reactionType = reactionType
+        ) { success, newValue ->
+            if (success) {
+                comment.reactions[reactionType] = newValue
+                notifyItemChanged(position, "reaction")
+            }
         }
-
-        val reactionRef = FirebaseDatabase.getInstance().getReference(path)
-
-        reactionRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null && currentData != null) {
-                    // Only update the local model with the value from Firebase
-                    // This prevents any possibility of double counting
-                    val newValue = currentData.getValue(Int::class.java) ?: 0
-                    comment.reactions[reactionType] = newValue
-
-                    if (position < comments.size) {
-                        notifyItemChanged(position, "reaction")
-                    }
-                }
-            }
-        })
     }
 
     // Utility method to update hit or miss counts
-    private fun updateHitOrMiss(comment: CommentMessage, type: String, position: Int) {
+    private fun updateHitOrMiss(comment: CommentMessage, type: String, position: Int,context: Context) {
         if (position == RecyclerView.NO_POSITION || position >= comments.size) return
 
         val isHit = type == "hit"
 
-        // Determine the parent content type based on messageType
-        val contentType = when (messageType) {
-            "chat" -> "chats"
-            "poll" -> "polls"
-            "meme" -> "memes"
-            else -> return
-        }
+        // For comments, we need parent info
+        val activity = context as? CommentActivity
+        val parentId = activity?.messageId ?: return
+        val parentType = activity.messageType ?: return
 
-        // Update comment stats and team stats
-        TeamStatsUtility.updateContentAndTeamStats(
-            contentType = contentType,
-            contentId = "", // Not used for comments
-            team = comment.team,
-            isHit = isHit,
-            commentId = comment.id,
-            parentId = messageId
+        // Create parent ID with type prefix
+        val formattedParentId = "${parentType}_$parentId"
+
+        // Use ReactionTracker
+        ReactionTracker.updateHitOrMiss(
+            contentType = ReactionTracker.ContentType.COMMENT,
+            contentId = comment.id,
+            parentId = formattedParentId,
+            isHit = isHit
         ) { success, newValue ->
-            if (success && position < comments.size) {
-                // Update local model with received value
-                if (isHit) {
-                    comment.hit = newValue
-                } else {
-                    comment.miss = newValue
-                }
-
-                // Notify adapter of the change
+            if (success) {
+                if (isHit) comment.hit = newValue else comment.miss = newValue
                 notifyItemChanged(position, "hit_miss")
             }
         }

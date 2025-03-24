@@ -22,6 +22,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
+import com.cricketApp.cric.Utils.MilestoneBadgeHelper
+import com.cricketApp.cric.Utils.ReactionTracker
 import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemPollMessageBinding
 import com.cricketApp.cric.databinding.ItemReceiveChatBinding
@@ -209,6 +211,18 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
 
+                //For notification
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = chat.hit,
+                        miss = chat.miss,
+                        reactions = chat.reactions
+                    )
+                }
+
                 // Handle image content
                 if (chat.imageUrl.isNotEmpty()) {
                     imageViewContent.visibility = View.VISIBLE
@@ -375,6 +389,18 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
 
+                // Update badge visibility based on milestone
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = chat.hit,
+                        miss = chat.miss,
+                        reactions = chat.reactions
+                    )
+                }
+
                 // Handle image content
                 if (chat.imageUrl.isNotEmpty()) {
                     imageViewContent.visibility = View.VISIBLE
@@ -520,6 +546,18 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 textViewName.text = poll.senderName
                 textViewTeam.text = poll.team
                 textViewMessage.text = poll.question
+
+                // Update badge visibility based on milestone
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = poll.hit,
+                        miss = poll.miss,
+                        reactions = poll.reactions
+                    )
+                }
 
                 // Load profile picture
                 loadProfilePicture(poll.senderId, binding.imageViewProfile)
@@ -809,49 +847,39 @@ class ChatAdapter(private val items: MutableList<Any>) :
         if (position == RecyclerView.NO_POSITION) return
 
         val messageId: String
-        val dbPath: String
+        val contentType: ReactionTracker.ContentType
 
         when (message) {
             is ChatMessage -> {
                 messageId = message.id
-                dbPath = "NoBallZone/chats"
+                contentType = ReactionTracker.ContentType.CHAT
             }
             is PollMessage -> {
                 messageId = message.id
-                dbPath = "NoBallZone/polls"
+                contentType = ReactionTracker.ContentType.POLL
             }
             else -> return
         }
 
-        val reactionRef = FirebaseDatabase.getInstance()
-            .getReference("$dbPath/$messageId/reactions/$reactionType")
-
-        reactionRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null && currentData != null) {
-                    // Only update the local model with the value from Firebase
-                    // This prevents any possibility of double counting
-                    val newValue = currentData.getValue(Int::class.java) ?: 0
-
-                    when (message) {
-                        is ChatMessage -> {
-                            message.reactions[reactionType] = newValue
-                            notifyItemChanged(position, PAYLOAD_REACTION)
-                        }
-                        is PollMessage -> {
-                            message.reactions[reactionType] = newValue
-                            notifyItemChanged(position, PAYLOAD_REACTION)
-                        }
+        // Use ReactionTracker to handle the reaction
+        ReactionTracker.addEmojiReaction(
+            contentType = contentType,
+            contentId = messageId,
+            reactionType = reactionType
+        ) { success, newValue ->
+            if (success) {
+                when (message) {
+                    is ChatMessage -> {
+                        message.reactions[reactionType] = newValue
+                        notifyItemChanged(position, PAYLOAD_REACTION)
+                    }
+                    is PollMessage -> {
+                        message.reactions[reactionType] = newValue
+                        notifyItemChanged(position, PAYLOAD_REACTION)
                     }
                 }
             }
-        })
+        }
     }
 
     // Utility method to update hit or miss counts (fixed to prevent double counting)
@@ -859,38 +887,35 @@ class ChatAdapter(private val items: MutableList<Any>) :
         if (position == RecyclerView.NO_POSITION) return
 
         val isHit = type == "hit"
+        val messageId: String
+        val contentType: ReactionTracker.ContentType
 
         when (message) {
             is ChatMessage -> {
-                // Update chat message stats and team stats
-                TeamStatsUtility.updateContentAndTeamStats(
-                    contentType = "chats",
-                    contentId = message.id,
-                    team = message.team,
-                    isHit = isHit
-                ) { success, newValue ->
-                    if (success) {
-                        // Update local model with received value
-                        if (isHit) message.hit = newValue else message.miss = newValue
-
-                        // Notify adapter of the change
-                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                    }
-                }
+                messageId = message.id
+                contentType = ReactionTracker.ContentType.CHAT
             }
             is PollMessage -> {
-                // Update poll message stats and team stats
-                TeamStatsUtility.updateContentAndTeamStats(
-                    contentType = "polls",
-                    contentId = message.id,
-                    team = message.team,
-                    isHit = isHit
-                ) { success, newValue ->
-                    if (success) {
-                        // Update local model with received value
-                        if (isHit) message.hit = newValue else message.miss = newValue
+                messageId = message.id
+                contentType = ReactionTracker.ContentType.POLL
+            }
+            else -> return
+        }
 
-                        // Notify adapter of the change
+        // Use ReactionTracker to handle the hit/miss
+        ReactionTracker.updateHitOrMiss(
+            contentType = contentType,
+            contentId = messageId,
+            isHit = isHit
+        ) { success, newValue ->
+            if (success) {
+                when (message) {
+                    is ChatMessage -> {
+                        if (isHit) message.hit = newValue else message.miss = newValue
+                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
+                    }
+                    is PollMessage -> {
+                        if (isHit) message.hit = newValue else message.miss = newValue
                         notifyItemChanged(position, PAYLOAD_HIT_MISS)
                     }
                 }

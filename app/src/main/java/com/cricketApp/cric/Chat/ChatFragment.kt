@@ -59,12 +59,19 @@ class ChatFragment : Fragment() {
     private val LOGIN_REQUEST_CODE = 1001
     private var selectedImageUri: Uri? = null
     private lateinit var safetyChecker: CloudVisionSafetyChecker
+    private var highlightMessageId: String? = null
 
     // Map to keep track of message positions for efficient updates
     private val messagePositions = mutableMapOf<String, Int>()
 
     // Selected filters
     private var selectedFilter = mutableSetOf<String>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        highlightMessageId = arguments?.getString("HIGHLIGHT_MESSAGE_ID")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -188,6 +195,46 @@ class ChatFragment : Fragment() {
             transaction.addToBackStack(null)
             transaction.commit()
         }
+
+        // Setup message highlighting if we have a message ID to highlight
+        if (!highlightMessageId.isNullOrEmpty()) {
+            // Wait for messages to load before trying to scroll
+            Handler(Looper.getMainLooper()).postDelayed({
+                scrollToAndHighlightMessage(highlightMessageId!!)
+            }, 500) // Small delay to allow messages to load
+        }
+    }
+
+    private fun scrollToAndHighlightMessage(messageId: String) {
+        // Find the position of the message in the adapter
+        val position = adapter.findPositionById(messageId)
+
+        if (position != -1) {
+            // Scroll to the position
+            binding.recyclerViewMessages.scrollToPosition(position)
+
+            // Get the item view and apply highlight animation
+            Handler(Looper.getMainLooper()).postDelayed({
+                val viewHolder = binding.recyclerViewMessages.findViewHolderForAdapterPosition(position)
+                viewHolder?.itemView?.let { view ->
+                    applyHighlightAnimation(view)
+                }
+            }, 100) // Small delay to ensure view is available
+        }
+    }
+
+    /**
+     * Apply a highlight animation to the given view
+     */
+    private fun applyHighlightAnimation(view: View) {
+        // Create a flash animation effect
+        val originalBackground = view.background
+        view.setBackgroundResource(R.drawable.highlighted_item_background)
+
+        // Reset background after animation
+        Handler(Looper.getMainLooper()).postDelayed({
+            view.background = originalBackground
+        }, 1500) // 1.5 seconds highlight
     }
 
     private fun isUserLoggedIn(): Boolean {

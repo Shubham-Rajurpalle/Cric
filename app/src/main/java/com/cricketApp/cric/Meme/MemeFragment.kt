@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -46,6 +48,8 @@ class MemeFragment : Fragment() {
     private val PICK_MEME_REQUEST = 1
     private val LOGIN_REQUEST_CODE = 1001
     private lateinit var safetyChecker: CloudVisionSafetyChecker
+    private var highlightMemeId: String? = null
+
 
     // Map to keep track of meme positions for efficient updates
     private val memePositions = mutableMapOf<String, Int>()
@@ -71,6 +75,13 @@ class MemeFragment : Fragment() {
 
             Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Get highlight meme ID from arguments
+        highlightMemeId = arguments?.getString("HIGHLIGHT_MESSAGE_ID")
     }
 
     override fun onCreateView(
@@ -165,10 +176,48 @@ class MemeFragment : Fragment() {
             transaction.addToBackStack(null)
             transaction.commit()
         }
+
+        if (!highlightMemeId.isNullOrEmpty()) {
+            // Wait for memes to load before trying to scroll
+            Handler(Looper.getMainLooper()).postDelayed({
+                scrollToAndHighlightMeme(highlightMemeId!!)
+            }, 500) // Small delay to allow memes to load
+        }
     }
 
     private fun isUserLoggedIn(): Boolean {
         return FirebaseAuth.getInstance().currentUser != null
+    }
+    private fun scrollToAndHighlightMeme(memeId: String) {
+        // Find the position of the meme in the adapter
+        val position = memeAdapter.findPositionById(memeId)
+
+        if (position != -1) {
+            // Scroll to the position
+            binding.recyclerViewMemes.scrollToPosition(position)
+
+            // Get the item view and apply highlight animation
+            Handler(Looper.getMainLooper()).postDelayed({
+                val viewHolder = binding.recyclerViewMemes.findViewHolderForAdapterPosition(position)
+                viewHolder?.itemView?.let { view ->
+                    applyHighlightAnimation(view)
+                }
+            }, 100) // Small delay to ensure view is available
+        }
+    }
+
+    /**
+     * Apply a highlight animation to the given view
+     */
+    private fun applyHighlightAnimation(view: View) {
+        // Create a flash animation effect
+        val originalBackground = view.background
+        view.setBackgroundResource(R.drawable.highlighted_item_background)
+
+        // Reset background after animation
+        Handler(Looper.getMainLooper()).postDelayed({
+            view.background = originalBackground
+        }, 1500) // 1.5 seconds highlight
     }
 
     private fun showLoginPrompt(message: String) {
