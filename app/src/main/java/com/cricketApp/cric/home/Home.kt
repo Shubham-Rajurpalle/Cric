@@ -69,6 +69,8 @@ class Home : AppCompatActivity() {
             insets
         }
 
+        // In your MainActivity.onCreate() or Application.onCreate()
+        subscribeToNotifications()
         handleNotificationNavigation(intent)
 
         // Replace with permission check
@@ -137,6 +139,45 @@ class Home : AppCompatActivity() {
         } else {
             // No runtime permission needed for Android < 13
             initializeNotificationService()
+        }
+    }
+
+    fun subscribeToNotifications() {
+        // Subscribe all users to the general "trending" topic
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("trending")
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("FCM", "Subscribed to trending notifications")
+                } else {
+                    Log.e("FCM", "Failed to subscribe to trending notifications")
+                }
+            }
+
+        // If user is logged in, subscribe to their team's topic
+        val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val database = com.google.firebase.database.FirebaseDatabase.getInstance()
+            database.getReference("Users/$userId/iplTeam").addListenerForSingleValueEvent(
+                object : com.google.firebase.database.ValueEventListener {
+                    override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                        val team = snapshot.getValue(String::class.java) ?: return
+                        if (team.isNotEmpty()) {
+                            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("team_$team")
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        Log.d("FCM", "Subscribed to team $team notifications")
+                                    } else {
+                                        Log.e("FCM", "Failed to subscribe to team $team notifications")
+                                    }
+                                }
+                        }
+                    }
+
+                    override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                        Log.e("FCM", "Failed to fetch user team: ${error.message}")
+                    }
+                }
+            )
         }
     }
 

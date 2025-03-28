@@ -431,7 +431,7 @@ object ReactionTracker {
                     else -> snapshot.child("message").getValue(String::class.java) ?: ""
                 }
 
-                // Create notification
+                // Create notification in Firebase
                 val notificationsRef = FirebaseDatabase.getInstance().getReference(NOTIFICATIONS_PATH).push()
 
                 val notification = mapOf(
@@ -452,6 +452,18 @@ object ReactionTracker {
                 notificationsRef.setValue(notification)
                     .addOnSuccessListener {
                         Log.d(TAG, "Created milestone notification for $contentType with ID $contentId")
+
+                        // IMPORTANT ADDITION: Send cloud message to all users
+                        sendCloudNotification(
+                            contentType = contentType.toString(),
+                            contentId = contentId,
+                            senderName = senderName,
+                            team = team,
+                            message = message,
+                            reactionCategory = reactionCategory,
+                            reactionValue = reactionValue,
+                            count = count
+                        )
                     }
                     .addOnFailureListener {
                         Log.e(TAG, "Failed to create notification: ${it.message}")
@@ -463,6 +475,72 @@ object ReactionTracker {
             }
         })
     }
+
+
+    private fun sendCloudNotification(
+        contentType: String,
+        contentId: String,
+        senderName: String,
+        team: String,
+        message: String,
+        reactionCategory: String,
+        reactionValue: String,
+        count: Int
+    ) {
+        // Create a cloud function trigger or use Firebase Admin SDK from your server
+        // Here we'll add the notification to a special "cloud_notifications" node that will be processed
+        // by a Cloud Function
+
+        val notificationMessage = when (contentType) {
+            "CHAT" -> {
+                when (reactionCategory) {
+                    "hitMiss" -> "${senderName}'s message received ${count} ${reactionValue.capitalize()}!"
+                    else -> "${senderName}'s message is trending!"
+                }
+            }
+            "POLL" -> {
+                when (reactionCategory) {
+                    "hitMiss" -> "${senderName}'s poll received ${count} ${reactionValue.capitalize()}!"
+                    else -> "${senderName}'s poll is trending!"
+                }
+            }
+            "MEME" -> {
+                when (reactionCategory) {
+                    "hitMiss" -> "${senderName}'s meme received ${count} ${reactionValue.capitalize()}!"
+                    else -> "${senderName}'s meme is trending!"
+                }
+            }
+            "COMMENT" -> {
+                when (reactionCategory) {
+                    "hitMiss" -> "${senderName}'s comment received ${count} ${reactionValue.capitalize()}!"
+                    else -> "${senderName}'s comment is trending!"
+                }
+            }
+            else -> "Content is trending!"
+        }
+
+        val title = "Trending Content"
+
+        // Add to a node that will trigger a cloud function
+        val cloudNotificationRef = FirebaseDatabase.getInstance().getReference("CloudNotifications").push()
+        val notificationData = mapOf(
+            "contentType" to contentType,
+            "contentId" to contentId,
+            "title" to title,
+            "message" to notificationMessage,
+            "team" to team,
+            "timestamp" to System.currentTimeMillis()
+        )
+
+        cloudNotificationRef.setValue(notificationData)
+            .addOnSuccessListener {
+                Log.d(TAG, "Cloud notification created for $contentType with ID $contentId")
+            }
+            .addOnFailureListener {
+                Log.e(TAG, "Failed to create cloud notification: ${it.message}")
+            }
+    }
+
 
     /**
      * Update team stats when content is rated

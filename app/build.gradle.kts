@@ -92,14 +92,18 @@ dependencies {
     implementation ("com.google.android.material:material:1.9.0")
 
     // Navigation Components
-    implementation ("androidx.navigation:navigation-fragment-ktx:2.6.0 ")
+    implementation ("androidx.navigation:navigation-fragment-ktx:2.6.0")
     implementation ("androidx.navigation:navigation-ui-ktx:2.6.0")
 
     // RecyclerView for displaying video list
     implementation ("androidx.recyclerview:recyclerview:1.2.1")
 
-    // ExoPlayer for playing videos
-    implementation ("com.google.android.exoplayer:exoplayer:2.18.1")
+    // Media3 for playing videos (replacing ExoPlayer)
+    implementation ("com.google.android.exoplayer:exoplayer:2.18.7")
+    implementation ("androidx.media3:media3-exoplayer:1.2.1")
+    implementation ("androidx.media3:media3-ui:1.2.1")
+    implementation ("androidx.media3:media3-exoplayer-dash:1.2.1")
+    implementation ("androidx.media3:media3-exoplayer-hls:1.2.1")
 
     //Glide for Thumbnail loading
     implementation ("com.github.bumptech.glide:glide:4.15.1")
@@ -136,4 +140,6 @@ dependencies {
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 
+    //Notification Firebase Cloud Messaging
+    implementation ("com.google.firebase:firebase-messaging:23.2.1")
 }
