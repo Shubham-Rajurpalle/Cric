@@ -19,9 +19,11 @@ class hitsFragment : Fragment() {
     private var _binding: FragmentHitsBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var databaseRef: DatabaseReference
+    private var databaseRef: DatabaseReference? = null
+    private var valueEventListener: ValueEventListener? = null
     private lateinit var adapter: HitsLeaderboardAdapter
     private val allTeams = mutableListOf<TeamData>()
+
 
     // Add a flag to track whether the fragment is attached
     private var isFragmentActive = false
@@ -52,27 +54,26 @@ class hitsFragment : Fragment() {
         loadLeaderboardData()
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-
-        // Set flag to false when fragment view is destroyed
-        isFragmentActive = false
-        _binding = null
-    }
 
     private fun loadLeaderboardData() {
-        databaseRef.orderByChild("hits").limitToLast(10).addValueEventListener(object :
-            ValueEventListener {
+        // If there's an existing listener, remove it first
+        if (valueEventListener != null && databaseRef != null) {
+            databaseRef?.removeEventListener(valueEventListener!!)
+        }
+
+        valueEventListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 // Check if fragment is still active before processing data
-                if (!isFragmentActive) return
+                if (!isFragmentActive || _binding == null) return
 
                 allTeams.clear()
 
                 for (dataSnapshot in snapshot.children) {
                     val team = dataSnapshot.getValue(TeamData::class.java)
-                    if (team != null) {
-                        allTeams.add(team)
+                    team?.let {
+                        // Ensure we have the key as the team ID
+                        it.id = dataSnapshot.key ?: ""
+                        allTeams.add(it)
                     }
                 }
 
@@ -84,11 +85,14 @@ class hitsFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Check if fragment is still active before showing toast
-                if (!isFragmentActive) return
+                if (!isFragmentActive || _binding == null) return
 
                 Toast.makeText(requireContext(), "Failed to load data", Toast.LENGTH_SHORT).show()
             }
-        })
+        }
+
+        // Use startAt(1) to only get teams with at least 1 hit
+        databaseRef?.orderByChild("hits")?.startAt(1.0)?.addValueEventListener(valueEventListener!!)
     }
 
     private fun updateUI() {
@@ -108,18 +112,20 @@ class hitsFragment : Fragment() {
             binding.thirdHits.text = thirdPlace.hits.toString()
 
             try {
-                // Use requireView() to ensure we only load images when the view exists
-                Glide.with(requireView())
-                    .load(firstPlace.logoUrl)
-                    .into(binding.firstTeamLogo)
+                // Use context instead of requireView() for safer Glide loading
+                context?.let { ctx ->
+                    Glide.with(ctx)
+                        .load(firstPlace.logoUrl)
+                        .into(binding.firstTeamLogo)
 
-                Glide.with(requireView())
-                    .load(secondPlace.logoUrl)
-                    .into(binding.secondTeamLogo)
+                    Glide.with(ctx)
+                        .load(secondPlace.logoUrl)
+                        .into(binding.secondTeamLogo)
 
-                Glide.with(requireView())
-                    .load(thirdPlace.logoUrl)
-                    .into(binding.thirdTeamLogo)
+                    Glide.with(ctx)
+                        .load(thirdPlace.logoUrl)
+                        .into(binding.thirdTeamLogo)
+                }
             } catch (e: Exception) {
                 // Handle any exceptions that might occur during image loading
                 e.printStackTrace()
@@ -130,4 +136,22 @@ class hitsFragment : Fragment() {
             adapter.submitList(allTeams)
         }
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Remove the Firebase listener to prevent memory leaks
+        if (valueEventListener != null && databaseRef != null) {
+            databaseRef?.removeEventListener(valueEventListener!!)
+            valueEventListener = null
+        }
+
+        // Clear adapter reference
+        binding.leaderboardList.adapter = null
+
+        // Set flag to false when fragment view is destroyed
+        isFragmentActive = false
+        _binding = null
+    }
+
 }

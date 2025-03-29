@@ -500,8 +500,6 @@ class ProfileFragment : Fragment() {
     }
 
     private fun sortActivitiesAndUpdateAdapter() {
-        if (!isFragmentActive) return
-
         // Sort activities by timestamp (newest first)
         activities.sortByDescending { it.timestamp }
 

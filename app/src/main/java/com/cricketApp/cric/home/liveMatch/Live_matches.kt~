@@ -63,7 +63,7 @@
 
             // Observe matches data
             viewModel.matches.observe(viewLifecycleOwner) { matches ->
-                if (!isFragmentActive || _binding == null) return@observe
+                if (!isFragmentActive || _binding == null) return
 
                 Log.d("LiveMatches", "Received ${matches.size} matches")
 
@@ -81,7 +81,7 @@
 
             // Observe loading state
             viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-                if (!isFragmentActive || _binding == null) return@observe
+                if (!isFragmentActive || _binding == null) return
 
                 // Find progress bar by ID or resource identifier
                 val progressBar = binding.root.findViewById<View>(
@@ -95,7 +95,7 @@
 
             // Observe error state
             viewModel.error.observe(viewLifecycleOwner) { errorMsg ->
-                if (!isFragmentActive || _binding == null) return@observe
+                if (!isFragmentActive || _binding == null) return
 
                 errorMsg?.let {
                     Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
@@ -106,16 +106,6 @@
 
         override fun onDestroyView() {
             super.onDestroyView()
-
-            // Set flag to false
-            isFragmentActive = false
-
-            // Clear adapter reference
-            binding.liveMatchesRecyclerView.adapter = null
-
-            // Clear swipe refresh reference
-            swipeRefreshLayout = null
-
             _binding = null
         }
     }

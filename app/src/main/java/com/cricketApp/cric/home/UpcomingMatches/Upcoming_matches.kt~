@@ -55,7 +55,7 @@ class Upcoming_matches : Fragment() {
         binding.upcomingMatchesRecyclerView.visibility = View.GONE
 
         viewModel.matches.observe(viewLifecycleOwner) { matches ->
-            if (!isFragmentActive || _binding == null) return@observe
+            if (!isFragmentActive || _binding == null) return
 
             // Hide progress bar
             binding.progressBar.visibility = View.GONE
@@ -78,7 +78,7 @@ class Upcoming_matches : Fragment() {
 
         // Handle any loading errors
         viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
-            if (!isFragmentActive || _binding == null) return@observe
+            if (!isFragmentActive || _binding == null) return
 
             // Hide progress bar
             binding.progressBar.visibility = View.GONE

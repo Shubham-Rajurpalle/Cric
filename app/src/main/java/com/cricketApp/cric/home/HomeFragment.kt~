@@ -223,16 +223,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        isFragmentActive = false
-    }
-
-    override fun onResume() {
-        super.onResume()
-        isFragmentActive = true
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
 
@@ -244,14 +234,6 @@ class HomeFragment : Fragment() {
 
         // Clear adapter references
         _binding?.viewPager?.adapter = null
-
-        // Cancel any pending operations
-        try {
-            // If any handlers are used, cancel them here
-            // handler?.removeCallbacksAndMessages(null)
-        } catch (e: Exception) {
-            Log.e("HomeFragment", "Error during cleanup", e)
-        }
 
         // Clear binding reference
         _binding = null

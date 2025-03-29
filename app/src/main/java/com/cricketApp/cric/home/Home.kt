@@ -33,6 +33,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
@@ -40,6 +41,8 @@ class Home : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private lateinit var notificationService: NotificationService
+    private val valueEventListeners = HashMap<DatabaseReference, ValueEventListener>()
+
 
     // Add this permission launcher
     private val requestPermissionLauncher = registerForActivityResult(
@@ -283,7 +286,8 @@ class Home : AppCompatActivity() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser != null) {
             val userRef = FirebaseDatabase.getInstance().getReference("Users/${currentUser.uid}/profilePhoto")
-            userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+            val listener = object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val photoUrl = snapshot.getValue(String::class.java)
                     if (!photoUrl.isNullOrEmpty()) {
@@ -311,9 +315,13 @@ class Home : AppCompatActivity() {
                 override fun onCancelled(error: DatabaseError) {
                     Log.e("Home", "Error loading profile photo", error.toException())
                 }
-            })
+            }
+
+            userRef.addListenerForSingleValueEvent(listener)
+            valueEventListeners[userRef] = listener
         }
     }
+
 
     private fun isUserLoggedIn(): Boolean {
         return FirebaseAuth.getInstance().currentUser != null
@@ -357,6 +365,23 @@ class Home : AppCompatActivity() {
             transaction.commitAllowingStateLoss()
         } catch (e: Exception) {
             Log.e("Home", "Error switching fragment: ${e.message}", e)
+        }
+    }
+
+    // Add this method to clean up in onDestroy
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Remove all Firebase listeners
+        for ((ref, listener) in valueEventListeners) {
+            ref.removeEventListener(listener)
+        }
+        valueEventListeners.clear()
+
+        // Clean up notification service
+        if (::notificationService.isInitialized) {
+            // If stopListening() doesn't exist, just remove the entire line
+            // notificationService.stopListening()
         }
     }
 }
