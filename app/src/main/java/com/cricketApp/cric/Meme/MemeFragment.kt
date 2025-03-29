@@ -19,12 +19,14 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.cricketApp.cric.Chat.ChatAdapter
 import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.Chat.FirebaseDataHelper
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
 import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.cricketApp.cric.R
+import com.cricketApp.cric.databinding.FragmentChatBinding
 import com.cricketApp.cric.databinding.FragmentMemeBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,13 +35,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
+import java.lang.ref.WeakReference
 
 class MemeFragment : Fragment() {
-    private lateinit var binding: FragmentMemeBinding
     private lateinit var memeAdapter: MemeAdapter
     private val memes = mutableListOf<MemeMessage>()
     private var selectedImageUri: Uri? = null
@@ -49,6 +52,10 @@ class MemeFragment : Fragment() {
     private val LOGIN_REQUEST_CODE = 1001
     private lateinit var safetyChecker: CloudVisionSafetyChecker
     private var highlightMemeId: String? = null
+    private var _binding: FragmentMemeBinding? = null
+    private val binding get() = _binding ?: throw IllegalStateException("Binding not available")
+    private val valueEventListeners = HashMap<DatabaseReference, ValueEventListener>()
+    private val childEventListeners = HashMap<DatabaseReference, ChildEventListener>()
 
 
     // Map to keep track of meme positions for efficient updates
@@ -89,7 +96,7 @@ class MemeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentMemeBinding.inflate(inflater, container, false)
+        _binding = FragmentMemeBinding.inflate(inflater, container, false)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             val height = requireActivity().findViewById<BottomNavigationView>(R.id.bottomNavigation).height
@@ -129,9 +136,16 @@ class MemeFragment : Fragment() {
         }
 
         binding.recyclerViewMemes.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, true)
-            (layoutManager as LinearLayoutManager).stackFromEnd = true
-            adapter = memeAdapter
+            val layoutManager = LinearLayoutManager(context)
+            layoutManager.orientation = LinearLayoutManager.VERTICAL
+            layoutManager.reverseLayout = false
+            layoutManager.stackFromEnd = false
+            this.layoutManager = layoutManager
+            adapter = this@MemeFragment.memeAdapter
+
+            // Add this line to make sure content at the bottom is fully visible
+            clipToPadding = false
+            setPadding(paddingLeft, paddingTop, paddingRight, resources.getDimensionPixelSize(com.intuit.sdp.R.dimen._15sdp))
         }
 
         // Setup filters - no login required for filters
@@ -188,7 +202,10 @@ class MemeFragment : Fragment() {
     private fun isUserLoggedIn(): Boolean {
         return FirebaseAuth.getInstance().currentUser != null
     }
+
     private fun scrollToAndHighlightMeme(memeId: String) {
+        if (!isAdded || _binding == null) return
+
         // Find the position of the meme in the adapter
         val position = memeAdapter.findPositionById(memeId)
 
@@ -196,16 +213,21 @@ class MemeFragment : Fragment() {
             // Scroll to the position
             binding.recyclerViewMemes.scrollToPosition(position)
 
+            // Create weak reference to the fragment
+            val fragmentRef = WeakReference(this)
+
             // Get the item view and apply highlight animation
             Handler(Looper.getMainLooper()).postDelayed({
-                val viewHolder = binding.recyclerViewMemes.findViewHolderForAdapterPosition(position)
+                val fragment = fragmentRef.get() ?: return@postDelayed
+                if (!fragment.isAdded || fragment._binding == null) return@postDelayed
+
+                val viewHolder = fragment.binding.recyclerViewMemes.findViewHolderForAdapterPosition(position)
                 viewHolder?.itemView?.let { view ->
-                    applyHighlightAnimation(view)
+                    fragment.applyHighlightAnimation(view)
                 }
             }, 100) // Small delay to ensure view is available
         }
     }
-
     /**
      * Apply a highlight animation to the given view
      */
@@ -246,16 +268,29 @@ class MemeFragment : Fragment() {
     }
 
     private fun loadProfilePhoto() {
+        if (!isAdded || _binding == null) return // Safety check
+
         val userId = currentUser?.uid ?: return
         val userRef = FirebaseDatabase.getInstance().getReference("Users/$userId/profilePhoto")
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Importantly, check if binding is still available
+                if (!isAdded || _binding == null) return
+
                 val photoUrl = snapshot.getValue(String::class.java)
                 if (!photoUrl.isNullOrEmpty()) {
-                    Glide.with(context ?: return)
-                        .load(photoUrl)
-                        .placeholder(R.drawable.profile_icon)
-                        .into(binding.profilePhoto)
+                    try {
+                        context?.let { ctx ->
+                            Glide.with(ctx)
+                                .load(photoUrl)
+                                .placeholder(R.drawable.profile_icon)
+                                .into(_binding?.profilePhoto ?: return)
+                        }
+                    } catch (e: Exception) {
+                        // Handle Glide exceptions
+                        Log.e("MemeFragment", "Error loading profile image", e)
+                    }
                 } else {
                     Log.e("Profile", "No profile photo found")
                 }
@@ -264,7 +299,11 @@ class MemeFragment : Fragment() {
             override fun onCancelled(error: DatabaseError) {
                 Log.e("MemeFragment", "Error loading profile photo", error.toException())
             }
-        })
+        }
+
+        // Store the listener for cleanup
+        userRef.addListenerForSingleValueEvent(listener)
+        valueEventListeners[userRef] = listener
     }
 
     private fun fetchUserTeam() {
@@ -425,14 +464,20 @@ class MemeFragment : Fragment() {
     // In MemeFragment.kt, modify the loadInitialMemes() method:
 
     private fun loadInitialMemes() {
+        // Only proceed if the fragment is attached and binding is available
+        if (!isAdded) return
+
         // Show progress before loading
-        binding.progressBar.visibility = View.VISIBLE
-        binding.recyclerViewMemes.visibility = View.GONE
+        _binding?.progressBar?.visibility = View.VISIBLE
+        _binding?.recyclerViewMemes?.visibility = View.GONE
 
         val memesRef = FirebaseDatabase.getInstance().getReference("NoBallZone/memes")
 
         memesRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
                 val tempMemes = ArrayList<MemeMessage>()
 
                 for (memeSnapshot in snapshot.children) {
@@ -456,31 +501,53 @@ class MemeFragment : Fragment() {
                 updatePositionsMap()
 
                 // Hide progress after loading
-                binding.progressBar.visibility = View.GONE
-                binding.recyclerViewMemes.visibility = View.VISIBLE
+                _binding?.progressBar?.visibility = View.GONE
+                _binding?.recyclerViewMemes?.visibility = View.VISIBLE
 
                 // Notify adapter of changes
                 memeAdapter.notifyDataSetChanged()
 
-                // Scroll to top after loading
-                if (memes.isNotEmpty()) {
-                    binding.recyclerViewMemes.scrollToPosition(0)
+                // Add more robust scrolling behavior with multiple attempts
+                if (memes.isNotEmpty() && _binding != null) {
+                    // First immediate scroll
+                    _binding?.recyclerViewMemes?.scrollToPosition(0)
+
+                    // Second attempt after layout
+                    _binding?.recyclerViewMemes?.post {
+                        // Check again before posting
+                        if (_binding != null) {
+                            _binding?.recyclerViewMemes?.scrollToPosition(0)
+                        }
+                    }
+
+                    // Third attempt with delay for safety
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        // Check again if fragment is still attached
+                        if (isAdded && _binding != null) {
+                            _binding?.recyclerViewMemes?.scrollToPosition(0)
+                        }
+                    }, 200)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
                 // Hide progress on error
-                binding.progressBar.visibility = View.GONE
-                binding.recyclerViewMemes.visibility = View.VISIBLE
+                _binding?.progressBar?.visibility = View.GONE
+                _binding?.recyclerViewMemes?.visibility = View.VISIBLE
 
                 Log.e("MemeFragment", "Error loading initial memes", error.toException())
             }
         })
     }
 
-    private fun setupMemeListener(memesRef: com.google.firebase.database.DatabaseReference) {
-        memesRef.addChildEventListener(object : ChildEventListener {
+    private fun setupMemeListener(memesRef: DatabaseReference) {
+        val listener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                if (!isAdded || _binding == null) return
+
                 // Skip if already in our list
                 val memeId = snapshot.key ?: return
                 if (memePositions.containsKey(memeId)) return
@@ -499,6 +566,8 @@ class MemeFragment : Fragment() {
             }
 
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                if (!isAdded || _binding == null) return
+
                 val memeId = snapshot.key ?: return
                 val position = memePositions[memeId] ?: return
 
@@ -532,6 +601,8 @@ class MemeFragment : Fragment() {
             }
 
             override fun onChildRemoved(snapshot: DataSnapshot) {
+                if (!isAdded || _binding == null) return
+
                 val memeId = snapshot.key ?: return
                 val position = memePositions[memeId] ?: return
 
@@ -545,10 +616,15 @@ class MemeFragment : Fragment() {
             }
 
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+
             override fun onCancelled(error: DatabaseError) {
                 Log.e("MemeFragment", "Error with meme listener", error.toException())
             }
-        })
+        }
+
+        // Add and track the listener
+        memesRef.addChildEventListener(listener)
+        childEventListeners[memesRef] = listener
     }
 
     private fun updatePositionsMap() {
@@ -727,6 +803,8 @@ class MemeFragment : Fragment() {
     }
 
     private fun showMemePreviewDialog() {
+        if (!isAdded || _binding == null) return
+
         // Create loading dialog
         val progressView = View.inflate(requireContext(), R.layout.loading_indicator, null)
         val progressIndicator = progressView.findViewById<CircularProgressIndicator>(R.id.progressIndicator)
@@ -738,31 +816,45 @@ class MemeFragment : Fragment() {
 
         progressDialog.show()
 
+        // Create weak reference to fragment
+        val fragmentRef = WeakReference(this)
+
         // Check image content safety using Cloud Vision API
         selectedImageUri?.let { uri ->
-            // Using coroutines for the async API call
-            lifecycleScope.launch {
+            // Using viewLifecycleOwner for coroutine scope to prevent leaks
+            viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val result = safetyChecker.checkImageSafety(uri)
 
-                    // Process the result on main thread
+                    // Check if fragment is still valid
+                    val fragment = fragmentRef.get()
+                    if (fragment == null || !fragment.isAdded || fragment._binding == null) {
+                        progressDialog.dismiss()
+                        return@launch
+                    }
+
                     progressDialog.dismiss()
 
                     if (result.isSafe) {
                         // Image is safe, proceed with upload
-                        showUploadDialog()
+                        fragment.showUploadDialog()
                     } else if (result.autoBlock) {
                         // Image is NOT safe and should be automatically blocked
-                        showContentBlockedDialog(result.issues)
+                        fragment.showContentBlockedDialog(result.issues)
                     } else {
                         // Image has potential issues but is not automatically blocked
-                        showContentWarningDialog(result.issues)
+                        fragment.showContentWarningDialog(result.issues)
                     }
                 } catch (e: Exception) {
                     progressDialog.dismiss()
+
+                    // Check if fragment is still valid
+                    val fragment = fragmentRef.get()
+                    if (fragment == null || !fragment.isAdded) return@launch
+
                     Log.e("MemeFragment", "Error checking image safety: ${e.message}", e)
                     // Show error dialog
-                    MaterialAlertDialogBuilder(requireContext())
+                    MaterialAlertDialogBuilder(fragment.requireContext())
                         .setTitle("Error")
                         .setMessage("Failed to analyze image: ${e.message}")
                         .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
@@ -771,7 +863,9 @@ class MemeFragment : Fragment() {
             }
         } ?: run {
             progressDialog.dismiss()
-            Toast.makeText(context, "No image selected", Toast.LENGTH_SHORT).show()
+            if (isAdded) {
+                Toast.makeText(context, "No image selected", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -938,5 +1032,30 @@ class MemeFragment : Fragment() {
             loadProfilePhoto()
             fetchUserTeam()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Remove all value event listeners
+        for ((ref, listener) in valueEventListeners) {
+            ref.removeEventListener(listener)
+        }
+        valueEventListeners.clear()
+
+        // Remove all child event listeners
+        for ((ref, listener) in childEventListeners) {
+            ref.removeEventListener(listener)
+        }
+        childEventListeners.clear()
+
+        // Cancel all handler callbacks
+        Handler(Looper.getMainLooper()).removeCallbacksAndMessages(null)
+
+        // Remove adapter to prevent leaks
+        _binding?.recyclerViewMemes?.adapter = null
+
+        // Clear the binding
+        _binding = null
     }
 }

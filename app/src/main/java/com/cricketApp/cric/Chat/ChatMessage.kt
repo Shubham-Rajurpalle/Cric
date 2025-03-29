@@ -6,7 +6,7 @@ data class ChatMessage(
     val senderName: String = "",
     val team: String = "",
     val message: String = "",
-    val timestamp: Long = 0,
+    val timestamp: Long = System.currentTimeMillis(),
     val imageUrl: String = "", // Added field for image URL
     var reactions: MutableMap<String, Int> = mutableMapOf<String, Int>().apply {
         put("fire", 0)

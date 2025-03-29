@@ -23,7 +23,12 @@ class Cric_shots : Fragment() {
     private lateinit var newsAdapter: NewsAdapter
     private val videoList = mutableListOf<Video>()
     private val newsList = mutableListOf<News>()
-    private val firestore = FirebaseFirestore.getInstance()
+    private var firestore: FirebaseFirestore? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        firestore = FirebaseFirestore.getInstance()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -65,10 +70,17 @@ class Cric_shots : Fragment() {
     }
 
     private fun fetchVideos() {
-        firestore.collection("videos")
+        // Check if firestore and fragment are still active
+        val firestoreInstance = firestore ?: return
+        if (!isAdded) return
+
+        firestoreInstance.collection("videos")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snapshot ->
+                // Check again if fragment is still attached
+                if (!isAdded) return@addOnSuccessListener
+
                 snapshot?.let {
                     if (!it.isEmpty) {
                         videoList.clear()
@@ -78,15 +90,18 @@ class Cric_shots : Fragment() {
                 }
             }
             .addOnFailureListener { e ->
+                // Check again if fragment is still attached
+                if (!isAdded) return@addOnFailureListener
+
                 Log.e("Firestore", "Error fetching videos", e)
             }
     }
 
     private fun fetchNews() {
-        firestore.collection("NewsPosts")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .get()
-            .addOnSuccessListener { snapshot ->
+        firestore?.collection("NewsPosts")
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.get()
+            ?.addOnSuccessListener { snapshot ->
                 snapshot?.let {
                     if (!it.isEmpty) {
                         newsList.clear()
@@ -95,7 +110,7 @@ class Cric_shots : Fragment() {
                     }
                 }
             }
-            .addOnFailureListener { e ->
+            ?.addOnFailureListener { e ->
                 Log.e("Firestore", "Error fetching news", e)
             }
     }
@@ -110,6 +125,18 @@ class Cric_shots : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+
+        // Nullify adapter references
+        binding.shotsRecyclerView.adapter = null
+        binding.newsRecycleView.adapter = null
+
+        // Clear reference to binding
         _binding = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clear Firestore reference
+        firestore = null
     }
 }

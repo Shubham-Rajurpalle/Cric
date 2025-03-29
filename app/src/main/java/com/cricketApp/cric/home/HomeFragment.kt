@@ -22,20 +22,24 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class HomeFragment : Fragment() {
-    private var binding: FragmentHomeBinding? = null
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
     private lateinit var database: FirebaseDatabase
+    private val valueEventListeners = HashMap<DatabaseReference, ValueEventListener>()
+
     private var currentUser = FirebaseAuth.getInstance().currentUser
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentHomeBinding.inflate(inflater, container, false)
-        return binding!!.root
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     private val loginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -55,10 +59,10 @@ class HomeFragment : Fragment() {
         if (isUserLoggedIn()) {
             loadProfilePhoto()
         } else {
-            binding?.profilePhoto?.setImageResource(R.drawable.profile_icon)
+            binding.profilePhoto.setImageResource(R.drawable.profile_icon)
         }
 
-        binding?.profilePhoto?.setOnClickListener {
+        binding.profilePhoto.setOnClickListener {
             if (!isUserLoggedIn()) {
                 showLoginPrompt("Login to view your profile")
                 return@setOnClickListener
@@ -73,28 +77,38 @@ class HomeFragment : Fragment() {
             transaction.commit()
         }
 
-        // Check for unread notifications
-        val notificationsRef = FirebaseDatabase.getInstance().getReference("Notifications")
-        notificationsRef.orderByChild("read").equalTo(false).addValueEventListener(object : ValueEventListener {
+        // Store reference to the ValueEventListener
+        val notificationsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
                 val unreadCount = snapshot.childrenCount.toInt()
                 if (unreadCount > 0) {
                     // Show badge with count
-                    binding?.bellIcon?.visibility = View.VISIBLE
-                    binding?.bellIcon?.text  = if (unreadCount > 99) "99+" else unreadCount.toString()
+                    _binding?.bellIcon?.visibility = View.VISIBLE
+                    _binding?.bellIcon?.text = if (unreadCount > 99) "99+" else unreadCount.toString()
                 } else {
                     // Hide badge
-                    binding?.bellIcon?.visibility = View.GONE
+                    _binding?.bellIcon?.visibility = View.GONE
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
+                // Check if fragment is still attached
+                if (!isAdded) return
             }
-        })
+        }
+
+        // Check for unread notifications
+        val notificationsRef = FirebaseDatabase.getInstance().getReference("Notifications")
+        notificationsRef.orderByChild("read").equalTo(false).addValueEventListener(notificationsListener)
+
+        // Store the listener for cleanup
+        valueEventListeners[notificationsRef] = notificationsListener
 
         // Set up bell icon click to open notifications
-        binding?.bellIcon?.setOnClickListener {
+        binding.bellIcon.setOnClickListener {
             openNotifications()
         }
 
@@ -102,30 +116,50 @@ class HomeFragment : Fragment() {
         checkUnreadNotifications()
     }
 
+    private fun addValueEventListener(reference: DatabaseReference, listener: ValueEventListener) {
+        reference.addValueEventListener(listener)
+        valueEventListeners[reference] = listener
+    }
+
+
     private fun checkUnreadNotifications() {
+        // Check if fragment is still attached and binding exists
+        if (!isAdded || _binding == null) return
+
         val notificationsRef = FirebaseDatabase.getInstance().getReference("Notifications")
-        notificationsRef.orderByChild("read").equalTo(false).addValueEventListener(object : ValueEventListener {
+
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
                 val unreadCount = snapshot.childrenCount.toInt()
                 if (unreadCount > 0) {
                     // Show badge with count
-                    binding?.bellIcon?.visibility = View.VISIBLE
-                    binding?.bellIcon?.visibility = View.VISIBLE
-                    binding?.bellIcon?.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                    _binding?.bellIcon?.visibility = View.VISIBLE
+                    _binding?.bellIcon?.text = if (unreadCount > 99) "99+" else unreadCount.toString()
                 } else {
                     // Hide badge count, but keep icon visible
-                    binding?.bellIcon?.visibility = View.VISIBLE
-                    binding?.bellIcon?.visibility = View.GONE
+                    _binding?.bellIcon?.visibility = View.VISIBLE
+                    _binding?.bellIcon?.visibility = View.GONE
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
                 // Handle error - keep icon visible but no badge
-                binding?.bellIcon?.visibility = View.VISIBLE
-                binding?.bellIcon?.visibility = View.GONE
+                _binding?.bellIcon?.visibility = View.VISIBLE
+                _binding?.bellIcon?.visibility = View.GONE
             }
-        })
+        }
+
+        // Add and track the listener
+        notificationsRef.orderByChild("read").equalTo(false).addValueEventListener(listener)
+        valueEventListeners[notificationsRef] = listener
     }
+
 
     private fun openNotifications() {
         val intent = Intent(requireContext(), NotificationActivity::class.java)
@@ -149,36 +183,49 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-    private fun loadProfilePhoto(){
-        val userId=currentUser?.uid?:return
+    private fun loadProfilePhoto() {
+        if (!isAdded || _binding == null) return
+
+        val userId = currentUser?.uid ?: return
         val userRef = database.getReference("Users/$userId")
 
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                if (!isAdded || _binding == null) return
+
                 val photoUrl = snapshot.child("profilePhoto").getValue(String::class.java)
                 if (!photoUrl.isNullOrEmpty()) {
-                    Glide.with(this@HomeFragment)
-                        .load(photoUrl)
-                        .placeholder(R.drawable.profile_empty)
-                        .into(binding!!.profilePhoto)
+                    try {
+                        Glide.with(requireContext())
+                            .load(photoUrl)
+                            .placeholder(R.drawable.profile_empty)
+                            .into(binding.profilePhoto)
+                    } catch (e: Exception) {
+                        Log.e("HomeFragment", "Error loading profile image", e)
+                    }
                 } else {
                     Log.e("Profile", "No profile photo found")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ChatFragment", "Error loading profile photo", error.toException())
+                Log.e("HomeFragment", "Error loading profile photo", error.toException())
             }
-        })
+        }
+
+        // Add and track listener
+        userRef.addListenerForSingleValueEvent(listener)
+        valueEventListeners[userRef] = listener
     }
+
 
     private fun setupTabLayout() {
         val adapter = ViewPagerAdapter(this)
-        binding?.viewPager?.adapter = adapter
-        binding?.viewPager?.isUserInputEnabled ?: true
+        binding.viewPager.adapter = adapter
+        binding.viewPager.isUserInputEnabled ?: true
 
-        binding?.let {
-            TabLayoutMediator(it.tabsHomePage, binding!!.viewPager) { tab, position ->
+        binding.let {
+            TabLayoutMediator(it.tabsHomePage, binding.viewPager) { tab, position ->
                 tab.text = when (position) {
                     0 -> "CricShots"
                     1 -> "Live"
@@ -187,5 +234,21 @@ class HomeFragment : Fragment() {
                 }
             }.attach()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Remove all listeners
+        for ((ref, listener) in valueEventListeners) {
+            ref.removeEventListener(listener)
+        }
+        valueEventListeners.clear()
+
+        // Clear adapter references
+        _binding?.viewPager?.adapter = null
+
+        // Clear binding reference
+        _binding = null
     }
 }

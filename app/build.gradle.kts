@@ -142,4 +142,7 @@ dependencies {
 
     //Notification Firebase Cloud Messaging
     implementation ("com.google.firebase:firebase-messaging:23.2.1")
+
+    //Leak Canery
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
 }
