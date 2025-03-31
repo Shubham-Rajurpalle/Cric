@@ -21,6 +21,11 @@ import com.cricketApp.cric.Meme.CloudVisionSafetyChecker
 import com.cricketApp.cric.Moderation.ChatModerationService
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivityCommentBinding
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.firebase.auth.FirebaseAuth
@@ -47,6 +52,8 @@ class CommentActivity : AppCompatActivity() {
     private lateinit var storageRef: StorageReference
     private lateinit var moderationService: ChatModerationService
     private lateinit var safetyChecker: CloudVisionSafetyChecker
+    private val TAG = "AdMobActivity"
+    private lateinit var adView: AdView
 
     // Make these properties public so MessageActionsHandler can access them
     var messageId: String = ""
@@ -139,6 +146,27 @@ class CommentActivity : AppCompatActivity() {
         binding.buttonBack.setOnClickListener {
             finish()
         }
+
+        MobileAds.initialize(this) {
+            loadBannerAd()
+        }
+    }
+
+    private fun loadBannerAd() {
+        adView =binding.adView
+        val adRequest = AdRequest.Builder().build()
+
+        adView.adListener = object : AdListener() {
+            override fun onAdLoaded() {
+                Log.d(TAG, "Ad loaded")
+            }
+            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                Log.e(TAG, "Ad failed to load: $loadAdError")
+            }
+        }
+
+        adView.loadAd(adRequest)
+
     }
 
     private fun isUserLoggedIn(): Boolean {

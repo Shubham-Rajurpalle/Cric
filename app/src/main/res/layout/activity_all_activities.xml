@@ -25,15 +25,15 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewAllActivities"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/adView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appBarLayout"
-        tools:listitem="@layout/item_user_activity" />
+        tools:listitem="@layout/activity_all_activities"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -61,9 +61,9 @@
         <ImageView
             android:layout_width="120dp"
             android:layout_height="120dp"
-            android:src="@drawable/icc_logo"
             android:alpha="0.5"
-            android:contentDescription="Empty state icon" />
+            android:contentDescription="Empty state icon"
+            android:src="@drawable/icc_logo" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -82,5 +82,20 @@
             android:textColor="@android:color/darker_gray" />
 
     </LinearLayout>
+
+
+
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        app:adSize="BANNER"
+        app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+        app:layout_constraintBottom_toBottomOf="@+id/recyclerViewAllActivities"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

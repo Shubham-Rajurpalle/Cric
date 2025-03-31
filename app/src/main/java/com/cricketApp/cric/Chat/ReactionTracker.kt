@@ -8,6 +8,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
+import java.util.Locale
 
 /**
  * Utility class to track and manage user reactions to content
@@ -547,8 +548,9 @@ object ReactionTracker {
      */
     private fun updateTeamStats(team: String, isHit: Boolean, isRemoval: Boolean = false) {
         if (team.isEmpty()) return
+        var lowerCaseTeam= team.lowercase(Locale.getDefault())
 
-        val teamStatsRef = FirebaseDatabase.getInstance().getReference("TeamStats/$team")
+        val teamStatsRef = FirebaseDatabase.getInstance().getReference("teams/$lowerCaseTeam")
         val field = if (isHit) "hits" else "misses"
 
         teamStatsRef.child(field).runTransaction(object : Transaction.Handler {

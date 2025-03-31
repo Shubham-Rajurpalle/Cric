@@ -7,12 +7,12 @@ import android.util.Log
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.cricketApp.cric.databinding.ActivityVideoPlayerBinding
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
 
 class VideoPlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVideoPlayerBinding
@@ -65,8 +65,11 @@ class VideoPlayerActivity : AppCompatActivity() {
 
                 // Buffering indicator
                 exoPlayer.addListener(object : Player.Listener {
-                    override fun onPlaybackStateChanged(state: Int) {
-                        binding.progressBar.visibility = if (state == Player.STATE_BUFFERING) View.VISIBLE else View.GONE
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        binding.progressBar.visibility = if (playbackState == Player.STATE_BUFFERING)
+                            View.VISIBLE
+                        else
+                            View.GONE
                     }
                 })
             }
@@ -93,8 +96,8 @@ class VideoPlayerActivity : AppCompatActivity() {
                 if (document.exists()) {
                     val likes = document.getLong("likes") ?: 0
                     val shares = document.getLong("shares") ?: 0
-                    binding.likeCount.text = likes.toString()
-                    binding.shareCount.text = shares.toString()
+                    binding.likeCount.text = "$likes "
+                    binding.shareCount.text = "$shares "
                 }
             }
             .addOnFailureListener { e ->
@@ -106,8 +109,9 @@ class VideoPlayerActivity : AppCompatActivity() {
         firestore.collection("videos").document(videoId)
             .update("likes", FieldValue.increment(1))
             .addOnSuccessListener {
-                val currentLikes = binding.likeCount.text.toString().toIntOrNull() ?: 0
-                binding.likeCount.text = (currentLikes + 1).toString()
+                val currentText = binding.likeCount.text.toString()
+                val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
+                binding.likeCount.text = "${currentLikes + 1} likes"
             }
             .addOnFailureListener { e ->
                 Log.e("VideoPlayerActivity", "Error updating like count", e)
@@ -118,8 +122,9 @@ class VideoPlayerActivity : AppCompatActivity() {
         firestore.collection("videos").document(videoId)
             .update("shares", FieldValue.increment(1))
             .addOnSuccessListener {
-                val currentShares = binding.shareCount.text.toString().toIntOrNull() ?: 0
-                binding.shareCount.text = (currentShares + 1).toString()
+                val currentText = binding.shareCount.text.toString()
+                val currentShares = currentText.substringBefore(" ").toIntOrNull() ?: 0
+                binding.shareCount.text = "${currentShares + 1} shares"
             }
             .addOnFailureListener { e ->
                 Log.e("VideoPlayerActivity", "Error updating share count", e)
@@ -127,19 +132,32 @@ class VideoPlayerActivity : AppCompatActivity() {
 
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "Check out this amazing video: $videoUrl")
+            putExtra(Intent.EXTRA_TEXT, "Check out this amazing cricket video: $videoUrl")
         }
         startActivity(Intent.createChooser(shareIntent, "Share Video"))
     }
 
+    override fun onResume() {
+        super.onResume()
+        player?.playWhenReady = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        player?.playWhenReady = false
+    }
+
     override fun onStop() {
         super.onStop()
-        player?.release()
-        player = null
+        releasePlayer()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        releasePlayer()
+    }
+
+    private fun releasePlayer() {
         player?.release()
         player = null
     }

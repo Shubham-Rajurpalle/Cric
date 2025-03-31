@@ -12,6 +12,11 @@ import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.Chat.FirebaseDataHelper
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivityAllActivitiesBinding
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -23,6 +28,8 @@ class AllActivitiesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAllActivitiesBinding
     private lateinit var activitiesAdapter: UserActivityAdapter
     private val allActivities = ArrayList<UserActivity>()
+    private val TAG = "AdMobActivity"
+    private lateinit var adView: AdView
 
     private val currentUser = FirebaseAuth.getInstance().currentUser
 
@@ -41,6 +48,27 @@ class AllActivitiesActivity : AppCompatActivity() {
 
         // Load Activities
         loadAllUserActivities()
+
+        MobileAds.initialize(this) {
+            loadBannerAd()
+        }
+    }
+
+    private fun loadBannerAd() {
+        adView =binding.adView
+        val adRequest = AdRequest.Builder().build()
+
+        adView.adListener = object : AdListener() {
+            override fun onAdLoaded() {
+                Log.d(TAG, "Ad loaded")
+            }
+            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                Log.e(TAG, "Ad failed to load: $loadAdError")
+            }
+        }
+
+        adView.loadAd(adRequest)
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

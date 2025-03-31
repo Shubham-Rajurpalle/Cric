@@ -61,6 +61,9 @@ class hitsFragment : Fragment() {
             databaseRef?.removeEventListener(valueEventListener!!)
         }
 
+        // Get reference to TeamStats for up-to-date hit/miss data
+        val teamStatsRef = FirebaseDatabase.getInstance().getReference("teams")
+
         valueEventListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 // Check if fragment is still active before processing data
@@ -68,6 +71,7 @@ class hitsFragment : Fragment() {
 
                 allTeams.clear()
 
+                // First get all teams data (for names, logos, etc.)
                 for (dataSnapshot in snapshot.children) {
                     val team = dataSnapshot.getValue(TeamData::class.java)
                     team?.let {
@@ -77,10 +81,32 @@ class hitsFragment : Fragment() {
                     }
                 }
 
-                // Sort in descending order by hits
-                allTeams.sortByDescending { it.hits }
+                // Now fetch the hit/miss counts from TeamStats
+                teamStatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(statsSnapshot: DataSnapshot) {
+                        // Update hit/miss values for each team
+                        for (team in allTeams) {
+                            val teamStatsData = statsSnapshot.child(team.id)
+                            if (teamStatsData.exists()) {
+                                // Update with latest hit/miss counts
+                                team.hits = teamStatsData.child("hits").getValue(Int::class.java) ?: 0
+                                team.misses = teamStatsData.child("misses").getValue(Int::class.java) ?: 0
+                            }
+                        }
 
-                updateUI()
+                        // Sort in descending order by hits
+                        allTeams.sortByDescending { it.hits }
+
+                        // Update UI with the combined data
+                        updateUI()
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        // Just log the error but continue with teams data we have
+                        if (!isFragmentActive || _binding == null) return
+                        updateUI() // Still update UI with the teams data we have
+                    }
+                })
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -91,8 +117,8 @@ class hitsFragment : Fragment() {
             }
         }
 
-        // Use startAt(1) to only get teams with at least 1 hit
-        databaseRef?.orderByChild("hits")?.startAt(1.0)?.addValueEventListener(valueEventListener!!)
+        // Get all teams without filtering
+        databaseRef?.addValueEventListener(valueEventListener!!)
     }
 
     private fun updateUI() {

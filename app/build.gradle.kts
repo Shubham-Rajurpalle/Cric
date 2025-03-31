@@ -99,11 +99,11 @@ dependencies {
     implementation ("androidx.recyclerview:recyclerview:1.2.1")
 
     // Media3 for playing videos (replacing ExoPlayer)
-    implementation ("com.google.android.exoplayer:exoplayer:2.18.7")
     implementation ("androidx.media3:media3-exoplayer:1.2.1")
     implementation ("androidx.media3:media3-ui:1.2.1")
     implementation ("androidx.media3:media3-exoplayer-dash:1.2.1")
     implementation ("androidx.media3:media3-exoplayer-hls:1.2.1")
+
 
     //Glide for Thumbnail loading
     implementation ("com.github.bumptech.glide:glide:4.15.1")
@@ -145,4 +145,7 @@ dependencies {
 
     //Leak Canery
     debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
+
+    //Admob
+    implementation ("com.google.android.gms:play-services-ads:22.0.0")
 }

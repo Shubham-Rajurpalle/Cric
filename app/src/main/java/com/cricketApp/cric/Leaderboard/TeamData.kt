@@ -4,6 +4,6 @@ data class TeamData(
     var id: String = "",
     val name: String = "",
     val logoUrl: String = "",
-    val hits: Int = 0,
-    val misses: Int = 0
+    var hits: Int = 0,
+    var misses: Int = 0
 )

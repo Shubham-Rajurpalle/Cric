@@ -6,6 +6,11 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.databinding.ActivityNewsDetailsBinding
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.firestore.FirebaseFirestore
 
 class NewsDetailsActivity : AppCompatActivity() {
@@ -13,6 +18,8 @@ class NewsDetailsActivity : AppCompatActivity() {
     private lateinit var binding: ActivityNewsDetailsBinding
     private val firestore = FirebaseFirestore.getInstance()
     private var newsId: String? = null
+    private val TAG = "AdMobActivity"
+    private lateinit var adView: AdView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +39,27 @@ class NewsDetailsActivity : AppCompatActivity() {
         binding.shareButton.setOnClickListener {
             shareNews()
         }
+
+        MobileAds.initialize(this) {
+            loadBannerAd()
+        }
+    }
+
+    private fun loadBannerAd() {
+        adView =binding.adView
+        val adRequest = AdRequest.Builder().build()
+
+        adView.adListener = object : AdListener() {
+            override fun onAdLoaded() {
+                Log.d(TAG, "Ad loaded")
+            }
+            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                Log.e(TAG, "Ad failed to load: $loadAdError")
+            }
+        }
+
+        adView.loadAd(adRequest)
+
     }
 
     private fun fetchNewsDetails(newsId: String) {
