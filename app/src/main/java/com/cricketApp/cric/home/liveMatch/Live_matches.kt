@@ -1,7 +1,6 @@
     package com.cricketApp.cric.home.liveMatch
 
     import android.os.Bundle
-    import android.util.Log
     import android.view.LayoutInflater
     import android.view.View
     import android.view.ViewGroup
@@ -65,7 +64,7 @@
             viewModel.matches.observe(viewLifecycleOwner) { matches ->
                 if (!isFragmentActive || _binding == null) return@observe
 
-                Log.d("LiveMatches", "Received ${matches.size} matches")
+            //    Log.d("LiveMatches", "Received ${matches.size} matches")
 
                 // Only show empty state when list is truly empty
                 if (matches.isEmpty()) {
@@ -99,7 +98,7 @@
 
                 errorMsg?.let {
                     Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
-                    Log.e("LiveMatches", "Error: $it")
+               //     Log.e("LiveMatches", "Error: $it")
                 }
             }
         }

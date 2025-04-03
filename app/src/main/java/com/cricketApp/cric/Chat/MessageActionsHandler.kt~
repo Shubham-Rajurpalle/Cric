@@ -398,7 +398,7 @@ object MessageActionsHandler {
                         val messageRef = database.getReference("NoBallZone/$messageType/$messageId")
                         messageRef.removeValue()
                             .addOnSuccessListener {
-                            //    Log.d(TAG, "Automatically removed message due to ${reportCount} reports for '${reason}'")
+                                Log.d(TAG, "Automatically removed message due to ${reportCount} reports for '${reason}'")
                             }
                     }
                 }

@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -38,28 +39,22 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.messaging.BuildConfig
 import com.google.firebase.messaging.FirebaseMessaging
 
 
 class Home : AppCompatActivity() {
-
     private lateinit var binding: ActivityHomeBinding
     private lateinit var notificationService: NotificationService
     private val valueEventListeners = HashMap<DatabaseReference, ValueEventListener>()
     private val TAG = "AdMobActivity"
     private lateinit var adView: AdView
 
-
     // Add this permission launcher
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            Log.d("Permissions", "Notification permission granted")
-            initializeNotificationService()
-        } else {
-            Log.d("Permissions", "Notification permission denied")
-            // Initialize service anyway - it will just log without showing notifications
             initializeNotificationService()
         }
     }
@@ -78,13 +73,9 @@ class Home : AppCompatActivity() {
             insets
         }
 
-        // In your MainActivity.onCreate() or Application.onCreate()
         subscribeToNotifications()
         handleNotificationNavigation(intent)
-
-        // Replace with permission check
         checkNotificationPermission()
-
         loadProfileImageForBottomNav()
         setupBottomNav()
 
@@ -118,15 +109,18 @@ class Home : AppCompatActivity() {
         }
 
         FirebaseMessaging.getInstance().subscribeToTopic("all")
+        FirebaseMessaging.getInstance().subscribeToTopic("all")
             .addOnSuccessListener {
-                Log.d(TAG, "Successfully subscribed to 'all' topic")
+                if (BuildConfig.DEBUG) {
+                //    Log.d(TAG, "Successfully subscribed to 'all' topic")
+                }
             }
             .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to subscribe to 'all' topic: ${e.message}")
+                if (BuildConfig.DEBUG) {
+                //    Log.e(TAG, "Failed to subscribe to 'all' topic: ${e.message}")
+                }
             }
     }
-
-
 
     private fun loadBannerAd() {
         adView =binding.adView
@@ -134,17 +128,16 @@ class Home : AppCompatActivity() {
 
         adView.adListener = object : AdListener() {
             override fun onAdLoaded() {
-                Log.d(TAG, "Ad loaded")
+                adView.visibility= View.VISIBLE
             }
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                Log.e(TAG, "Ad failed to load: $loadAdError")
+                adView.visibility=View.GONE
             }
         }
 
         adView.loadAd(adRequest)
 
     }
-
 
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -154,7 +147,6 @@ class Home : AppCompatActivity() {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     // Permission already granted
-                    Log.d("Permissions", "Notification permission already granted")
                     initializeNotificationService()
                 }
                 shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS) -> {
@@ -173,7 +165,7 @@ class Home : AppCompatActivity() {
                 }
                 else -> {
                     // First time asking - request directly
-                    Log.d("Permissions", "Requesting notification permission")
+                 //   Log.d("Permissions", "Requesting notification permission")
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
@@ -185,12 +177,12 @@ class Home : AppCompatActivity() {
 
     fun subscribeToNotifications() {
         // Subscribe all users to the general "trending" topic
-        com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("trending")
+        FirebaseMessaging.getInstance().subscribeToTopic("trending")
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Log.d("FCM", "Subscribed to trending notifications")
+                //    Log.d("FCM", "Subscribed to trending notifications")
                 } else {
-                    Log.e("FCM", "Failed to subscribe to trending notifications")
+                //    Log.e("FCM", "Failed to subscribe to trending notifications")
                 }
             }
 
@@ -206,16 +198,16 @@ class Home : AppCompatActivity() {
                             com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("team_$team")
                                 .addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
-                                        Log.d("FCM", "Subscribed to team $team notifications")
+                                    //    Log.d("FCM", "Subscribed to team $team notifications")
                                     } else {
-                                        Log.e("FCM", "Failed to subscribe to team $team notifications")
+                                    //    Log.e("FCM", "Failed to subscribe to team $team notifications")
                                     }
                                 }
                         }
                     }
 
                     override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
-                        Log.e("FCM", "Failed to fetch user team: ${error.message}")
+                    //    Log.e("FCM", "Failed to fetch user team: ${error.message}")
                     }
                 }
             )
@@ -284,7 +276,6 @@ class Home : AppCompatActivity() {
                     }
                 }
             }
-
             // Clear navigation flags
             intent.removeExtra("SHOULD_NAVIGATE")
         }
@@ -351,7 +342,7 @@ class Home : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("Home", "Error loading profile photo", error.toException())
+                 //   Log.e("Home", "Error loading profile photo", error.toException())
                 }
             }
 
@@ -359,7 +350,6 @@ class Home : AppCompatActivity() {
             valueEventListeners[userRef] = listener
         }
     }
-
 
     private fun isUserLoggedIn(): Boolean {
         return FirebaseAuth.getInstance().currentUser != null
@@ -402,7 +392,7 @@ class Home : AppCompatActivity() {
 
             transaction.commitAllowingStateLoss()
         } catch (e: Exception) {
-            Log.e("Home", "Error switching fragment: ${e.message}", e)
+        //    Log.e("Home", "Error switching fragment: ${e.message}", e)
         }
     }
 

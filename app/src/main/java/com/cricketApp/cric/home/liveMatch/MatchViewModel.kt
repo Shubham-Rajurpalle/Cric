@@ -29,7 +29,7 @@ class MatchViewModel(private val context: Context) : ViewModel() {
 
         repository.fetchLiveMatches { matchList ->
             if (matchList != null) {
-                _matches.postValue(matchList)
+                _matches.postValue(matchList!!)
             } else {
                 _error.postValue("Failed to load matches")
             }

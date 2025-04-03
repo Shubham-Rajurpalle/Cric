@@ -85,7 +85,7 @@ class HomeFragment : Fragment() {
                 transaction.addToBackStack(null)
                 transaction.commit()
             } catch (e: Exception) {
-                Log.e("HomeFragment", "Error navigating to profile", e)
+             //   Log.e("HomeFragment", "Error navigating to profile", e)
             }
         }
 
@@ -184,15 +184,15 @@ class HomeFragment : Fragment() {
                             .placeholder(R.drawable.profile_empty)
                             .into(binding.profilePhoto)
                     } catch (e: Exception) {
-                        Log.e("HomeFragment", "Error loading profile image", e)
+                    //    Log.e("HomeFragment", "Error loading profile image", e)
                     }
                 } else {
-                    Log.e("Profile", "No profile photo found")
+                //    Log.e("Profile", "No profile photo found")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("HomeFragment", "Error loading profile photo", error.toException())
+            //    Log.e("HomeFragment", "Error loading profile photo", error.toException())
             }
         }
 
@@ -219,7 +219,7 @@ class HomeFragment : Fragment() {
                 }
             }.attach()
         } catch (e: Exception) {
-            Log.e("HomeFragment", "Error setting up tab layout", e)
+        //    Log.e("HomeFragment", "Error setting up tab layout", e)
         }
     }
 
@@ -250,9 +250,8 @@ class HomeFragment : Fragment() {
             // If any handlers are used, cancel them here
             // handler?.removeCallbacksAndMessages(null)
         } catch (e: Exception) {
-            Log.e("HomeFragment", "Error during cleanup", e)
+        //    Log.e("HomeFragment", "Error during cleanup", e)
         }
-
         // Clear binding reference
         _binding = null
     }

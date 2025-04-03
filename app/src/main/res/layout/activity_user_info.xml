@@ -155,20 +155,24 @@
 
                     <LinearLayout
                         android:layout_width="@dimen/_250sdp"
+                        android:layout_height="wrap_content"
                         android:gravity="center_horizontal"
                         android:orientation="vertical"
-                        android:layout_height="wrap_content">
+                        app:layout_constraintBottom_toBottomOf="@+id/loadingLayout"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Country"
-                            android:layout_weight="1"
+                            android:layout_gravity="left"
                             android:layout_marginTop="@dimen/_7sdp"
                             android:layout_marginBottom="@dimen/_3sdp"
-                            android:textSize="@dimen/_13sdp"
-                            android:layout_gravity="left"
-                            android:textColor="@color/white"/>
+                            android:layout_weight="1"
+                            android:text="Country"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_13sdp" />
 
 
                         <com.google.android.material.card.MaterialCardView

@@ -289,15 +289,15 @@ class MemeFragment : Fragment() {
                         }
                     } catch (e: Exception) {
                         // Handle Glide exceptions
-                        Log.e("MemeFragment", "Error loading profile image", e)
+                    //    Log.e("MemeFragment", "Error loading profile image", e)
                     }
                 } else {
-                    Log.e("Profile", "No profile photo found")
+                //    Log.e("Profile", "No profile photo found")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("MemeFragment", "Error loading profile photo", error.toException())
+            //    Log.e("MemeFragment", "Error loading profile photo", error.toException())
             }
         }
 
@@ -538,7 +538,7 @@ class MemeFragment : Fragment() {
                 _binding?.progressBar?.visibility = View.GONE
                 _binding?.recyclerViewMemes?.visibility = View.VISIBLE
 
-                Log.e("MemeFragment", "Error loading initial memes", error.toException())
+            //    Log.e("MemeFragment", "Error loading initial memes", error.toException())
             }
         })
     }
@@ -618,7 +618,7 @@ class MemeFragment : Fragment() {
             override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("MemeFragment", "Error with meme listener", error.toException())
+            //    Log.e("MemeFragment", "Error with meme listener", error.toException())
             }
         }
 
@@ -678,7 +678,7 @@ class MemeFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("MemeFragment", "Error loading top hit memes", error.toException())
+            //    Log.e("MemeFragment", "Error loading top hit memes", error.toException())
             }
         })
     }
@@ -726,7 +726,7 @@ class MemeFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("MemeFragment", "Error loading top miss memes", error.toException())
+            //    Log.e("MemeFragment", "Error loading top miss memes", error.toException())
             }
         })
     }
@@ -773,7 +773,7 @@ class MemeFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("MemeFragment", "Error loading team memes", error.toException())
+           //     Log.e("MemeFragment", "Error loading team memes", error.toException())
             }
         })
     }
@@ -785,14 +785,14 @@ class MemeFragment : Fragment() {
         }
 
         try {
-            Log.d("MemeFragment", "Opening comments for meme ID: ${meme.id}")
+        //    Log.d("MemeFragment", "Opening comments for meme ID: ${meme.id}")
             val intent = Intent(requireContext(), CommentActivity::class.java).apply {
                 putExtra("MESSAGE_ID", meme.id)
                 putExtra("MESSAGE_TYPE", "meme")
             }
             startActivity(intent)
         } catch (e: Exception) {
-            Log.e("MemeFragment", "Error opening comment activity: ${e.message}", e)
+        //    Log.e("MemeFragment", "Error opening comment activity: ${e.message}", e)
             Toast.makeText(requireContext(), "Unable to open comments", Toast.LENGTH_SHORT).show()
         }
     }
@@ -852,7 +852,7 @@ class MemeFragment : Fragment() {
                     val fragment = fragmentRef.get()
                     if (fragment == null || !fragment.isAdded) return@launch
 
-                    Log.e("MemeFragment", "Error checking image safety: ${e.message}", e)
+               //     Log.e("MemeFragment", "Error checking image safety: ${e.message}", e)
                     // Show error dialog
                     MaterialAlertDialogBuilder(fragment.requireContext())
                         .setTitle("Error")
@@ -955,7 +955,7 @@ class MemeFragment : Fragment() {
                 }
                 .addOnFailureListener { e ->
                     // Handle error
-                    Log.e("MemeFragment", "Meme upload failed: ${e.message}")
+                //    Log.e("MemeFragment", "Meme upload failed: ${e.message}")
                     onComplete?.invoke(false)
                 }
         }
@@ -994,12 +994,12 @@ class MemeFragment : Fragment() {
                     }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("MemeFragment", "Error posting meme", it)
+                    //    Log.e("MemeFragment", "Error posting meme", it)
                     }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("MemeFragment", "User data fetch cancelled", error.toException())
+            //    Log.e("MemeFragment", "User data fetch cancelled", error.toException())
             }
         })
     }

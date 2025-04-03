@@ -28,7 +28,7 @@ object FirebaseDataHelper {
             val commentsSnapshot = snapshot.child("comments")
 
             // Log how many children we're dealing with for debugging
-            Log.d(TAG, "Comments node has ${commentsSnapshot.childrenCount} children")
+            // Log.d(TAG, "Comments node has ${commentsSnapshot.childrenCount} children")
 
             // Iterate through each comment directly - this works for both Map and List structures
             for (childSnapshot in commentsSnapshot.children) {
@@ -92,17 +92,17 @@ object FirebaseDataHelper {
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error parsing individual comment: ${e.message}")
+                  //  Log.e(TAG, "Error parsing individual comment: ${e.message}")
                 }
             }
 
             // Sort comments by timestamp for consistency
             comments.sortBy { it.timestamp }
 
-            Log.d(TAG, "Successfully parsed ${comments.size} comments")
+        //    Log.d(TAG, "Successfully parsed ${comments.size} comments")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing comments: ${e.message}")
+        //    Log.e(TAG, "Error parsing comments: ${e.message}")
         }
 
         return comments
@@ -178,7 +178,7 @@ object FirebaseDataHelper {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing chat message: ${e.message}")
+         //   Log.e(TAG, "Error parsing chat message: ${e.message}")
         }
 
         return null
@@ -280,7 +280,7 @@ object FirebaseDataHelper {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing poll message: ${e.message}")
+        //    Log.e(TAG, "Error parsing poll message: ${e.message}")
         }
 
         return null
@@ -354,7 +354,7 @@ object FirebaseDataHelper {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing meme message: ${e.message}")
+        //    Log.e(TAG, "Error parsing meme message: ${e.message}")
         }
 
         return null

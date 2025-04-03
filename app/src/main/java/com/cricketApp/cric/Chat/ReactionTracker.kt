@@ -90,7 +90,7 @@ object ReactionTracker {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error checking existing reaction: ${error.message}")
+            //    Log.e(TAG, "Error checking existing reaction: ${error.message}")
                 onComplete(false, 0)
             }
         })
@@ -127,11 +127,11 @@ object ReactionTracker {
                             onComplete(true, newValue)
                         }
                         .addOnFailureListener {
-                            Log.e(TAG, "Error saving user reaction: ${it.message}")
+                        //    Log.e(TAG, "Error saving user reaction: ${it.message}")
                             onComplete(false, 0)
                         }
                 } else {
-                    Log.e(TAG, "Error updating reaction: ${error?.message}")
+                //    Log.e(TAG, "Error updating reaction: ${error?.message}")
                     onComplete(false, 0)
                 }
 
@@ -184,11 +184,11 @@ object ReactionTracker {
                             onComplete(true, newValue)
                         }
                         .addOnFailureListener {
-                            Log.e(TAG, "Error removing user reaction: ${it.message}")
+                        //    Log.e(TAG, "Error removing user reaction: ${it.message}")
                             onComplete(false, 0)
                         }
                 } else {
-                    Log.e(TAG, "Error updating reaction: ${error?.message}")
+                //    Log.e(TAG, "Error updating reaction: ${error?.message}")
                     onComplete(false, 0)
                 }
             }
@@ -250,7 +250,7 @@ object ReactionTracker {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error checking existing hit/miss: ${error.message}")
+            //    Log.e(TAG, "Error checking existing hit/miss: ${error.message}")
                 onComplete(false, 0)
             }
         })
@@ -303,11 +303,11 @@ object ReactionTracker {
                                     onComplete(true, newValue)
                                 }
                                 .addOnFailureListener {
-                                    Log.e(TAG, "Error saving user hit/miss: ${it.message}")
+                                //    Log.e(TAG, "Error saving user hit/miss: ${it.message}")
                                     onComplete(false, 0)
                                 }
                         } else {
-                            Log.e(TAG, "Error updating hit/miss: ${error?.message}")
+                        //    Log.e(TAG, "Error updating hit/miss: ${error?.message}")
                             onComplete(false, 0)
                         }
 
@@ -323,7 +323,7 @@ object ReactionTracker {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error getting team info: ${error.message}")
+            //    Log.e(TAG, "Error getting team info: ${error.message}")
                 onComplete(false, 0)
             }
         })
@@ -383,11 +383,11 @@ object ReactionTracker {
                                     onComplete(true, newValue)
                                 }
                                 .addOnFailureListener {
-                                    Log.e(TAG, "Error removing user hit/miss: ${it.message}")
+                                //    Log.e(TAG, "Error removing user hit/miss: ${it.message}")
                                     onComplete(false, 0)
                                 }
                         } else {
-                            Log.e(TAG, "Error updating hit/miss: ${error?.message}")
+                        //    Log.e(TAG, "Error updating hit/miss: ${error?.message}")
                             onComplete(false, 0)
                         }
                     }
@@ -395,7 +395,7 @@ object ReactionTracker {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error getting team info: ${error.message}")
+            //    Log.e(TAG, "Error getting team info: ${error.message}")
                 onComplete(false, 0)
             }
         })
@@ -413,7 +413,7 @@ object ReactionTracker {
         count: Int
     ) {
         if (count < 100) return
-        Log.d(TAG, "Creating milestone notification for content reaching $count")
+    //    Log.d(TAG, "Creating milestone notification for content reaching $count")
 
         // Get full content info to create rich notification
         val contentRef = getFullContentRef(contentType, contentId, parentId)
@@ -452,7 +452,7 @@ object ReactionTracker {
 
                 notificationsRef.setValue(notification)
                     .addOnSuccessListener {
-                        Log.d(TAG, "Created milestone notification for $contentType with ID $contentId")
+                     //   Log.d(TAG, "Created milestone notification for $contentType with ID $contentId")
 
                         // IMPORTANT ADDITION: Send cloud message to all users
                         sendCloudNotification(
@@ -467,12 +467,12 @@ object ReactionTracker {
                         )
                     }
                     .addOnFailureListener {
-                        Log.e(TAG, "Failed to create notification: ${it.message}")
+                   //     Log.e(TAG, "Failed to create notification: ${it.message}")
                     }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error getting content for notification: ${error.message}")
+            //    Log.e(TAG, "Error getting content for notification: ${error.message}")
             }
         })
     }
@@ -535,10 +535,10 @@ object ReactionTracker {
 
         cloudNotificationRef.setValue(notificationData)
             .addOnSuccessListener {
-                Log.d(TAG, "Cloud notification created for $contentType with ID $contentId")
+            //    Log.d(TAG, "Cloud notification created for $contentType with ID $contentId")
             }
             .addOnFailureListener {
-                Log.e(TAG, "Failed to create cloud notification: ${it.message}")
+            //    Log.e(TAG, "Failed to create cloud notification: ${it.message}")
             }
     }
 
@@ -570,7 +570,7 @@ object ReactionTracker {
 
             override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
                 if (error != null) {
-                    Log.e(TAG, "Error updating team stats: ${error.message}")
+                //    Log.e(TAG, "Error updating team stats: ${error.message}")
                 }
             }
         })

@@ -60,10 +60,10 @@ class AllActivitiesActivity : AppCompatActivity() {
 
         adView.adListener = object : AdListener() {
             override fun onAdLoaded() {
-                Log.d(TAG, "Ad loaded")
+             //   Log.d(TAG, "Ad loaded")
             }
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                Log.e(TAG, "Ad failed to load: $loadAdError")
+            //    Log.e(TAG, "Ad failed to load: $loadAdError")
             }
         }
 
@@ -183,7 +183,7 @@ class AllActivitiesActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("AllActivitiesActivity", "Error loading chats", error.toException())
+                //    Log.e("AllActivitiesActivity", "Error loading chats", error.toException())
                     onComplete()
                 }
             })
@@ -218,7 +218,7 @@ class AllActivitiesActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("AllActivitiesActivity", "Error loading memes", error.toException())
+                //    Log.e("AllActivitiesActivity", "Error loading memes", error.toException())
                     onComplete()
                 }
             })
@@ -256,7 +256,7 @@ class AllActivitiesActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("AllActivitiesActivity", "Error loading polls", error.toException())
+                //    Log.e("AllActivitiesActivity", "Error loading polls", error.toException())
                     onComplete()
                 }
             })
@@ -324,7 +324,7 @@ class AllActivitiesActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("AllActivitiesActivity", "Error loading comments from $path", error.toException())
+            //    Log.e("AllActivitiesActivity", "Error loading comments from $path", error.toException())
                 onComplete()
             }
         })

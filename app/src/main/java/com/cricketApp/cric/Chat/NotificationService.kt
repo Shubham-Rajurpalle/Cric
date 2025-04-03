@@ -39,7 +39,7 @@ class NotificationService(private val context: Context) {
         private const val REQUEST_CODE_BASE = 1000
 
         // Cooldown period between notifications (15 minutes in milliseconds)
-        private const val NOTIFICATION_COOLDOWN = 0 // 15 minutes
+        private const val NOTIFICATION_COOLDOWN = 60*5*1000 // 15 minutes
 
         // Map to track when we last sent a notification for a specific content item
         private val notificationTimestamps = ConcurrentHashMap<String, Long>()
@@ -79,7 +79,7 @@ class NotificationService(private val context: Context) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
 
-            Log.d(TAG, "Created notification channel: $CHANNEL_ID")
+        //    Log.d(TAG, "Created notification channel: $CHANNEL_ID")
         }
     }
 
@@ -93,11 +93,11 @@ class NotificationService(private val context: Context) {
         // First get a count of all notifications for debugging
         notificationsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                Log.d(TAG, "Found ${snapshot.childrenCount} total notifications in database")
+            //    Log.d(TAG, "Found ${snapshot.childrenCount} total notifications in database")
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Error checking total notifications: ${error.message}")
+             //   Log.e(TAG, "Error checking total notifications: ${error.message}")
             }
         })
 
@@ -106,7 +106,7 @@ class NotificationService(private val context: Context) {
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     // Log new notification detected
-                    Log.d(TAG, "New notification detected with ID: ${snapshot.key}")
+                //    Log.d(TAG, "New notification detected with ID: ${snapshot.key}")
 
                     // Process new notification
                     processNotification(snapshot)
@@ -114,12 +114,12 @@ class NotificationService(private val context: Context) {
 
                 override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
                     // Not handling changes
-                    Log.d(TAG, "Notification changed: ${snapshot.key}")
+                //    Log.d(TAG, "Notification changed: ${snapshot.key}")
                 }
 
                 override fun onChildRemoved(snapshot: DataSnapshot) {
                     // Not handling removals
-                    Log.d(TAG, "Notification removed: ${snapshot.key}")
+                //    Log.d(TAG, "Notification removed: ${snapshot.key}")
                 }
 
                 override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
@@ -127,11 +127,11 @@ class NotificationService(private val context: Context) {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e(TAG, "Error listening for notifications: ${error.message}")
+                 //   Log.e(TAG, "Error listening for notifications: ${error.message}")
                 }
             })
 
-        Log.d(TAG, "Started listening for notifications")
+    //    Log.d(TAG, "Started listening for notifications")
     }
 
     /**
@@ -139,7 +139,7 @@ class NotificationService(private val context: Context) {
      */
     private fun processNotification(snapshot: DataSnapshot) {
         try {
-            Log.d(TAG, "Processing notification data: ${snapshot.key}")
+        //    Log.d(TAG, "Processing notification data: ${snapshot.key}")
 
             // Extract notification data
             val contentType = snapshot.child("contentType").getValue(String::class.java) ?: ""
@@ -156,18 +156,18 @@ class NotificationService(private val context: Context) {
 
             // Skip if missing critical info or count not at threshold
             if (contentId.isEmpty() || contentType.isEmpty() || count < 100) {
-                Log.d(TAG, "Skipping notification - missing info or count below threshold")
+            //    Log.d(TAG, "Skipping notification - missing info or count below threshold")
                 return
             }
 
             // Skip already read notifications
             if (read) {
-                Log.d(TAG, "Skipping notification - already marked as read")
+            //    Log.d(TAG, "Skipping notification - already marked as read")
                 return
             }
 
             // Log the extracted data
-            Log.d(TAG, "Content type: $contentType, ID: $contentId, Sender: $senderName, Count: $count")
+        //    Log.d(TAG, "Content type: $contentType, ID: $contentId, Sender: $senderName, Count: $count")
 
             // Check cooldown period - create a unique key for this content + reaction type
             val notificationKey = "$contentId:$reactionCategory:$reactionValue"
@@ -176,7 +176,7 @@ class NotificationService(private val context: Context) {
 
             // If we're still in cooldown period, skip this notification
             if (currentTime - lastNotificationTime < NOTIFICATION_COOLDOWN) {
-                Log.d(TAG, "Skipping notification due to cooldown: $notificationKey")
+           //     Log.d(TAG, "Skipping notification due to cooldown: $notificationKey")
                 return
             }
 
@@ -226,8 +226,8 @@ class NotificationService(private val context: Context) {
                 }
             }
 
-            Log.d(TAG, "Notification title: $title")
-            Log.d(TAG, "Notification message: $notificationMessage")
+        //    Log.d(TAG, "Notification title: $title")
+        //    Log.d(TAG, "Notification message: $notificationMessage")
 
             // Create pending intent for when notification is tapped
             val pendingIntent = createContentPendingIntent(contentType, contentId)
@@ -237,12 +237,12 @@ class NotificationService(private val context: Context) {
 
             // Check notification permission
             if (!checkNotificationPermission()) {
-                Log.e(TAG, "Missing POST_NOTIFICATIONS permission - notification won't appear")
+            //    Log.e(TAG, "Missing POST_NOTIFICATIONS permission - notification won't appear")
                 return
             }
 
             // Build notification
-            Log.d(TAG, "Building notification...")
+       //     Log.d(TAG, "Building notification...")
             val builder = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.bell_icon)
                 .setContentTitle(title)
@@ -269,7 +269,7 @@ class NotificationService(private val context: Context) {
 
             // Show notification
             try {
-                Log.d(TAG, "Attempting to show notification...")
+            //    Log.d(TAG, "Attempting to show notification...")
                 with(NotificationManagerCompat.from(context)) {
                     if (ActivityCompat.checkSelfPermission(
                             context,
@@ -277,20 +277,20 @@ class NotificationService(private val context: Context) {
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
                         notify(notificationId++, builder.build())
-                        Log.d(TAG, "Successfully showed system notification for $contentType with ID $contentId")
+                    //    Log.d(TAG, "Successfully showed system notification for $contentType with ID $contentId")
                     } else {
-                        Log.e(TAG, "Permission check failed inside notification show attempt")
+                    //    Log.e(TAG, "Permission check failed inside notification show attempt")
                     }
                 }
             } catch (e: Exception) {
                 // Handle any other exceptions
-                Log.e(TAG, "Error showing notification: ${e.message}", e)
+            //    Log.e(TAG, "Error showing notification: ${e.message}", e)
             }
 
-            Log.d(TAG, "Notification processing completed")
+        //    Log.d(TAG, "Notification processing completed")
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error processing notification: ${e.message}", e)
+        //    Log.e(TAG, "Error processing notification: ${e.message}", e)
         }
     }
 
@@ -363,10 +363,10 @@ class NotificationService(private val context: Context) {
         val notificationRef = FirebaseDatabase.getInstance().getReference("Notifications/$notificationId/read")
         notificationRef.setValue(true)
             .addOnSuccessListener {
-                Log.d(TAG, "Notification marked as read: $notificationId")
+             //   Log.d(TAG, "Notification marked as read: $notificationId")
             }
             .addOnFailureListener {
-                Log.e(TAG, "Failed to mark notification as read: ${it.message}")
+             //   Log.e(TAG, "Failed to mark notification as read: ${it.message}")
             }
     }
 
@@ -383,11 +383,11 @@ class NotificationService(private val context: Context) {
                     for (notificationSnapshot in snapshot.children) {
                         notificationSnapshot.ref.child("read").setValue(true)
                     }
-                    Log.d(TAG, "Marked all notifications as read")
+                //    Log.d(TAG, "Marked all notifications as read")
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e(TAG, "Error marking all notifications as read: ${error.message}")
+                //    Log.e(TAG, "Error marking all notifications as read: ${error.message}")
                 }
             })
     }
@@ -396,7 +396,7 @@ class NotificationService(private val context: Context) {
      * Test method to send a sample notification
      */
     fun showTestNotification() {
-        Log.d(TAG, "Sending test notification...")
+     //   Log.d(TAG, "Sending test notification...")
 
         val intent = Intent(context, NotificationActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -421,9 +421,9 @@ class NotificationService(private val context: Context) {
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 notify(999, builder.build())
-                Log.d(TAG, "Test notification sent successfully")
+            //    Log.d(TAG, "Test notification sent successfully")
             } else {
-                Log.e(TAG, "Missing notification permission for test notification")
+            //    Log.e(TAG, "Missing notification permission for test notification")
             }
         }
     }

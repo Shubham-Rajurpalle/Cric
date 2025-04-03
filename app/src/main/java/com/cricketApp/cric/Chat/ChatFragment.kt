@@ -312,15 +312,15 @@ class ChatFragment : Fragment() {
                                 .into(_binding?.profilePhoto ?: return)
                         }
                     } catch (e: Exception) {
-                        Log.e("ChatFragment", "Error loading profile image", e)
+                        //Log.e("ChatFragment", "Error loading profile image", e)
                     }
                 } else {
-                    Log.e("Profile", "No profile photo found")
+                    //Log.e("Profile", "No profile photo found")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ChatFragment", "Error loading profile photo", error.toException())
+               // Log.e("ChatFragment", "Error loading profile photo", error.toException())
             }
         }
 
@@ -448,7 +448,7 @@ class ChatFragment : Fragment() {
 
     private fun sendMessageToFirebase(messageText: String) {
         if (currentUser == null) {
-            Log.e("ChatFragment", "User not logged in")
+          //  Log.e("ChatFragment", "User not logged in")
             Toast.makeText(context, "You must be logged in to send messages", Toast.LENGTH_SHORT).show()
             return
         }
@@ -479,13 +479,13 @@ class ChatFragment : Fragment() {
                     }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("ChatFragment", "Error sending message", it)
+                     //   Log.e("ChatFragment", "Error sending message", it)
                         Toast.makeText(context, "Failed to send message", Toast.LENGTH_SHORT).show()
                     }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ChatFragment", "Error fetching user data", error.toException())
+               // Log.e("ChatFragment", "Error fetching user data", error.toException())
                 Toast.makeText(context, "Failed to fetch user data", Toast.LENGTH_SHORT).show()
             }
         })
@@ -540,7 +540,7 @@ class ChatFragment : Fragment() {
                 }
                 .addOnFailureListener { e ->
                     // Handle error
-                    Log.e("ChatFragment", "Image upload failed: ${e.message}")
+                   // Log.e("ChatFragment", "Image upload failed: ${e.message}")
                     onComplete?.invoke(false)
                 }
         }
@@ -631,12 +631,12 @@ class ChatFragment : Fragment() {
                     }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("ChatFragment", "Error sending message with image", it)
+                      //  Log.e("ChatFragment", "Error sending message with image", it)
                     }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ChatFragment", "User data fetch cancelled", error.toException())
+             //   Log.e("ChatFragment", "User data fetch cancelled", error.toException())
             }
         })
     }
@@ -680,7 +680,7 @@ class ChatFragment : Fragment() {
                     }
                 } catch (e: Exception) {
                     progressDialog.dismiss()
-                    Log.e("ChatFragment", "Error checking image safety: ${e.message}", e)
+                //    Log.e("ChatFragment", "Error checking image safety: ${e.message}", e)
                     // Show error dialog
                     MaterialAlertDialogBuilder(requireContext())
                         .setTitle("Error")
@@ -1081,7 +1081,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error with poll listener", error.toException())
+            //    Log.e("ChatFragment", "Error with poll listener", error.toException())
             }
         }
 
@@ -1132,7 +1132,7 @@ class ChatFragment : Fragment() {
                 chatsLoaded = true
                 binding.progressSending.visibility = View.GONE
                 binding.recyclerViewMessages.visibility = View.VISIBLE
-                Log.e("ChatFragment", "Error loading chats", error.toException())
+            //    Log.e("ChatFragment", "Error loading chats", error.toException())
             }
         })
 
@@ -1161,7 +1161,7 @@ class ChatFragment : Fragment() {
                 pollsLoaded = true
                 binding.progressSending.visibility = View.GONE
                 binding.recyclerViewMessages.visibility = View.VISIBLE
-                Log.e("ChatFragment", "Error loading polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading polls", error.toException())
             }
         })
     }
@@ -1247,7 +1247,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top hit messages", error.toException())
+            //    Log.e("ChatFragment", "Error loading top hit messages", error.toException())
             }
         })
     }
@@ -1297,7 +1297,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top hit polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading top hit polls", error.toException())
             }
         })
     }
@@ -1334,7 +1334,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top miss messages", error.toException())
+            //    Log.e("ChatFragment", "Error loading top miss messages", error.toException())
             }
         })
     }
@@ -1384,7 +1384,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top miss polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading top miss polls", error.toException())
             }
         })
     }
@@ -1421,7 +1421,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading team messages", error.toException())
+            //    Log.e("ChatFragment", "Error loading team messages", error.toException())
             }
         })
     }
@@ -1466,7 +1466,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading team polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading team polls", error.toException())
             }
         })
     }
@@ -1521,7 +1521,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading polls", error.toException())
             }
         })
     }
@@ -1646,7 +1646,7 @@ class ChatFragment : Fragment() {
                     }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("ChatFragment", "Error creating poll", it)
+                    //    Log.e("ChatFragment", "Error creating poll", it)
                         Toast.makeText(context, "Failed to create poll", Toast.LENGTH_SHORT).show()
                     }
             }
@@ -1670,7 +1670,7 @@ class ChatFragment : Fragment() {
                     }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("ChatFragment", "Error creating poll", it)
+                //        Log.e("ChatFragment", "Error creating poll", it)
                         Toast.makeText(context, "Failed to create poll", Toast.LENGTH_SHORT).show()
                     }
             }

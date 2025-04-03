@@ -9,7 +9,6 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.media.RingtoneManager
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.cricketApp.cric.R
 import com.cricketApp.cric.home.Home
@@ -24,7 +23,7 @@ class FCMService : FirebaseMessagingService() {
         private const val CHANNEL_NAME = "Content Milestones"
         private const val CHANNEL_DESCRIPTION = "Notifications for popular content"
         private const val COOLDOWN_PREFS = "notification_cooldown_prefs"
-        private const val COOLDOWN_DURATION = 600000 // 10 minutes in milliseconds (set to 0 to disable)
+        private const val COOLDOWN_DURATION = 300000 // 5 minutes in milliseconds (changed from 10 minutes)
     }
 
     private lateinit var sharedPreferences: SharedPreferences
@@ -35,12 +34,8 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d(TAG, "From: ${remoteMessage.from}")
-
         // Check if the message contains data
         if (remoteMessage.data.isNotEmpty()) {
-            Log.d(TAG, "Message data: ${remoteMessage.data}")
-
             // Get data from message
             val contentType = remoteMessage.data["contentType"] ?: ""
             val contentId = remoteMessage.data["contentId"] ?: ""
@@ -50,34 +45,25 @@ class FCMService : FirebaseMessagingService() {
 
             // Check if we should show this notification based on cooldown
             val shouldShow = shouldShowNotification(contentType)
-            Log.d(TAG, "Should show notification for $contentType: $shouldShow")
 
             if (shouldShow) {
                 showNotification(contentType, contentId, title, message, team)
                 updateCooldownTimestamp(contentType)
-                Log.d(TAG, "Displayed notification for: $contentId")
-            } else {
-                Log.d(TAG, "Notification for $contentType skipped due to cooldown, contentId: $contentId")
             }
         }
 
         // Check if the message contains notification
         remoteMessage.notification?.let {
-            Log.d(TAG, "Notification Body: ${it.body}")
             // If there's a notification payload, use it as fallback
             val contentType = remoteMessage.data["contentType"] ?: "GENERAL"
             val contentId = remoteMessage.data["contentId"] ?: System.currentTimeMillis().toString()
             val team = remoteMessage.data["team"] ?: ""
 
             val shouldShow = shouldShowNotification(contentType)
-            Log.d(TAG, "Should show notification for $contentType: $shouldShow")
 
             if (shouldShow) {
                 showNotification(contentType, contentId, it.title ?: "New Notification", it.body ?: "Check out what's happening!", team)
                 updateCooldownTimestamp(contentType)
-                Log.d(TAG, "Displayed notification for: $contentId from notification payload")
-            } else {
-                Log.d(TAG, "Notification for $contentType skipped due to cooldown, contentId: $contentId")
             }
         }
     }
@@ -105,7 +91,6 @@ class FCMService : FirebaseMessagingService() {
     }
 
     override fun onNewToken(token: String) {
-        Log.d(TAG, "New FCM token: $token")
         sendRegistrationTokenToServer(token)
     }
 
@@ -113,12 +98,6 @@ class FCMService : FirebaseMessagingService() {
         val userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: return
         val database = com.google.firebase.database.FirebaseDatabase.getInstance()
         database.getReference("Users/$userId/fcmToken").setValue(token)
-            .addOnSuccessListener {
-                Log.d(TAG, "FCM token saved for user $userId")
-            }
-            .addOnFailureListener {
-                Log.e(TAG, "Failed to save FCM token: ${it.message}")
-            }
     }
 
     private fun showNotification(contentType: String, contentId: String, title: String, message: String, team: String) {
@@ -172,6 +151,5 @@ class FCMService : FirebaseMessagingService() {
         }
 
         notificationManager.notify(contentId.hashCode(), notificationBuilder.build())
-        Log.d(TAG, "Notification displayed for $contentType with ID: $contentId")
     }
 }

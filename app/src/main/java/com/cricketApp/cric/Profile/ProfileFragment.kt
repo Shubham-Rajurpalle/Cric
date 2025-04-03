@@ -190,7 +190,7 @@ class ProfileFragment : Fragment() {
                             .placeholder(R.drawable.profile_empty)
                             .into(binding.profileImage)
                     } catch (e: Exception) {
-                        Log.e("ProfileFragment", "Error loading profile image", e)
+                    //    Log.e("ProfileFragment", "Error loading profile image", e)
                     }
                 }
 
@@ -210,7 +210,7 @@ class ProfileFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ProfileFragment", "Error loading user data", error.toException())
+            //    Log.e("ProfileFragment", "Error loading user data", error.toException())
             }
         }
 
@@ -268,7 +268,7 @@ class ProfileFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ProfileFragment", "Error calculating stats from $path", error.toException())
+            //    Log.e("ProfileFragment", "Error calculating stats from $path", error.toException())
                 callback(0, 0)
             }
         })
@@ -340,7 +340,7 @@ class ProfileFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ProfileFragment", "Error loading user chats", error.toException())
+            //    Log.e("ProfileFragment", "Error loading user chats", error.toException())
             }
         }
 
@@ -382,7 +382,7 @@ class ProfileFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ProfileFragment", "Error loading user memes", error.toException())
+            //    Log.e("ProfileFragment", "Error loading user memes", error.toException())
             }
         }
 
@@ -427,7 +427,7 @@ class ProfileFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ProfileFragment", "Error loading user polls", error.toException())
+            //    Log.e("ProfileFragment", "Error loading user polls", error.toException())
             }
         }
 
@@ -491,7 +491,7 @@ class ProfileFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ProfileFragment", "Error loading comments from $path", error.toException())
+            //    Log.e("ProfileFragment", "Error loading comments from $path", error.toException())
             }
         }
 
@@ -566,7 +566,7 @@ class ProfileFragment : Fragment() {
                 }
                 .addOnFailureListener { e ->
                     progressDialog.dismiss()
-                    Log.e("ProfileFragment", "Error uploading profile image", e)
+                //    Log.e("ProfileFragment", "Error uploading profile image", e)
                     Toast.makeText(context, "Failed to upload image", Toast.LENGTH_SHORT).show()
                 }
         }
@@ -584,7 +584,7 @@ class ProfileFragment : Fragment() {
                 onComplete()
             }
             .addOnFailureListener { e ->
-                Log.e("ProfileFragment", "Error updating profile photo URL", e)
+            //    Log.e("ProfileFragment", "Error updating profile photo URL", e)
                 onComplete()
             }
     }

@@ -93,7 +93,7 @@ class Cric_shots : Fragment() {
                 // Check again if fragment is still attached
                 if (!isAdded) return@addOnFailureListener
 
-                Log.e("Firestore", "Error fetching videos", e)
+             //   Log.e("Firestore", "Error fetching videos", e)
             }
     }
 
@@ -111,7 +111,7 @@ class Cric_shots : Fragment() {
                 }
             }
             ?.addOnFailureListener { e ->
-                Log.e("Firestore", "Error fetching news", e)
+            //    Log.e("Firestore", "Error fetching news", e)
             }
     }
 

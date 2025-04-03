@@ -89,7 +89,7 @@ class CommentActivity : AppCompatActivity() {
             return
         }
 
-        Log.d("CommentActivity", "Loading comments for $messageType ID: $messageId")
+        //Log.d("CommentActivity", "Loading comments for $messageType ID: $messageId")
 
         // Initialize Firebase
         database = FirebaseDatabase.getInstance()
@@ -158,10 +158,10 @@ class CommentActivity : AppCompatActivity() {
 
         adView.adListener = object : AdListener() {
             override fun onAdLoaded() {
-                Log.d(TAG, "Ad loaded")
+             //   Log.d(TAG, "Ad loaded")
             }
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                Log.e(TAG, "Ad failed to load: $loadAdError")
+             //   Log.e(TAG, "Ad failed to load: $loadAdError")
             }
         }
 
@@ -202,7 +202,7 @@ class CommentActivity : AppCompatActivity() {
             "poll" -> "NoBallZone/polls/$messageId/comments"
             "meme" -> "NoBallZone/memes/$messageId/comments"
             else -> {
-                Log.e("CommentActivity", "Unknown message type: $messageType, defaulting to chats")
+            //    Log.e("CommentActivity", "Unknown message type: $messageType, defaulting to chats")
                 "NoBallZone/chats/$messageId/comments" // Default path
             }
         }
@@ -210,7 +210,7 @@ class CommentActivity : AppCompatActivity() {
 
     private fun setupCommentsListener() {
         val commentsRef = database.getReference(getCommentsPath())
-        Log.d("CommentActivity", "Setting up listener at path: ${getCommentsPath()}")
+    //    Log.d("CommentActivity", "Setting up listener at path: ${getCommentsPath()}")
 
         commentsRef.addChildEventListener(object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -282,7 +282,7 @@ class CommentActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("CommentActivity", "Error with comments listener: ${error.message}")
+            //    Log.e("CommentActivity", "Error with comments listener: ${error.message}")
             }
         })
     }
@@ -293,14 +293,14 @@ class CommentActivity : AppCompatActivity() {
         binding.recyclerViewComments.visibility = View.GONE
 
         val commentsRef = database.getReference(getCommentsPath())
-        Log.d("CommentActivity", "Loading initial comments from path: ${getCommentsPath()}")
+    //    Log.d("CommentActivity", "Loading initial comments from path: ${getCommentsPath()}")
 
         commentsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 comments.clear()
                 commentPositions.clear()
 
-                Log.d("CommentActivity", "Found ${snapshot.childrenCount} comments")
+            //    Log.d("CommentActivity", "Found ${snapshot.childrenCount} comments")
 
                 for (commentSnapshot in snapshot.children) {
                     val comment = commentSnapshot.getValue(CommentMessage::class.java)
@@ -336,7 +336,7 @@ class CommentActivity : AppCompatActivity() {
                 binding.progressSending.visibility = View.GONE
                 binding.recyclerViewComments.visibility = View.VISIBLE
 
-                Log.e("CommentActivity", "Error loading comments: ${error.message}")
+            //    Log.e("CommentActivity", "Error loading comments: ${error.message}")
                 Toast.makeText(this@CommentActivity, "Failed to load comments", Toast.LENGTH_SHORT).show()
             }
         })
@@ -397,7 +397,7 @@ class CommentActivity : AppCompatActivity() {
 
             override fun onError(errorMessage: String) {
                 runOnUiThread {
-                    Log.e("CommentActivity", "Moderation error: $errorMessage")
+                //    Log.e("CommentActivity", "Moderation error: $errorMessage")
 
                     // On error, we still allow the comment to be posted
                     sendComment(commentText)
@@ -483,7 +483,7 @@ class CommentActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     progressDialog.dismiss()
-                    Log.e("CommentActivity", "Error checking image safety: ${e.message}", e)
+                //    Log.e("CommentActivity", "Error checking image safety: ${e.message}", e)
                     // Show error dialog
                     MaterialAlertDialogBuilder(this@CommentActivity)
                         .setTitle("Error")
@@ -630,7 +630,7 @@ class CommentActivity : AppCompatActivity() {
             override fun onError(errorMessage: String) {
                 runOnUiThread {
                     progressDialog.dismiss()
-                    Log.e("CommentActivity", "Moderation error: $errorMessage")
+                //    Log.e("CommentActivity", "Moderation error: $errorMessage")
 
                     // On error, just send with original caption
                     uploadAndSendImage(caption)
@@ -730,12 +730,12 @@ class CommentActivity : AppCompatActivity() {
                         updateParentMessageCommentCount()
                     }
                     .addOnFailureListener {
-                        Log.e("CommentActivity", "Failed to send comment with image: ${it.message}")
+                    //    Log.e("CommentActivity", "Failed to send comment with image: ${it.message}")
                     }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("CommentActivity", "Failed to get user data: ${error.message}")
+            //    Log.e("CommentActivity", "Failed to get user data: ${error.message}")
             }
         })
     }
@@ -793,7 +793,7 @@ class CommentActivity : AppCompatActivity() {
                 updateParentMessageCommentCount()
             }
             .addOnFailureListener {
-                Log.e("CommentActivity", "Failed to send comment: ${it.message}")
+            //    Log.e("CommentActivity", "Failed to send comment: ${it.message}")
             }
     }
 
@@ -803,7 +803,7 @@ class CommentActivity : AppCompatActivity() {
             "poll" -> database.getReference("NoBallZone/polls/$messageId")
             "meme" -> database.getReference("NoBallZone/memes/$messageId")
             else -> {
-                Log.e("CommentActivity", "Unknown message type when updating count: $messageType")
+            //    Log.e("CommentActivity", "Unknown message type when updating count: $messageType")
                 database.getReference("NoBallZone/chats/$messageId") // Default path
             }
         }
@@ -828,17 +828,17 @@ class CommentActivity : AppCompatActivity() {
                         dataSnapshot: DataSnapshot?
                     ) {
                         if (error != null) {
-                            Log.e(
-                                "CommentActivity",
-                                "Error updating comment count: ${error.message}"
-                            )
+                        //    Log.e(
+                        //        "CommentActivity",
+                        //        "Error updating comment count: ${error.message}"
+                        //    )
                         }
                     }
                 })
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("CommentActivity", "Error updating comment count: ${error.message}")
+           //     Log.e("CommentActivity", "Error updating comment count: ${error.message}")
             }
         })
     }

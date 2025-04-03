@@ -60,10 +60,10 @@ class NewsAdapter(private var newsList: MutableList<News>, private val context: 
             .addOnSuccessListener {
                 news.views = newViewsCount
                 viewCountTextView.text = "$newViewsCount Views"
-                Log.d("Firestore", "Views updated for ${news.id}")
+            //    Log.d("Firestore", "Views updated for ${news.id}")
             }
             .addOnFailureListener { e ->
-                Log.e("Firestore", "Error updating views", e)
+            //    Log.e("Firestore", "Error updating views", e)
             }
     }
 

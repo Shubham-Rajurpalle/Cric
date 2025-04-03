@@ -18,7 +18,7 @@ class UpcomingMatchRepository {
             val authToken = FirebaseConfigUpcoming.authToken
 
             if (authToken.isNullOrEmpty()) {
-                Log.e("API_ERROR", "Missing API auth token")
+            //    Log.e("API_ERROR", "Missing API auth token")
                 onResult(null)
                 return@loadConfig
             }
@@ -35,16 +35,16 @@ class UpcomingMatchRepository {
                         val upcomingMatches = response.body()?.data ?: emptyList()
                         processMatches(upcomingMatches, authToken, onResult)
                     } else {
-                        Log.e(
-                            "API_ERROR",
-                            "Response unsuccessful: ${response.errorBody()?.string()}"
-                        )
+                    //    Log.e(
+                    //        "API_ERROR",
+                    //        "Response unsuccessful: ${response.errorBody()?.string()}"
+                    //    )
                         onResult(null)
                     }
                 }
 
                 override fun onFailure(call: Call<SportMonksResponseUpcoming>, t: Throwable) {
-                    Log.e("API_ERROR", "Network call failed: ${t.message}")
+               //     Log.e("API_ERROR", "Network call failed: ${t.message}")
                     onResult(null)
                 }
             })
@@ -180,14 +180,14 @@ class UpcomingMatchRepository {
                     leagueCache[leagueId] = leagueDetails
                     onComplete(leagueDetails)
                 } else {
-                    Log.e("API_ERROR", "Failed to fetch league $leagueId: ${response.errorBody()?.string()}")
+                //    Log.e("API_ERROR", "Failed to fetch league $leagueId: ${response.errorBody()?.string()}")
                     // Return a placeholder (empty or default logo)
                     onComplete(LeagueDetails(leagueId, "Unknown League", null))
                 }
             }
 
             override fun onFailure(call: Call<LeagueResponse>, t: Throwable) {
-                Log.e("API_ERROR", "Network error fetching league $leagueId: ${t.message}")
+            //    Log.e("API_ERROR", "Network error fetching league $leagueId: ${t.message}")
                 // Return a placeholder (empty or default logo)
                 onComplete(LeagueDetails(leagueId, "Unknown League", null))
             }
@@ -211,14 +211,14 @@ class UpcomingMatchRepository {
                     teamCache[teamId] = teamDetails
                     onComplete(teamDetails)
                 } else {
-                    Log.e("API_ERROR", "Failed to fetch team $teamId: ${response.errorBody()?.string()}")
+                //    Log.e("API_ERROR", "Failed to fetch team $teamId: ${response.errorBody()?.string()}")
                     // Return a placeholder
                     onComplete(TeamDetails(teamId, "Unknown Team", "UNK", null))
                 }
             }
 
             override fun onFailure(call: Call<TeamResponse>, t: Throwable) {
-                Log.e("API_ERROR", "Network error fetching team $teamId: ${t.message}")
+            //    Log.e("API_ERROR", "Network error fetching team $teamId: ${t.message}")
                 // Return a placeholder
                 onComplete(TeamDetails(teamId, "Unknown Team", "UNK", null))
             }
@@ -241,14 +241,14 @@ class UpcomingMatchRepository {
                     seriesCache[seriesId] = seriesDetails
                     onComplete(seriesDetails)
                 } else {
-                    Log.e("API_ERROR", "Failed to fetch series $seriesId: ${response.errorBody()?.string()}")
+                //    Log.e("API_ERROR", "Failed to fetch series $seriesId: ${response.errorBody()?.string()}")
                     // Return a placeholder (empty or default logo)
                     onComplete(SeriesDetails(seriesId, "Unknown Series", null))
                 }
             }
 
             override fun onFailure(call: Call<SeriesResponse>, t: Throwable) {
-                Log.e("API_ERROR", "Network error fetching series $seriesId: ${t.message}")
+            //    Log.e("API_ERROR", "Network error fetching series $seriesId: ${t.message}")
                 // Return a placeholder (empty or default logo)
                 onComplete(SeriesDetails(seriesId, "Unknown Series", null))
             }

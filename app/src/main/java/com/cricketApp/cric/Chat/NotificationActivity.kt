@@ -127,7 +127,7 @@ class NotificationActivity : AppCompatActivity() {
 
                             notifications.add(notification)
                         } catch (e: Exception) {
-                            Log.e("NotificationsActivity", "Error parsing notification: ${e.message}")
+                        //    Log.e("NotificationsActivity", "Error parsing notification: ${e.message}")
                         }
                     }
 
@@ -148,7 +148,7 @@ class NotificationActivity : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("NotificationsActivity", "Error loading notifications: ${error.message}")
+                //    Log.e("NotificationsActivity", "Error loading notifications: ${error.message}")
                     binding.progressBar.visibility = View.GONE
                     binding.swipeRefreshLayout.isRefreshing = false
                     binding.noNotificationsText.visibility = View.VISIBLE

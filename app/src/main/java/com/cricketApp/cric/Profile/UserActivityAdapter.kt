@@ -201,14 +201,14 @@ class UserActivityAdapter(
                         }
                     } catch (e: Exception) {
                         // Catch any Glide or context-related exceptions
-                        Log.e("UserActivityAdapter", "Error loading profile picture", e)
+                    //    Log.e("UserActivityAdapter", "Error loading profile picture", e)
 
                         // Set default profile picture
                         try {
                             imageView.setImageResource(R.drawable.profile_icon)
                         } catch (e2: Exception) {
                             // Even setting the image resource might fail if the view is no longer valid
-                            Log.e("UserActivityAdapter", "Could not set default profile picture", e2)
+                        //    Log.e("UserActivityAdapter", "Could not set default profile picture", e2)
                         }
                     }
                 }
@@ -220,7 +220,7 @@ class UserActivityAdapter(
                             imageView.setImageResource(R.drawable.profile_icon)
                         }
                     } catch (e: Exception) {
-                        Log.e("UserActivityAdapter", "Error in onCancelled", e)
+                    //    Log.e("UserActivityAdapter", "Error in onCancelled", e)
                     }
                 }
             })

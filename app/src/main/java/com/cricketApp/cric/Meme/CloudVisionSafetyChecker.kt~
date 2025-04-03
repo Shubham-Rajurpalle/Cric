@@ -253,7 +253,8 @@ class CloudVisionSafetyChecker(private val context: Context) {
                 return@withContext SafetyCheckResult(false, true, listOf("Analysis failed or returned no results"))
             }
         } catch (e: Exception) {
-            // Handle errors appropriately - in production, remove the logging
+        //    Log.e(TAG, "Error in vision API: ${e.message}")
+            e.printStackTrace()
             return@withContext SafetyCheckResult(false, true, listOf("Error analyzing image: ${e.message}"))
         }
     }

@@ -77,13 +77,13 @@ class CommentAdapter(
      */
     fun removeComment(position: Int) {
         if (position < 0 || position >= comments.size) {
-            Log.e(TAG, "Invalid position for removal: $position, size: ${comments.size}")
+        //    Log.e(TAG, "Invalid position for removal: $position, size: ${comments.size}")
             return
         }
 
         comments.removeAt(position)
         notifyItemRemoved(position)
-        Log.d(TAG, "Removed comment at position $position")
+    //    Log.d(TAG, "Removed comment at position $position")
     }
 
     /**
@@ -149,7 +149,7 @@ class CommentAdapter(
                             }
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                            Log.e(TAG, "Error opening image viewer", e)
+                        //    Log.e(TAG, "Error opening image viewer", e)
                             Toast.makeText(itemView.context,
                                 "Failed to open image", Toast.LENGTH_SHORT).show()
                         }
@@ -266,7 +266,7 @@ class CommentAdapter(
                             comment.team = team
                         } catch (e: Exception) {
                             // If this fails, it's not critical since the UI is already updated
-                            Log.e(TAG, "Error updating team: ${e.message}")
+                        //    Log.e(TAG, "Error updating team: ${e.message}")
                         }
                     }
                 }

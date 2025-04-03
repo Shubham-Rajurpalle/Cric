@@ -30,7 +30,7 @@ class VideoPlayerActivity : AppCompatActivity() {
         videoUrl = intent.getStringExtra("videoUrl")
 
         if (videoId.isNullOrEmpty() || videoUrl.isNullOrEmpty()) {
-            Log.e("VideoPlayerActivity", "Video ID or URL is missing")
+         //   Log.e("VideoPlayerActivity", "Video ID or URL is missing")
             finish()
             return
         }
@@ -74,7 +74,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 })
             }
         } catch (e: Exception) {
-            Log.e("VideoPlayerActivity", "Error setting up ExoPlayer", e)
+        //    Log.e("VideoPlayerActivity", "Error setting up ExoPlayer", e)
         }
     }
 
@@ -82,10 +82,10 @@ class VideoPlayerActivity : AppCompatActivity() {
         firestore.collection("videos").document(videoId)
             .update("views", FieldValue.increment(1))
             .addOnSuccessListener {
-                Log.d("VideoPlayerActivity", "View count updated successfully")
+            //    Log.d("VideoPlayerActivity", "View count updated successfully")
             }
             .addOnFailureListener { e ->
-                Log.e("VideoPlayerActivity", "Error updating view count", e)
+            //    Log.e("VideoPlayerActivity", "Error updating view count", e)
             }
     }
 
@@ -101,7 +101,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("VideoPlayerActivity", "Error fetching counts", e)
+            //    Log.e("VideoPlayerActivity", "Error fetching counts", e)
             }
     }
 
@@ -114,7 +114,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 binding.likeCount.text = "${currentLikes + 1} likes"
             }
             .addOnFailureListener { e ->
-                Log.e("VideoPlayerActivity", "Error updating like count", e)
+            //    Log.e("VideoPlayerActivity", "Error updating like count", e)
             }
     }
 
@@ -127,7 +127,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 binding.shareCount.text = "${currentShares + 1} shares"
             }
             .addOnFailureListener { e ->
-                Log.e("VideoPlayerActivity", "Error updating share count", e)
+             //   Log.e("VideoPlayerActivity", "Error updating share count", e)
             }
 
         val shareIntent = Intent(Intent.ACTION_SEND).apply {

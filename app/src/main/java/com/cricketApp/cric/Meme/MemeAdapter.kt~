@@ -135,7 +135,7 @@ class MemeAdapter(
      */
     fun removeMeme(position: Int, expectedId: String? = null) {
         if (position < 0 || position >= items.size) {
-        //    Log.e(TAG, "Invalid position for removal: $position, size: ${items.size}")
+            Log.e(TAG, "Invalid position for removal: $position, size: ${items.size}")
             return
         }
 
@@ -143,20 +143,20 @@ class MemeAdapter(
         val actualId = items[position].id
 
         // Log before removal
-    //    Log.d(TAG, "About to remove meme at position $position, ID: $actualId")
+        Log.d(TAG, "About to remove meme at position $position, ID: $actualId")
 
         // If an expected ID was provided and doesn't match, find the correct position
         if (expectedId != null && expectedId != actualId) {
-        //    Log.e(TAG, "ID mismatch during removal! Expected: $expectedId, Actual: $actualId")
+            Log.e(TAG, "ID mismatch during removal! Expected: $expectedId, Actual: $actualId")
 
             // Try to find the correct position for the expected ID
             val correctPosition = findPositionById(expectedId)
             if (correctPosition != -1) {
-            //    Log.d(TAG, "Found expected meme at position $correctPosition, removing from there")
+                Log.d(TAG, "Found expected meme at position $correctPosition, removing from there")
                 removeMeme(correctPosition)
                 return
             } else {
-            //    Log.w(TAG, "Expected meme $expectedId not found in list")
+                Log.w(TAG, "Expected meme $expectedId not found in list")
                 return
             }
         }
@@ -170,8 +170,8 @@ class MemeAdapter(
         // Notify about the specific removal
         notifyItemRemoved(position)
 
-    //    Log.d(TAG, "Removed meme at position $position, ID: $actualId")
-    //    Log.d(TAG, "New item count: ${items.size}")
+        Log.d(TAG, "Removed meme at position $position, ID: $actualId")
+        Log.d(TAG, "New item count: ${items.size}")
     }
 
     /**
@@ -324,14 +324,14 @@ class MemeAdapter(
                         onCommentClickListener.invoke(meme)
                     } else {
                         try {
-                        //    Log.d(TAG, "Opening comments for meme ID: ${meme.id}")
+                            Log.d(TAG, "Opening comments for meme ID: ${meme.id}")
                             val intent = Intent(context, CommentActivity::class.java).apply {
                                 putExtra("MESSAGE_ID", meme.id)
                                 putExtra("MESSAGE_TYPE", "meme")
                             }
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                        //    Log.e(TAG, "Error opening comments: ${e.message}", e)
+                            Log.e(TAG, "Error opening comments: ${e.message}", e)
                             Toast.makeText(context, "Unable to open comments", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -489,14 +489,14 @@ class MemeAdapter(
                         onCommentClickListener.invoke(meme)
                     } else {
                         try {
-                        //    Log.d(TAG, "Opening comments for meme ID: ${meme.id}")
+                            Log.d(TAG, "Opening comments for meme ID: ${meme.id}")
                             val intent = Intent(context, CommentActivity::class.java).apply {
                                 putExtra("MESSAGE_ID", meme.id)
                                 putExtra("MESSAGE_TYPE", "meme")
                             }
                             context.startActivity(intent)
                         } catch (e: Exception) {
-                        //    Log.e(TAG, "Error opening comments: ${e.message}", e)
+                            Log.e(TAG, "Error opening comments: ${e.message}", e)
                             Toast.makeText(context, "Unable to open comments", Toast.LENGTH_SHORT).show()
                         }
                     }

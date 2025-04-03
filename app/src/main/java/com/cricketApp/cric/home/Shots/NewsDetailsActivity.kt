@@ -51,10 +51,10 @@ class NewsDetailsActivity : AppCompatActivity() {
 
         adView.adListener = object : AdListener() {
             override fun onAdLoaded() {
-                Log.d(TAG, "Ad loaded")
+            //    Log.d(TAG, "Ad loaded")
             }
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                Log.e(TAG, "Ad failed to load: $loadAdError")
+            //    Log.e(TAG, "Ad failed to load: $loadAdError")
             }
         }
 
@@ -81,7 +81,7 @@ class NewsDetailsActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-                Log.e("Firestore", "Error fetching news details", e)
+            //    Log.e("Firestore", "Error fetching news details", e)
             }
     }
 
@@ -96,10 +96,10 @@ class NewsDetailsActivity : AppCompatActivity() {
                 newsRef.update("views", newViewsCount)
                     .addOnSuccessListener {
                         binding.newsViews.text = "$newViewsCount Views"
-                        Log.d("Firestore", "News views updated in Firestore")
+                    //    Log.d("Firestore", "News views updated in Firestore")
                     }
                     .addOnFailureListener { e ->
-                        Log.e("Firestore", "Error updating views count", e)
+                    //    Log.e("Firestore", "Error updating views count", e)
                     }
             }
         }

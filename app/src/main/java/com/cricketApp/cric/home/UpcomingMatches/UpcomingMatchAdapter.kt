@@ -78,7 +78,7 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                 if (seriesId == 0) throw Exception("Failed to fetch series")
                 "Series #$seriesId"
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Failed to fetch series $seriesId: ${e.message}")
+            //    Log.e("API_ERROR", "Failed to fetch series $seriesId: ${e.message}")
                 null
             }
         }
@@ -90,7 +90,7 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                 if (leagueId == 0) throw Exception("Failed to fetch league")
                 "League #$leagueId"
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Failed to fetch league $leagueId: ${e.message}")
+             //   Log.e("API_ERROR", "Failed to fetch league $leagueId: ${e.message}")
                 null
             }
         }
@@ -131,7 +131,7 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                     dateTimeString
                 }
             } catch (e: Exception) {
-                Log.e("DateFormat", "Error formatting date: $e")
+            //    Log.e("DateFormat", "Error formatting date: $e")
                 dateTimeString
             }
         }

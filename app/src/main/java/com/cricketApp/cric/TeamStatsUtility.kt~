@@ -51,9 +51,9 @@ object TeamStatsUtility {
 
             override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
                 if (error != null) {
-                //    Log.e(TAG, "Error updating team stats: ${error.message}")
+                    Log.e(TAG, "Error updating team stats: ${error.message}")
                 } else if (committed) {
-                //    Log.d(TAG, "Team $teamId ${field} updated successfully")
+                    Log.d(TAG, "Team $teamId ${field} updated successfully")
                 }
             }
         })
@@ -107,7 +107,7 @@ object TeamStatsUtility {
 
             override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
                 if (error != null) {
-                 //   Log.e(TAG, "Error updating content stats: ${error.message}")
+                    Log.e(TAG, "Error updating content stats: ${error.message}")
                     callback?.invoke(false, 0)
                 } else if (committed && currentData != null) {
                     val newValue = currentData.getValue(Int::class.java) ?: 0
@@ -117,7 +117,7 @@ object TeamStatsUtility {
                     updateTeamStats(team, isHit)
 
                     callback?.invoke(true, newValue)
-                //    Log.d(TAG, "Content $contentId $field updated successfully")
+                    Log.d(TAG, "Content $contentId $field updated successfully")
                 } else {
                     callback?.invoke(false, 0)
                 }

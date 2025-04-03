@@ -103,7 +103,7 @@ class SignUp : AppCompatActivity() {
                 val downloadUrl = profileImageReference.downloadUrl.await()
                 downloadUrl.toString()
             } catch (e: Exception) {
-            //    Log.e("SignUp", "Profile photo upload failed", e)
+                Log.e("SignUp", "Profile photo upload failed", e)
                 ""
             }
         }
