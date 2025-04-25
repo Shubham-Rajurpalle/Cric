@@ -468,7 +468,7 @@ class MemeFragment : Fragment() {
         if (!isAdded) return
 
         // Show progress before loading
-        _binding?.progressBar?.visibility = View.VISIBLE
+        _binding?.llAnime2?.visibility = View.VISIBLE
         _binding?.recyclerViewMemes?.visibility = View.GONE
 
         val memesRef = FirebaseDatabase.getInstance().getReference("NoBallZone/memes")
@@ -501,7 +501,7 @@ class MemeFragment : Fragment() {
                 updatePositionsMap()
 
                 // Hide progress after loading
-                _binding?.progressBar?.visibility = View.GONE
+                _binding?.llAnime2?.visibility = View.GONE
                 _binding?.recyclerViewMemes?.visibility = View.VISIBLE
 
                 // Notify adapter of changes
@@ -535,7 +535,7 @@ class MemeFragment : Fragment() {
                 if (!isAdded || _binding == null) return
 
                 // Hide progress on error
-                _binding?.progressBar?.visibility = View.GONE
+                _binding?.llAnime2?.visibility = View.GONE
                 _binding?.recyclerViewMemes?.visibility = View.VISIBLE
 
             //    Log.e("MemeFragment", "Error loading initial memes", error.toException())

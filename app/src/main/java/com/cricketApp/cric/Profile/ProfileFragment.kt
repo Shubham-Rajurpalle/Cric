@@ -37,7 +37,7 @@ import java.util.Calendar
 class ProfileFragment : Fragment() {
 
     private lateinit var binding: FragmentProfileBinding
-    private lateinit var activitiesAdapter: UserActivityAdapter
+    private lateinit var activitiesAdapter: profileActivityAdapter
     private val activities = ArrayList<UserActivity>()
 
     private val currentUser = FirebaseAuth.getInstance().currentUser
@@ -123,7 +123,7 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupActivitiesRecyclerView() {
-        activitiesAdapter = UserActivityAdapter(activities) { activity ->
+        activitiesAdapter = profileActivityAdapter(activities) { activity ->
             // Handle click on activity item based on type
             when (activity.type) {
                 UserActivityType.CHAT -> {

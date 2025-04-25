@@ -1,60 +1,80 @@
-// Response models
 package com.cricketApp.cric.home.liveMatch
 
+import com.google.gson.annotations.Expose
+import com.google.gson.annotations.SerializedName
+
 data class SportMonksResponse(
-    val data: List<MatchData>
+    @Expose @SerializedName("data") val data: List<MatchData>
 )
 
 data class MatchData(
-    val id: Int,
-    val league: League? = null,
-    val localteam: Team? = null,
-    val visitorteam: Team? = null,
-    val runs: List<Score>? = null,
-    val live: Boolean = false,
-    val stage: Stage? = null,
-    val round: String? = null,
-    val status: String? = null,
-    val note: String? = null
-) {
-    // Provide a more accessible property for isLive
+    @Expose @SerializedName("id") val id: Int,
+    @Expose @SerializedName("league") val league: League? = null,
+    @Expose @SerializedName("localteam") val localteam: Team? = null,
+    @Expose @SerializedName("visitorteam") val visitorteam: Team? = null,
+    @Expose @SerializedName("runs") val runs: List<Score>? = null,
+    @Expose @SerializedName("live") val live: Boolean = false,
+    @Expose @SerializedName("stage") val stage: Stage? = null,
+    @Expose @SerializedName("round") val round: String? = null,
+    @Expose @SerializedName("status") val status: String? = null,
+    @Expose @SerializedName("note") val note: String? = null,
+    @Expose @SerializedName("starting_at") val starting_at: String? = null,
+    @Expose @SerializedName("type") val type: String? = null,
+    @Expose @SerializedName("localteam_id") val localteam_id: Int? = null,
+    @Expose @SerializedName("visitorteam_id") val visitorteam_id: Int? = null,
+    @Expose @SerializedName("series_id") val series_id: Int? = null,
+    @Expose @SerializedName("league_id") val league_id: Int? = null,
+    @Transient var localteamLogo: String? = null,
+    @Transient var visitorteamLogo: String? = null,
+    @Transient var seriesLogo: String? = null,
+    @Transient var leagueLogo: String? = null
+){
     val isLive: Boolean
         get() = live || status?.contains("Innings", ignoreCase = true) == true
 
-    // Provide a more accessible property for matchNumber
     val matchNumber: String?
         get() = round
 }
 
 data class LeagueResponse(
-    val data: League
+    @Expose @SerializedName("data") val data: League
 )
 
 data class League(
-    val id: Int,
-    val name: String,
-    val image_path: String? = null
+    @Expose @SerializedName("id") val id: Int,
+    @Expose @SerializedName("name") val name: String,
+    @Expose @SerializedName("image_path") val image_path: String? = null
 )
 
 data class TeamResponse(
-    val data: Team
+    @Expose @SerializedName("data") val data: Team
 )
 
 data class Team(
-    val id: Int,
-    val code: String,
-    val name: String? = null,
-    val image_path: String? = null
+    @Expose @SerializedName("id") val id: Int,
+    @Expose @SerializedName("code") val code: String,
+    @Expose @SerializedName("name") val name: String? = null,
+    @Expose @SerializedName("image_path") val image_path: String? = null
 )
 
 data class Stage(
-    val id: Int,
-    val name: String? = null
+    @Expose @SerializedName("id") val id: Int,
+    @Expose @SerializedName("name") val name: String? = null
 )
 
 data class Score(
-    val team_id: Int,
-    val score: Int = 0,
-    val wickets: Int = 0,
-    val overs: Double = 0.0
+    @Expose @SerializedName("team_id") val team_id: Int,
+    @Expose @SerializedName("score") val score: Int = 0,
+    @Expose @SerializedName("wickets") val wickets: Int = 0,
+    @Expose @SerializedName("overs") val overs: Double = 0.0
+)
+
+data class SeriesResponse(
+    @Expose @SerializedName("data") val data: SeriesDetails
+)
+
+data class SeriesDetails(
+    @Expose @SerializedName("id") val id: Int,
+    @Expose @SerializedName("name") val name: String? = null,
+    @Expose @SerializedName("logo_path") val logo_path: String? = null
 )

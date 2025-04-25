@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="end">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="6dp"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="3dp"
+        app:cardBackgroundColor="#4A011C6B">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="10dp">
+
+            <!-- User Info -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/imageViewProfile"
+                    android:layout_width="@dimen/_12sdp"
+                    android:layout_height="@dimen/_12sdp"
+                    android:src="@drawable/profile_empty"/>
+
+                <TextView
+                    android:id="@+id/textViewName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="John D"
+                    android:textSize="@dimen/_10sdp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="6dp"
+                    android:textColor="#00A3FF"/>
+
+                <TextView
+                    android:id="@+id/textViewTeam"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MI"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/_9sdp"
+                    android:layout_marginEnd="@dimen/_4sdp"
+                    android:textColor="#FFD300"/>
+
+                <ImageView
+                    android:id="@+id/imageViewTeam"
+                    android:layout_width="@dimen/_12sdp"
+                    android:layout_height="@dimen/_12sdp"
+                    android:src="@drawable/icc_logo"
+                    android:background="@drawable/circular_background"
+                    android:padding="2dp"/>
+            </LinearLayout>
+
+            <!-- Message Content -->
+            <TextView
+                android:id="@+id/textViewMessage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Hey, how are you doing?"
+                android:textSize="@dimen/_10sdp"
+                android:textColor="#FFFFFF"/>
+
+            <!-- Content -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                app:cardCornerRadius="@dimen/_16sdp"
+                android:layout_marginTop="6dp"
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:id="@+id/imageViewContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitXY"
+                    android:minHeight="@dimen/_100sdp"
+                    android:visibility="gone" />
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:id="@+id/buttonHit"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="🔥 2.4K"
+                    android:textColor="#FFFFFF"
+                    android:textSize="@dimen/_9sdp"
+                    android:gravity="center"
+                    android:background="@drawable/hit_button_background"
+                    android:padding="@dimen/_4sdp"
+                    android:layout_marginEnd="4dp"
+                    android:clickable="true"/>
+
+                <TextView
+                    android:id="@+id/buttonMiss"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="❌ 0.8K"
+                    android:textColor="#FF0000"
+                    android:textSize="@dimen/_9sdp"
+                    android:gravity="center"
+                    android:background="@drawable/miss_button_background"
+                    android:padding="@dimen/_4sdp"
+                    android:clickable="true"/>
+
+                <HorizontalScrollView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:scrollbars="none">
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:id="@+id/tvHappyEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="😁"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="2dp"
+                            android:clickable="true"/>
+                        <TextView
+                            android:id="@+id/tvAngryEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🤬"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="2dp"
+                            android:clickable="true"/>
+                        <TextView
+                            android:id="@+id/tvSadEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="💔"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="2dp"
+                            android:clickable="true"/>
+                        <TextView
+                            android:id="@+id/tvCryingEmoji"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="😭"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="2dp"
+                            android:clickable="true"/>
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+            </LinearLayout>
+
+            <!-- Comments and Emoji Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <TextView
+                    android:id="@+id/textViewComments"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Comments →"
+                    android:textSize="@dimen/_8sdp"
+                    android:textColor="#00A3FF"
+                    android:layout_gravity="center_vertical"
+                    android:clickable="true"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/badgeTrending"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:text="TRENDING"
+                    android:gravity="right"
+                    android:layout_weight="1"
+                    android:textColor="#FFFFFF"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+</LinearLayout>

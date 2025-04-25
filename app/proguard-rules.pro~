@@ -1,0 +1,342 @@
+# Cricket App ProGuard Rules - Complete Configuration with Firebase Callback Fix
+# This configuration prioritizes preserving the Google Sign-In and Firebase Database functionality
+
+# === Critical Firebase Realtime Database Callback Protection ===
+# These rules specifically protect the database callbacks after Google Sign-In
+
+# Keep the specific Firebase Database get() method and its Task
+-keepclassmembers class com.google.firebase.database.DatabaseReference {
+    public com.google.android.gms.tasks.Task get();
+    public void addListenerForSingleValueEvent(com.google.firebase.database.ValueEventListener);
+}
+
+# Protect the snapshot and snapshot value methods
+-keepclassmembers class com.google.firebase.database.DataSnapshot {
+    public getValue(**);
+    public getKey();
+    public getChildren();
+    public child(java.lang.String);
+    public exists();
+}
+
+# Keep Task continuation methods with their exact signatures
+-keepclassmembers class com.google.android.gms.tasks.Task {
+    public com.google.android.gms.tasks.Task addOnSuccessListener(com.google.android.gms.tasks.OnSuccessListener);
+    public com.google.android.gms.tasks.Task addOnFailureListener(com.google.android.gms.tasks.OnFailureListener);
+    public com.google.android.gms.tasks.Task addOnCompleteListener(com.google.android.gms.tasks.OnCompleteListener);
+    public java.lang.Exception getException();
+    public java.lang.Object getResult();
+    public boolean isSuccessful();
+}
+
+# Specifically target Firebase Database anonymous callbacks in SignIn class
+-keepclassmembers class com.cricketApp.cric.LogIn.SignIn {
+    private void checkUserInfo();
+    void lambda$checkUserInfo$*(**);  # This protects generated lambda methods
+}
+
+# Make sure task continuations are kept
+-keep class com.google.android.gms.tasks.TaskCompletionSource { *; }
+-keep class com.google.android.gms.tasks.CancellationToken { *; }
+-keep class com.google.android.gms.tasks.Continuation { *; }
+-keep class com.google.android.gms.tasks.SuccessContinuation { *; }
+
+# === Basic Rules ===
+-optimizationpasses 5
+-verbose
+
+# Keep Android components
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider
+-keep public class * extends android.preference.Preference
+-keep public class * extends android.view.View
+-keep public class * extends androidx.fragment.app.Fragment
+
+# === Keep All Provided Authentication Files ===
+# Ensure all the authentication-related Kotlin files remain intact
+-keep class com.cricketApp.cric.LogIn.** { *; }
+-keep class com.cricketApp.cric.Utils.AuthUtils { *; }
+
+# Keep all inner classes and anonymous classes in these files
+-keep class com.cricketApp.cric.LogIn.**$* { *; }
+-keep class com.cricketApp.cric.Utils.AuthUtils$* { *; }
+
+# === Critical ActivityResultLauncher and Google Sign-In Fixes ===
+
+# Keep the entire ActivityResultLauncher system
+-keep class androidx.activity.result.** { *; }
+-keep class * implements androidx.activity.result.ActivityResultCallback { *; }
+-keep class * implements androidx.activity.result.ActivityResultLauncher { *; }
+-keep class * implements androidx.activity.result.contract.ActivityResultContract { *; }
+-keep class androidx.activity.result.contract.** { *; }
+
+# Keep ActivityResultRegistry and related components
+-keep class androidx.activity.result.ActivityResultRegistry { *; }
+-keep class * extends androidx.activity.result.ActivityResultRegistry { *; }
+
+# Keep ALL ActivityResultCallback implementations
+-keep class * {
+    @androidx.activity.result.ActivityResultCallback *;
+}
+
+# Crucial - ActivityResultLauncher requires these
+-keepclassmembers class androidx.activity.ComponentActivity {
+    androidx.activity.result.ActivityResultRegistry getActivityResultRegistry();
+}
+-keepclassmembers class * extends androidx.fragment.app.Fragment {
+    androidx.activity.result.ActivityResultRegistry getActivityResultRegistry();
+}
+
+# Critical: Preserve lambdas in SignIn activity
+-keepclassmembers class com.cricketApp.cric.LogIn.SignIn {
+    private androidx.activity.result.ActivityResultLauncher googleSignInLauncher;
+    private void firebaseAuthWithGoogle(java.lang.String);
+    private void checkUserInfo();
+    private void checkExistingGoogleUser();
+    private void saveLoginState(boolean);
+}
+
+# === Google Services & Firebase ===
+# Keep *all* Google Sign-In related classes
+-keep class com.google.android.gms.** { *; }
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.firebase.**
+
+# Specifically keep GoogleSignIn and related classes
+-keep class com.google.android.gms.auth.api.signin.GoogleSignIn { *; }
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInClient { *; }
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInOptions { *; }
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInOptions$Builder { *; }
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInAccount { *; }
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInResult { *; }
+
+# Keep GoogleSignInClient implementation chain
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInClient { *; }
+-keep class com.google.android.gms.auth.api.signin.GoogleSignInClient$** { *; }
+-keep class * implements com.google.android.gms.auth.api.signin.GoogleSignInClient { *; }
+-keep class * extends com.google.android.gms.auth.api.signin.GoogleSignInClient { *; }
+
+# Keep authentication result handlers and callbacks
+-keep class com.google.android.gms.auth.api.** { *; }
+-keep class com.google.android.gms.auth.api.Auth { *; }
+-keep class * implements com.google.android.gms.tasks.OnCompleteListener { *; }
+-keep class * implements com.google.android.gms.tasks.OnSuccessListener { *; }
+-keep class * implements com.google.android.gms.tasks.OnFailureListener { *; }
+
+# Keep all Google Sign-In related callback classes and methods
+-keep class * implements com.google.android.gms.auth.api.signin.GoogleSignInAccount$** { *; }
+-keep class * implements com.google.android.gms.auth.api.signin.GoogleSignInOptions$** { *; }
+-keep class * implements com.google.android.gms.common.api.GoogleApiClient$** { *; }
+
+# Keep all API classes that handle the result
+-keep class com.google.android.gms.tasks.Task { *; }
+-keep class com.google.android.gms.tasks.Tasks { *; }
+-keep class com.google.android.gms.common.api.ApiException { *; }
+-keep class com.google.android.gms.common.api.Status { *; }
+
+# This is absolutely critical - Google Play Services needs this:
+-keep class com.google.android.gms.common.internal.** { *; }
+-keep class com.google.android.gms.common.api.internal.** { *; }
+
+# Keep all credential management classes
+-keep class com.google.android.gms.credentials.** { *; }
+
+# Ensure all callback and listener methods are kept
+-keepclassmembers class * {
+    @com.google.android.gms.common.api.internal.SignInConnectionListener *;
+    @com.google.android.gms.common.api.Api$ApiOptions$HasGoogleSignInAccountOptions *;
+}
+
+# Firebase Authentication related classes
+-keep class com.google.firebase.auth.** { *; }
+-keep class com.google.firebase.auth.FirebaseAuth { *; }
+-keep class com.google.firebase.auth.GoogleAuthProvider { *; }
+
+# WebView for Google Sign-In
+-keepclassmembers class * extends android.webkit.WebViewClient {
+    public void *(android.webkit.WebView, java.lang.String, android.graphics.Bitmap);
+    public boolean *(android.webkit.WebView, java.lang.String);
+}
+-keepclassmembers class * extends android.webkit.WebChromeClient {
+    public void *(android.webkit.WebView, java.lang.String);
+}
+
+# === Kotlin Specific Rules ===
+# Keep Kotlin features needed for callbacks
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+-keepnames class kotlin.coroutines.Continuation
+-keep class kotlinx.coroutines.** { *; }
+
+# Preserve all synthetic accessor methods that might be generated
+-keepclassmembers class ** {
+    synthetic <methods>;
+}
+
+# Keep all lambda expressions - critical for callbacks
+-dontwarn java.lang.invoke.**
+-dontwarn kotlin.coroutines.jvm.internal.**
+-keep class kotlin.Function* { *; }
+-keep class kotlin.coroutines.Continuation { *; }
+
+# Keep all reflection-based API access
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-keepattributes RuntimeVisibleAnnotations,RuntimeVisibleParameterAnnotations
+-keepattributes MethodParameters
+
+# Keep data class components and copy methods
+-keepclassmembers class * {
+    ** component*();
+    ** copy(...);
+}
+
+# === General Application Rules ===
+# Cricket App Data Models - Critical for API functionality
+-keep class com.cricketApp.cric.model.** { *; }
+-keep class com.cricketApp.cric.home.** { *; }
+-keep class com.cricketApp.cric.Leaderboard.** { *; }
+-keep class com.cricketApp.cric.Profile.** { *; }
+-keep class com.cricketApp.cric.Chat.** { *; }
+-keep class com.cricketApp.cric.Meme.** { *; }
+-keep class com.cricketApp.cric.Notifications.** { *; }
+
+# Keep all fields in model classes
+-keepclassmembers class com.cricketApp.cric.home.liveMatch.** {
+    <fields>;
+}
+-keepclassmembers class com.cricketApp.cric.home.upcomingMatch.** {
+    <fields>;
+}
+
+# Keep all ViewModel, Repository, API and Adapter classes
+-keep class com.cricketApp.cric.**.ViewModel* { *; }
+-keep class com.cricketApp.cric.**.Repository* { *; }
+-keep class com.cricketApp.cric.**.Adapter* { *; }
+-keep class com.cricketApp.cric.**.Api* { *; }
+-keep class com.cricketApp.cric.adapter.** { *; }
+
+# Ensure all resource IDs used in authentication are preserved
+-keep class **.R
+-keep class **.R$* {
+    <fields>;
+}
+
+# === Retrofit Rules - Critical for API calls ===
+-keep class retrofit2.** { *; }
+-keepattributes Signature
+-keepattributes Exceptions
+-keep class retrofit2.converter.** { *; }
+
+# Keep Retrofit interfaces
+-keepclasseswithmembers interface * {
+    @retrofit2.http.* <methods>;
+}
+
+# Keep all method names in Retrofit interfaces
+-keepclassmembers,allowshrinking,allowobfuscation interface * {
+    @retrofit2.http.* <methods>;
+}
+
+# === GSON Rules - Critical for JSON processing ===
+-keep class com.google.gson.** { *; }
+-keepattributes *Annotation*
+
+# Keep class members with SerializedName annotation
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+    @com.google.gson.annotations.Expose <fields>;
+}
+
+# Keep generic type info for GSON
+-keepattributes Signature
+
+# TypeToken is used for deserializing generic types
+-keep class com.google.gson.reflect.TypeToken
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep public class * implements java.lang.reflect.Type
+
+# GSON TypeAdapter classes
+-keep class * extends com.google.gson.TypeAdapter
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# === OkHttp Rules ===
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+-dontwarn okhttp3.**
+
+# Okio (needed by OkHttp)
+-keep class okio.** { *; }
+-keep interface okio.** { *; }
+-dontwarn okio.**
+
+# === Glide Rules ===
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep class * extends com.bumptech.glide.module.AppGlideModule {
+ <init>(...);
+}
+-keep public enum com.bumptech.glide.load.ImageHeaderParser$** {
+  **[] $VALUES;
+  public *;
+}
+-dontwarn com.bumptech.glide.**
+
+# === General Patterns ===
+# Keep all Serializable classes
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+
+# Keep all native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep Parcelable implementations
+-keepclassmembers class * implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator CREATOR;
+}
+
+# Keep enums
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# === Warnings Suppression ===
+-dontwarn javax.annotation.**
+-dontwarn android.support.annotation.**
+-dontwarn java.lang.invoke.**
+-dontwarn org.codehaus.mojo.animal_sniffer.**
+-dontwarn androidx.window.extensions.WindowExtensions
+-dontwarn androidx.window.extensions.WindowExtensionsProvider
+-dontwarn androidx.window.extensions.layout.DisplayFeature
+-dontwarn androidx.window.extensions.layout.FoldingFeature
+-dontwarn androidx.window.extensions.layout.WindowLayoutComponent
+-dontwarn androidx.window.extensions.layout.WindowLayoutInfo
+-dontwarn androidx.window.sidecar.SidecarDeviceState
+-dontwarn androidx.window.sidecar.SidecarDisplayFeature
+-dontwarn androidx.window.sidecar.SidecarInterface$SidecarCallback
+-dontwarn androidx.window.sidecar.SidecarInterface
+-dontwarn androidx.window.sidecar.SidecarProvider
+-dontwarn androidx.window.sidecar.SidecarWindowLayoutInfo
+-dontwarn androidx.window.extensions.embedding.ActivityEmbeddingComponent
+-dontwarn androidx.window.extensions.embedding.ActivityRule$Builder
+-dontwarn androidx.window.extensions.embedding.ActivityRule
+-dontwarn androidx.window.extensions.embedding.ActivityStack
+-dontwarn androidx.window.extensions.embedding.EmbeddingRule
+-dontwarn androidx.window.extensions.embedding.SplitInfo
+-dontwarn androidx.window.extensions.embedding.SplitPairRule$Builder
+-dontwarn androidx.window.extensions.embedding.SplitPairRule
+-dontwarn androidx.window.extensions.embedding.SplitPlaceholderRule$Builder
+-dontwarn androidx.window.extensions.embedding.SplitPlaceholderRule

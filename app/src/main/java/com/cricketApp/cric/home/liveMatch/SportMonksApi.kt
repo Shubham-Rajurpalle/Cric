@@ -13,7 +13,7 @@ interface SportMonksApi {
         @Url endpoint: String,
         @Query("api_token") token: String,
         @Query("include") includes: String = "localteam,visitorteam,league,runs,stage"
-    ): Call<SportMonksResponse>
+    ): Call<SportMonksResponse>  // Make sure this is explicitly typed as Call<SportMonksResponse>
 
     @GET("teams/{id}")
     fun getTeamDetails(

@@ -550,6 +550,7 @@ class ChatAdapter(private val items: MutableList<Any>) :
                 textViewName.text = poll.senderName
                 textViewTeam.text = poll.team
                 textViewMessage.text = poll.question
+                pollcount.text=poll.voters?.size.toString()+" Voters"
 
                 // Update badge visibility based on milestone
                 val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)

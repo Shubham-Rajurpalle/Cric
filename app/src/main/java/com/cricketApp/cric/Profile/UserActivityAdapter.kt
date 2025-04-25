@@ -1,6 +1,7 @@
 package com.cricketApp.cric.Profile
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -8,20 +9,23 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.cricketApp.cric.Chat.PollOptionView
 import com.cricketApp.cric.R
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
 class UserActivityAdapter(
-    private val activities: List<UserActivity>,
-    private val onActivityClick: (UserActivity) -> Unit
+    private val activities: MutableList<UserActivity>,
+    private val onActivityClick: (UserActivity) -> Unit,
+    private val enableLongPress: Boolean = false
 ) : RecyclerView.Adapter<UserActivityAdapter.ActivityViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ActivityViewHolder {
@@ -32,10 +36,25 @@ class UserActivityAdapter(
 
     override fun onBindViewHolder(holder: ActivityViewHolder, position: Int) {
         val activity = activities[position]
-        holder.bind(activity, onActivityClick)
+        holder.bind(activity, onActivityClick, enableLongPress) { deletedActivity ->
+            // Handle deletion by removing from the list and updating the adapter
+            val index = activities.indexOf(deletedActivity)
+            if (index != -1) {
+                activities.removeAt(index)
+                notifyItemRemoved(index)
+            }
+        }
     }
 
     override fun getItemCount() = activities.size
+
+    fun removeActivity(activityId: String) {
+        val index = activities.indexOfFirst { it.id == activityId }
+        if (index != -1) {
+            activities.removeAt(index)
+            notifyItemRemoved(index)
+        }
+    }
 
     class ActivityViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val usernameTextView: TextView = itemView.findViewById(R.id.activityUsername)
@@ -56,7 +75,12 @@ class UserActivityAdapter(
         private val buttonHit: TextView = itemView.findViewById(R.id.buttonHit)
         private val buttonMiss: TextView = itemView.findViewById(R.id.buttonMiss)
 
-        fun bind(activity: UserActivity, onActivityClick: (UserActivity) -> Unit) {
+        fun bind(
+            activity: UserActivity,
+            onActivityClick: (UserActivity) -> Unit,
+            enableLongPress: Boolean = false,
+            onActivityDeleted: (UserActivity) -> Unit
+        ) {
             // Set basic info
             usernameTextView.text = activity.username
             teamNameTextView.text = activity.team
@@ -164,6 +188,89 @@ class UserActivityAdapter(
             itemView.setOnClickListener {
                 onActivityClick(activity)
             }
+
+            // Setup long press if enabled
+            if (enableLongPress) {
+                itemView.setOnLongClickListener {
+                    showDeleteDialog(activity, onActivityDeleted)
+                    true
+                }
+            }
+        }
+
+        private fun showDeleteDialog(activity: UserActivity, onDelete: (UserActivity) -> Unit) {
+            val context = itemView.context
+            AlertDialog.Builder(context, R.style.CustomAlertDialogTheme)
+                .setTitle("Delete Activity")
+                .setMessage("Are you sure you want to delete this activity?")
+                .setPositiveButton("Delete") { _, _ ->
+                    // Delete the activity from Firebase
+                    deleteActivity(activity) { success ->
+                        if (success) {
+                            onDelete(activity)
+                            Toast.makeText(context, "Activity deleted", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Failed to delete activity", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        private fun deleteActivity(activity: UserActivity, callback: (Boolean) -> Unit) {
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+
+            // Verify that the current user owns this activity
+            if (currentUserId != activity.userId) {
+                callback(false)
+                return
+            }
+
+            val dbRef = when (activity.type) {
+                UserActivityType.CHAT -> {
+                    FirebaseDatabase.getInstance().getReference("NoBallZone/chats/${activity.id}")
+                }
+                UserActivityType.MEME -> {
+                    FirebaseDatabase.getInstance().getReference("NoBallZone/memes/${activity.id}")
+                }
+                UserActivityType.POLL -> {
+                    FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${activity.id}")
+                }
+                UserActivityType.COMMENT -> {
+                    // For comments, we need the parent ID and type
+                    val parentId = activity.additionalData?.get("parentId") as? String
+                    val parentType = activity.additionalData?.get("parentType") as? String
+
+                    if (parentId != null && parentType != null) {
+                        val path = when (parentType) {
+                            "chat" -> "NoBallZone/chats"
+                            "meme" -> "NoBallZone/memes"
+                            "poll" -> "NoBallZone/polls"
+                            else -> null
+                        }
+
+                        if (path != null) {
+                            FirebaseDatabase.getInstance().getReference("$path/$parentId/comments/${activity.id}")
+                        } else {
+                            null
+                        }
+                    } else {
+                        null
+                    }
+                }
+            } ?: run {
+                callback(false)
+                return
+            }
+
+            dbRef.removeValue()
+                .addOnSuccessListener {
+                    callback(true)
+                }
+                .addOnFailureListener {
+                    callback(false)
+                }
         }
 
         private fun loadProfilePicture(userId: String, imageView: ImageView) {
@@ -178,16 +285,8 @@ class UserActivityAdapter(
             userRef.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     try {
-                        // Check again if the view is still valid before loading the image
-                        if (imageView.context == null ||
-                            (imageView.context is Activity && (imageView.context as Activity).isFinishing) ||
-                            (imageView.context is Activity && (imageView.context as Activity).isDestroyed)) {
-                            return
-                        }
-
                         val profileUrl = snapshot.getValue(String::class.java)
                         if (profileUrl != null && profileUrl.isNotEmpty()) {
-                            // Use applicationContext to prevent memory leaks
                             Glide.with(imageView.context.applicationContext)
                                 .load(profileUrl)
                                 .apply(RequestOptions()
@@ -200,27 +299,15 @@ class UserActivityAdapter(
                             imageView.setImageResource(R.drawable.profile_icon)
                         }
                     } catch (e: Exception) {
-                        // Catch any Glide or context-related exceptions
-                    //    Log.e("UserActivityAdapter", "Error loading profile picture", e)
-
-                        // Set default profile picture
-                        try {
-                            imageView.setImageResource(R.drawable.profile_icon)
-                        } catch (e2: Exception) {
-                            // Even setting the image resource might fail if the view is no longer valid
-                        //    Log.e("UserActivityAdapter", "Could not set default profile picture", e2)
-                        }
+                        imageView.setImageResource(R.drawable.profile_icon)
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                     try {
-                        // Check if view is still valid
-                        if (imageView.isAttachedToWindow) {
-                            imageView.setImageResource(R.drawable.profile_icon)
-                        }
+                        imageView.setImageResource(R.drawable.profile_icon)
                     } catch (e: Exception) {
-                    //    Log.e("UserActivityAdapter", "Error in onCancelled", e)
+                        // Handle exception
                     }
                 }
             })

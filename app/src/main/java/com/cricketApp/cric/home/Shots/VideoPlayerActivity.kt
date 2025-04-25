@@ -5,12 +5,14 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.cricketApp.cric.databinding.ActivityVideoPlayerBinding
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -20,6 +22,8 @@ class VideoPlayerActivity : AppCompatActivity() {
     private var videoId: String? = null
     private var videoUrl: String? = null
     private val firestore by lazy { FirebaseFirestore.getInstance() }
+    private val auth by lazy { FirebaseAuth.getInstance() }
+    private var userHasLiked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,7 +34,6 @@ class VideoPlayerActivity : AppCompatActivity() {
         videoUrl = intent.getStringExtra("videoUrl")
 
         if (videoId.isNullOrEmpty() || videoUrl.isNullOrEmpty()) {
-         //   Log.e("VideoPlayerActivity", "Video ID or URL is missing")
             finish()
             return
         }
@@ -38,13 +41,14 @@ class VideoPlayerActivity : AppCompatActivity() {
         setupPlayer(videoUrl!!)
         updateViewCount(videoId!!)
         fetchCounts(videoId!!) // Fetch initial like/share counts
+        checkIfUserLiked(videoId!!) // Check if the current user has already liked this video
 
         // Click Listeners
-        binding.likeButton.setOnClickListener { updateLikeCount(videoId!!) }
+        binding.likeButton.setOnClickListener { toggleLike(videoId!!) }
         binding.shareButton.setOnClickListener { shareVideo(videoUrl!!, videoId!!) }
         binding.backButton.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        // ✅ Handling back press with OnBackPressedDispatcher
+        // Handling back press with OnBackPressedDispatcher
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 finish()
@@ -74,7 +78,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 })
             }
         } catch (e: Exception) {
-        //    Log.e("VideoPlayerActivity", "Error setting up ExoPlayer", e)
+            // Log.e("VideoPlayerActivity", "Error setting up ExoPlayer", e)
         }
     }
 
@@ -82,10 +86,10 @@ class VideoPlayerActivity : AppCompatActivity() {
         firestore.collection("videos").document(videoId)
             .update("views", FieldValue.increment(1))
             .addOnSuccessListener {
-            //    Log.d("VideoPlayerActivity", "View count updated successfully")
+                // Log.d("VideoPlayerActivity", "View count updated successfully")
             }
             .addOnFailureListener { e ->
-            //    Log.e("VideoPlayerActivity", "Error updating view count", e)
+                // Log.e("VideoPlayerActivity", "Error updating view count", e)
             }
     }
 
@@ -101,21 +105,107 @@ class VideoPlayerActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { e ->
-            //    Log.e("VideoPlayerActivity", "Error fetching counts", e)
+                // Log.e("VideoPlayerActivity", "Error fetching counts", e)
             }
     }
 
-    private fun updateLikeCount(videoId: String) {
-        firestore.collection("videos").document(videoId)
-            .update("likes", FieldValue.increment(1))
-            .addOnSuccessListener {
-                val currentText = binding.likeCount.text.toString()
-                val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
-                binding.likeCount.text = "${currentLikes + 1} likes"
+    private fun checkIfUserLiked(videoId: String) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            // User not logged in
+            userHasLiked = false
+            return
+        }
+
+        val userId = currentUser.uid
+        firestore.collection("users")
+            .document(userId)
+            .collection("likedVideos")
+            .document(videoId)
+            .get()
+            .addOnSuccessListener { document ->
+                userHasLiked = document.exists()
+                updateLikeButtonAppearance()
             }
             .addOnFailureListener { e ->
-            //    Log.e("VideoPlayerActivity", "Error updating like count", e)
+                // Log.e("VideoPlayerActivity", "Error checking if user liked video", e)
+                userHasLiked = false
+                updateLikeButtonAppearance()
             }
+    }
+
+    private fun updateLikeButtonAppearance() {
+        // Change the appearance of like button based on whether user has liked the video
+        // This is a placeholder - you should replace with actual UI changes
+        // For example, you might change the button background color or icon
+        if (userHasLiked) {
+            binding.likeButton.alpha = 1.0f // Make button fully opaque to indicate it's been liked
+            // You could also change a drawable resource:
+            // binding.likeButton.setImageResource(R.drawable.ic_liked)
+        } else {
+            binding.likeButton.alpha = 0.5f // Make button semi-transparent to indicate it's not liked
+            // binding.likeButton.setImageResource(R.drawable.ic_not_liked)
+        }
+    }
+
+    private fun toggleLike(videoId: String) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(this, "Please sign in to like videos", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val userId = currentUser.uid
+
+        if (userHasLiked) {
+            // User has already liked, so unlike the video
+            firestore.collection("videos").document(videoId)
+                .update("likes", FieldValue.increment(-1))
+                .addOnSuccessListener {
+                    // Remove the like record from user's liked videos collection
+                    firestore.collection("users")
+                        .document(userId)
+                        .collection("likedVideos")
+                        .document(videoId)
+                        .delete()
+                        .addOnSuccessListener {
+                            userHasLiked = false
+                            updateLikeButtonAppearance()
+
+                            // Update the like count in UI
+                            val currentText = binding.likeCount.text.toString()
+                            val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
+                            if (currentLikes > 0) {
+                                binding.likeCount.text = "${currentLikes - 1} "
+                            }
+                        }
+                }
+        } else {
+            // User hasn't liked yet, so add a like
+            firestore.collection("videos").document(videoId)
+                .update("likes", FieldValue.increment(1))
+                .addOnSuccessListener {
+                    // Add a record to user's liked videos collection
+                    val likedVideoData = hashMapOf(
+                        "timestamp" to FieldValue.serverTimestamp()
+                    )
+
+                    firestore.collection("users")
+                        .document(userId)
+                        .collection("likedVideos")
+                        .document(videoId)
+                        .set(likedVideoData)
+                        .addOnSuccessListener {
+                            userHasLiked = true
+                            updateLikeButtonAppearance()
+
+                            // Update the like count in UI
+                            val currentText = binding.likeCount.text.toString()
+                            val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
+                            binding.likeCount.text = "${currentLikes + 1} "
+                        }
+                }
+        }
     }
 
     private fun shareVideo(videoUrl: String, videoId: String) {
@@ -124,10 +214,10 @@ class VideoPlayerActivity : AppCompatActivity() {
             .addOnSuccessListener {
                 val currentText = binding.shareCount.text.toString()
                 val currentShares = currentText.substringBefore(" ").toIntOrNull() ?: 0
-                binding.shareCount.text = "${currentShares + 1} shares"
+                binding.shareCount.text = "${currentShares + 1} "
             }
             .addOnFailureListener { e ->
-             //   Log.e("VideoPlayerActivity", "Error updating share count", e)
+                // Log.e("VideoPlayerActivity", "Error updating share count", e)
             }
 
         val shareIntent = Intent(Intent.ACTION_SEND).apply {

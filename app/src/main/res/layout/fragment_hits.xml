@@ -77,14 +77,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="CSK"
+                    android:text="Loading..."
                     android:textColor="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/secondHits"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1847"
+                    android:text="Loading..."
                     android:textColor="#3D7BF5"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -148,14 +148,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="MI"
+                    android:text="Loading..."
                     android:textColor="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/firstHits"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="2430"
+                    android:text="Loading..."
                     android:textColor="#FFC107"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -213,14 +213,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="RCB"
+                    android:text="Loading..."
                     android:textColor="#FFFFFF" />
 
                 <TextView
                     android:id="@+id/thirdHits"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1520"
+                    android:text="Loading..."
                     android:textColor="#4CAF50"
                     android:textSize="18sp"
                     android:textStyle="bold" />

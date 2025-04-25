@@ -117,7 +117,7 @@ class HomeFragment : Fragment() {
                 if (!isAdded || _binding == null) return
 
                 val unreadCount = snapshot.childrenCount.toInt()
-                if (unreadCount > 0) {
+                if (unreadCount >= 0) {
                     // Show badge with count
                     _binding?.bellIcon?.visibility = View.VISIBLE
                     _binding?.bellIcon?.text = if (unreadCount > 99) "99+" else unreadCount.toString()

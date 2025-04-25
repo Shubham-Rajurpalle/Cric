@@ -1,0 +1,258 @@
+package com.cricketApp.cric.home
+
+import android.app.Activity
+import android.content.Intent
+import android.os.Bundle
+import android.util.Log
+import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import com.bumptech.glide.Glide
+import com.cricketApp.cric.Chat.NotificationActivity
+import com.cricketApp.cric.LogIn.SignIn
+import com.cricketApp.cric.Profile.ProfileFragment
+import com.cricketApp.cric.R
+import com.cricketApp.cric.databinding.FragmentHomeBinding
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.tabs.TabLayoutMediator
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
+class HomeFragment : Fragment() {
+    private var _binding: FragmentHomeBinding? = null
+    private val binding get() = _binding!!
+    private lateinit var database: FirebaseDatabase
+    private val valueEventListeners = HashMap<DatabaseReference, ValueEventListener>()
+
+    private var isFragmentActive = false
+
+    private var currentUser = FirebaseAuth.getInstance().currentUser
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    private val loginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // User successfully logged in
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Set flag to indicate fragment is active
+        isFragmentActive = true
+
+        setupTabLayout()
+        database = FirebaseDatabase.getInstance()
+
+        if (isUserLoggedIn()) {
+            loadProfilePhoto()
+        } else {
+            binding.profilePhoto.setImageResource(R.drawable.profile_icon)
+        }
+
+        binding.profilePhoto.setOnClickListener {
+            if (!isAdded || _binding == null) return@setOnClickListener
+
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to view your profile")
+                return@setOnClickListener
+            }
+
+            try {
+                val bottomNavigation: BottomNavigationView = requireActivity().findViewById(R.id.bottomNavigation)
+                bottomNavigation.selectedItemId = R.id.profileIcon
+                val fragmentManager = parentFragmentManager
+                val transaction = fragmentManager.beginTransaction()
+                transaction.replace(R.id.navHost, ProfileFragment())
+                transaction.addToBackStack(null)
+                transaction.commit()
+            } catch (e: Exception) {
+             //   Log.e("HomeFragment", "Error navigating to profile", e)
+            }
+        }
+
+        // Set up bell icon click to open notifications
+        binding.bellIcon.setOnClickListener {
+            if (!isAdded || _binding == null) return@setOnClickListener
+            openNotifications()
+        }
+
+        // Check for unread notifications
+        checkUnreadNotifications()
+    }
+
+    private fun addValueEventListener(reference: DatabaseReference, listener: ValueEventListener) {
+        reference.addValueEventListener(listener)
+        valueEventListeners[reference] = listener
+    }
+
+
+    private fun checkUnreadNotifications() {
+        // Check if fragment is still attached and binding exists
+        if (!isAdded || _binding == null) return
+
+        val notificationsRef = FirebaseDatabase.getInstance().getReference("Notifications")
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
+                val unreadCount = snapshot.childrenCount.toInt()
+                if (unreadCount > 0) {
+                    // Show badge with count
+                    _binding?.bellIcon?.visibility = View.VISIBLE
+                    _binding?.bellIcon?.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                } else {
+                    // Hide badge count, but keep icon visible
+                    _binding?.bellIcon?.visibility = View.VISIBLE
+                    _binding?.bellIcon?.visibility = View.GONE
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Check if fragment is still attached and binding exists
+                if (!isAdded || _binding == null) return
+
+                // Handle error - keep icon visible but no badge
+                _binding?.bellIcon?.visibility = View.VISIBLE
+                _binding?.bellIcon?.visibility = View.GONE
+            }
+        }
+
+        // Add and track the listener
+        notificationsRef.orderByChild("read").equalTo(false).addValueEventListener(listener)
+        valueEventListeners[notificationsRef] = listener
+    }
+
+
+    private fun openNotifications() {
+        val intent = Intent(requireContext(), NotificationActivity::class.java)
+        startActivity(intent)
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    private fun showLoginPrompt(message: String) {
+        AlertDialog.Builder(requireContext(),R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(requireContext(), SignIn::class.java)
+                // Use the activity result launcher instead of deprecated startActivityForResult
+                loginLauncher.launch(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun loadProfilePhoto() {
+        if (!isAdded || _binding == null) return
+
+        val userId = currentUser?.uid ?: return
+        val userRef = database.getReference("Users/$userId")
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!isAdded || _binding == null) return
+
+                val photoUrl = snapshot.child("profilePhoto").getValue(String::class.java)
+                if (!photoUrl.isNullOrEmpty()) {
+                    try {
+                        Glide.with(requireContext())
+                            .load(photoUrl)
+                            .placeholder(R.drawable.profile_empty)
+                            .into(binding.profilePhoto)
+                    } catch (e: Exception) {
+                    //    Log.e("HomeFragment", "Error loading profile image", e)
+                    }
+                } else {
+                //    Log.e("Profile", "No profile photo found")
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+            //    Log.e("HomeFragment", "Error loading profile photo", error.toException())
+            }
+        }
+
+        // Add and track listener
+        userRef.addListenerForSingleValueEvent(listener)
+        valueEventListeners[userRef] = listener
+    }
+
+
+    private fun setupTabLayout() {
+        if (!isAdded || _binding == null) return
+
+        try {
+            val adapter = ViewPagerAdapter(this)
+            binding.viewPager.adapter = adapter
+            binding.viewPager.isUserInputEnabled ?: true
+
+            TabLayoutMediator(binding.tabsHomePage, binding.viewPager) { tab, position ->
+                tab.text = when (position) {
+                    0 -> "CricShots"
+                    1 -> "Live"
+                    2 -> "Upcoming"
+                    else -> "CricShots"
+                }
+            }.attach()
+        } catch (e: Exception) {
+        //    Log.e("HomeFragment", "Error setting up tab layout", e)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isFragmentActive = false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isFragmentActive = true
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Remove all listeners
+        for ((ref, listener) in valueEventListeners) {
+            ref.removeEventListener(listener)
+        }
+        valueEventListeners.clear()
+
+        // Clear adapter references
+        _binding?.viewPager?.adapter = null
+
+        // Cancel any pending operations
+        try {
+            // If any handlers are used, cancel them here
+            // handler?.removeCallbacksAndMessages(null)
+        } catch (e: Exception) {
+        //    Log.e("HomeFragment", "Error during cleanup", e)
+        }
+        // Clear binding reference
+        _binding = null
+    }
+}

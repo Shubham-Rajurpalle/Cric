@@ -213,8 +213,80 @@
             android:id="@+id/recyclerViewMemes"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            android:visibility="gone"/>
+
+
+        <LinearLayout
+            android:id="@+id/llAnime2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:visibility="visible"
+            android:orientation="vertical">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_150sdp"
+                android:layout_gravity="center"
+                android:visibility="visible"
+                app:lottie_autoPlay="true"
+                android:alpha="0.2"
+                app:lottie_loop="true"
+                app:lottie_repeatCount="30"
+                app:lottie_repeatMode="restart"
+                app:lottie_rawRes="@raw/loading_v" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_150sdp"
+                android:layout_gravity="center"
+                android:visibility="visible"
+                app:lottie_autoPlay="true"
+                android:alpha="0.2"
+                app:lottie_loop="true"
+                app:lottie_repeatCount="30"
+                app:lottie_repeatMode="restart"
+                app:lottie_rawRes="@raw/loading_v" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_150sdp"
+                android:layout_gravity="center"
+                android:visibility="visible"
+                app:lottie_autoPlay="true"
+                android:alpha="0.2"
+                app:lottie_loop="true"
+                app:lottie_repeatCount="30"
+                app:lottie_repeatMode="restart"
+                app:lottie_rawRes="@raw/loading_v" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_150sdp"
+                android:layout_gravity="center"
+                android:visibility="visible"
+                app:lottie_autoPlay="true"
+                android:alpha="0.2"
+                app:lottie_loop="true"
+                app:lottie_repeatCount="30"
+                app:lottie_repeatMode="restart"
+                app:lottie_rawRes="@raw/loading_v" />
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_150sdp"
+                android:layout_gravity="center"
+                android:visibility="visible"
+                app:lottie_autoPlay="true"
+                android:alpha="0.2"
+                app:lottie_loop="true"
+                app:lottie_repeatCount="30"
+                app:lottie_repeatMode="restart"
+                app:lottie_rawRes="@raw/loading_v" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
 

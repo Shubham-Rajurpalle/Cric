@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Cric</string>
+    <string name="app_name">CricXone</string>
     <string name="hint_email">Enter your email</string>
     <string name="hint_pass">Password</string>
     <string name="terms_conditions"><u>Terms &amp; Conditions </u></string>

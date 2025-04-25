@@ -12,18 +12,18 @@ android {
         applicationId = "com.cricketApp.cric"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
+        versionCode = 18
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
+                "okhttp-proguard-rules.pro"
             )
         }
     }
@@ -78,6 +78,7 @@ dependencies {
     implementation ("com.google.firebase:firebase-firestore")
     implementation ("com.google.firebase:firebase-storage")
     implementation ("com.google.android.gms:play-services-auth:20.7.0")
+    implementation ("com.google.firebase:firebase-config-ktx:21.6.0")
 
     // Facebook Login
     implementation("com.facebook.android:facebook-login:16.3.0")
@@ -143,9 +144,13 @@ dependencies {
     //Notification Firebase Cloud Messaging
     implementation ("com.google.firebase:firebase-messaging:23.2.1")
 
-    //Leak Canery
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.12")
-
     //Admob
     implementation ("com.google.android.gms:play-services-ads:22.0.0")
+
+    //http logging
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
+
+    //Lottie Animations
+    implementation ("com.airbnb.android:lottie:6.1.0")
+
 }

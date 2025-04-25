@@ -79,6 +79,7 @@ class Cric_shots : Fragment() {
             .get()
             .addOnSuccessListener { snapshot ->
                 // Check again if fragment is still attached
+                binding.llAnime.visibility = View.GONE
                 if (!isAdded) return@addOnSuccessListener
 
                 snapshot?.let {
@@ -102,6 +103,7 @@ class Cric_shots : Fragment() {
             ?.orderBy("timestamp", Query.Direction.DESCENDING)
             ?.get()
             ?.addOnSuccessListener { snapshot ->
+                binding.llAnime2.visibility = View.GONE
                 snapshot?.let {
                     if (!it.isEmpty) {
                         newsList.clear()

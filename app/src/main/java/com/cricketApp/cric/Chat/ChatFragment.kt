@@ -1092,7 +1092,7 @@ class ChatFragment : Fragment() {
 
     private fun loadInitialMessages() {
         // Show progress before loading
-        binding.progressSending.visibility = View.VISIBLE
+        binding.llAnime2.visibility = View.VISIBLE
         binding.recyclerViewMessages.visibility = View.GONE
 
         val chatsRef = database.getReference("NoBallZone/chats")
@@ -1130,7 +1130,7 @@ class ChatFragment : Fragment() {
                 if (!isAdded || _binding == null) return
 
                 chatsLoaded = true
-                binding.progressSending.visibility = View.GONE
+                binding.llAnime2.visibility = View.GONE
                 binding.recyclerViewMessages.visibility = View.VISIBLE
             //    Log.e("ChatFragment", "Error loading chats", error.toException())
             }
@@ -1159,7 +1159,7 @@ class ChatFragment : Fragment() {
                 if (!isAdded || _binding == null) return
 
                 pollsLoaded = true
-                binding.progressSending.visibility = View.GONE
+                binding.llAnime2.visibility = View.GONE
                 binding.recyclerViewMessages.visibility = View.VISIBLE
             //    Log.e("ChatFragment", "Error loading polls", error.toException())
             }
@@ -1193,7 +1193,7 @@ class ChatFragment : Fragment() {
         adapter.notifyDataSetChanged()
 
         // Hide progress indicators
-        binding.progressSending.visibility = View.GONE
+        binding.llAnime2.visibility = View.GONE
         binding.recyclerViewMessages.visibility = View.VISIBLE
 
         // Scroll to show the latest messages

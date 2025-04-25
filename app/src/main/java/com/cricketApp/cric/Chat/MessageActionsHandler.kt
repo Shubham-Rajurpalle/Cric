@@ -34,11 +34,11 @@ object MessageActionsHandler {
     private val copyrightClaims = mutableMapOf<String, Int>() // messageId -> count
 
     // Constants for reports threshold - reduced from 50 to more reasonable numbers
-    private const val MAX_REPORTS_THRESHOLD = 5  // Lowered from 50 to 5
-    private const val INAPPROPRIATE_REPORTS_THRESHOLD = 3
-    private const val SPAM_REPORTS_THRESHOLD = 3
-    private const val HARASSMENT_REPORTS_THRESHOLD = 2
-    private const val FALSE_INFO_REPORTS_THRESHOLD = 4
+    private const val MAX_REPORTS_THRESHOLD = 50  // Lowered from 50 to 5
+    private const val INAPPROPRIATE_REPORTS_THRESHOLD = 30
+    private const val SPAM_REPORTS_THRESHOLD = 30
+    private const val HARASSMENT_REPORTS_THRESHOLD = 20
+    private const val FALSE_INFO_REPORTS_THRESHOLD = 40
 
     private const val IMAGE_CLAIM_THRESHOLD = 5
     private const val COPYRIGHT_CLAIM_THRESHOLD = 3  // Reduced from 10 to 3

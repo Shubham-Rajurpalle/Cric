@@ -36,7 +36,7 @@
             </androidx.cardview.widget.CardView>
 
             <TextView
-                android:id="@+id/series_name"
+                android:id="@+id/seriesName"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
@@ -47,7 +47,7 @@
                 android:paddingStart="8dp"/>
 
             <TextView
-                android:id="@+id/match_number"
+                android:id="@+id/matchNumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Match..."
@@ -83,14 +83,14 @@
                     app:cardElevation="2dp">
 
                     <ImageView
-                        android:id="@+id/team1_logo"
+                        android:id="@+id/team1Logo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"/>
                 </androidx.cardview.widget.CardView>
 
                 <TextView
-                    android:id="@+id/team1_name"
+                    android:id="@+id/team1Name"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
@@ -114,14 +114,14 @@
                     app:cardElevation="2dp">
 
                     <ImageView
-                        android:id="@+id/team2_logo"
+                        android:id="@+id/team2Logo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:scaleType="centerCrop"/>
                 </androidx.cardview.widget.CardView>
 
                 <TextView
-                    android:id="@+id/team2_name"
+                    android:id="@+id/team2Name"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
@@ -131,7 +131,7 @@
                     android:paddingStart="8dp"/>
 
                 <TextView
-                    android:id="@+id/match_time"
+                    android:id="@+id/matchTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Time.."

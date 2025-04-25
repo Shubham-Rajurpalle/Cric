@@ -2,7 +2,6 @@ package com.cricketApp.cric.Profile
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
@@ -55,20 +54,19 @@ class AllActivitiesActivity : AppCompatActivity() {
     }
 
     private fun loadBannerAd() {
-        adView =binding.adView
+        adView = binding.adView
         val adRequest = AdRequest.Builder().build()
 
         adView.adListener = object : AdListener() {
             override fun onAdLoaded() {
-             //   Log.d(TAG, "Ad loaded")
+                // Log.d(TAG, "Ad loaded")
             }
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-            //    Log.e(TAG, "Ad failed to load: $loadAdError")
+                // Log.e(TAG, "Ad failed to load: $loadAdError")
             }
         }
 
         adView.loadAd(adRequest)
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -80,25 +78,30 @@ class AllActivitiesActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        activitiesAdapter = UserActivityAdapter(allActivities) { activity ->
-            // Handle activity click
-            when (activity.type) {
-                UserActivityType.CHAT -> {
-                    navigateToComments(activity.id, "chat")
+        // Enable long press when setting up the adapter
+        activitiesAdapter = UserActivityAdapter(
+            allActivities,
+            onActivityClick = { activity ->
+                // Handle activity click
+                when (activity.type) {
+                    UserActivityType.CHAT -> {
+                        navigateToComments(activity.id, "chat")
+                    }
+                    UserActivityType.MEME -> {
+                        navigateToComments(activity.id, "meme")
+                    }
+                    UserActivityType.POLL -> {
+                        navigateToComments(activity.id, "poll")
+                    }
+                    UserActivityType.COMMENT -> {
+                        val parentType = activity.additionalData?.get("parentType") as? String ?: "chat"
+                        val parentId = activity.additionalData?.get("parentId") as? String ?: ""
+                        navigateToComments(parentId, parentType)
+                    }
                 }
-                UserActivityType.MEME -> {
-                    navigateToComments(activity.id, "meme")
-                }
-                UserActivityType.POLL -> {
-                    navigateToComments(activity.id, "poll")
-                }
-                UserActivityType.COMMENT -> {
-                    val parentType = activity.additionalData?.get("parentType") as? String ?: "chat"
-                    val parentId = activity.additionalData?.get("parentId") as? String ?: ""
-                    navigateToComments(parentId, parentType)
-                }
-            }
-        }
+            },
+            enableLongPress = true  // Enable long-press functionality
+        )
 
         binding.recyclerViewAllActivities.apply {
             layoutManager = LinearLayoutManager(this@AllActivitiesActivity)
