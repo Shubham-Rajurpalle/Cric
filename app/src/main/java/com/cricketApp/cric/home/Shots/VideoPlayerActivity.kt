@@ -5,16 +5,15 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.cricketApp.cric.databinding.ActivityVideoPlayerBinding
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import android.content.Context
 
 class VideoPlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVideoPlayerBinding
@@ -22,8 +21,7 @@ class VideoPlayerActivity : AppCompatActivity() {
     private var videoId: String? = null
     private var videoUrl: String? = null
     private val firestore by lazy { FirebaseFirestore.getInstance() }
-    private val auth by lazy { FirebaseAuth.getInstance() }
-    private var userHasLiked = false
+    private var hasLiked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,10 +39,16 @@ class VideoPlayerActivity : AppCompatActivity() {
         setupPlayer(videoUrl!!)
         updateViewCount(videoId!!)
         fetchCounts(videoId!!) // Fetch initial like/share counts
-        checkIfUserLiked(videoId!!) // Check if the current user has already liked this video
+
+        // Check if user has already liked this video using SharedPreferences
+        checkIfVideoLiked(videoId!!)
 
         // Click Listeners
-        binding.likeButton.setOnClickListener { toggleLike(videoId!!) }
+        binding.likeButton.setOnClickListener {
+            if (!hasLiked) {
+                updateLikeCount(videoId!!)
+            }
+        }
         binding.shareButton.setOnClickListener { shareVideo(videoUrl!!, videoId!!) }
         binding.backButton.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
@@ -109,103 +113,61 @@ class VideoPlayerActivity : AppCompatActivity() {
             }
     }
 
-    private fun checkIfUserLiked(videoId: String) {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            // User not logged in
-            userHasLiked = false
-            return
-        }
+    private fun checkIfVideoLiked(videoId: String) {
+        // Get SharedPreferences
+        val sharedPrefs = getSharedPreferences("video_likes", Context.MODE_PRIVATE)
 
-        val userId = currentUser.uid
-        firestore.collection("users")
-            .document(userId)
-            .collection("likedVideos")
-            .document(videoId)
-            .get()
-            .addOnSuccessListener { document ->
-                userHasLiked = document.exists()
-                updateLikeButtonAppearance()
-            }
-            .addOnFailureListener { e ->
-                // Log.e("VideoPlayerActivity", "Error checking if user liked video", e)
-                userHasLiked = false
-                updateLikeButtonAppearance()
-            }
+        // Check if this video ID exists in SharedPreferences
+        hasLiked = sharedPrefs.getBoolean(videoId, false)
+
+        // Update UI based on like status
+        updateLikeButtonAppearance()
     }
 
     private fun updateLikeButtonAppearance() {
-        // Change the appearance of like button based on whether user has liked the video
-        // This is a placeholder - you should replace with actual UI changes
-        // For example, you might change the button background color or icon
-        if (userHasLiked) {
-            binding.likeButton.alpha = 1.0f // Make button fully opaque to indicate it's been liked
-            // You could also change a drawable resource:
+        if (hasLiked) {
+            // Change the appearance of the like button when already liked
+            binding.likeButton.alpha = 0.5f
+            // You could also change the drawable if you have liked/unliked images
             // binding.likeButton.setImageResource(R.drawable.ic_liked)
         } else {
-            binding.likeButton.alpha = 0.5f // Make button semi-transparent to indicate it's not liked
-            // binding.likeButton.setImageResource(R.drawable.ic_not_liked)
+            binding.likeButton.alpha = 1.0f
+            // binding.likeButton.setImageResource(R.drawable.ic_like)
         }
     }
 
-    private fun toggleLike(videoId: String) {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            Toast.makeText(this, "Please sign in to like videos", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun updateLikeCount(videoId: String) {
+        // First update UI immediately
+        val currentText = binding.likeCount.text.toString()
+        val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
+        binding.likeCount.text = "${currentLikes + 1} "
 
-        val userId = currentUser.uid
+        // Mark as liked locally
+        hasLiked = true
+        updateLikeButtonAppearance()
 
-        if (userHasLiked) {
-            // User has already liked, so unlike the video
-            firestore.collection("videos").document(videoId)
-                .update("likes", FieldValue.increment(-1))
-                .addOnSuccessListener {
-                    // Remove the like record from user's liked videos collection
-                    firestore.collection("users")
-                        .document(userId)
-                        .collection("likedVideos")
-                        .document(videoId)
-                        .delete()
-                        .addOnSuccessListener {
-                            userHasLiked = false
-                            updateLikeButtonAppearance()
+        // Save like state to SharedPreferences
+        val sharedPrefs = getSharedPreferences("video_likes", Context.MODE_PRIVATE)
+        val editor = sharedPrefs.edit()
+        editor.putBoolean(videoId, true)
+        editor.apply()
 
-                            // Update the like count in UI
-                            val currentText = binding.likeCount.text.toString()
-                            val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
-                            if (currentLikes > 0) {
-                                binding.likeCount.text = "${currentLikes - 1} "
-                            }
-                        }
-                }
-        } else {
-            // User hasn't liked yet, so add a like
-            firestore.collection("videos").document(videoId)
-                .update("likes", FieldValue.increment(1))
-                .addOnSuccessListener {
-                    // Add a record to user's liked videos collection
-                    val likedVideoData = hashMapOf(
-                        "timestamp" to FieldValue.serverTimestamp()
-                    )
+        // Update like count in Firebase
+        firestore.collection("videos").document(videoId)
+            .update("likes", FieldValue.increment(1))
+            .addOnFailureListener { e ->
+                // On failure, revert the UI changes
+                binding.likeCount.text = "$currentLikes "
+                hasLiked = false
+                updateLikeButtonAppearance()
 
-                    firestore.collection("users")
-                        .document(userId)
-                        .collection("likedVideos")
-                        .document(videoId)
-                        .set(likedVideoData)
-                        .addOnSuccessListener {
-                            userHasLiked = true
-                            updateLikeButtonAppearance()
+                // Also revert SharedPreferences
+                val prefsEditor = sharedPrefs.edit()
+                prefsEditor.putBoolean(videoId, false)
+                prefsEditor.apply()
 
-                            // Update the like count in UI
-                            val currentText = binding.likeCount.text.toString()
-                            val currentLikes = currentText.substringBefore(" ").toIntOrNull() ?: 0
-                            binding.likeCount.text = "${currentLikes + 1} "
-                        }
-                }
-        }
+                // Log.e("VideoPlayerActivity", "Error updating like count", e)
+            }
     }
 
     private fun shareVideo(videoUrl: String, videoId: String) {

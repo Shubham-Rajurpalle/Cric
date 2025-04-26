@@ -40,8 +40,32 @@ class Cric_shots : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupSwipeRefreshLayout()
         setupCricShotsRecyclerView()
         setupNewsRecyclerView()
+        fetchVideos()
+        fetchNews()
+    }
+
+    private fun setupSwipeRefreshLayout() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            // Refresh data
+            refreshData()
+        }
+    }
+
+    private fun refreshData() {
+        // Show loading animations again if they're not visible
+        binding.llAnime.visibility = View.VISIBLE
+        binding.llAnime2.visibility = View.VISIBLE
+
+        // Clear existing data
+        videoList.clear()
+        newsList.clear()
+        videoAdapter.notifyDataSetChanged()
+        newsAdapter.notifyDataSetChanged()
+
+        // Fetch fresh data
         fetchVideos()
         fetchNews()
     }
@@ -87,6 +111,9 @@ class Cric_shots : Fragment() {
                         videoList.clear()
                         videoList.addAll(it.toObjects(Video::class.java))
                         videoAdapter.notifyDataSetChanged()
+
+                        // Check if both fetches are complete to dismiss the refresh indicator
+                        checkRefreshComplete()
                     }
                 }
             }
@@ -94,7 +121,9 @@ class Cric_shots : Fragment() {
                 // Check again if fragment is still attached
                 if (!isAdded) return@addOnFailureListener
 
-             //   Log.e("Firestore", "Error fetching videos", e)
+                // Dismiss refresh indicator on failure too
+                checkRefreshComplete()
+                //Log.e("Firestore", "Error fetching videos", e)
             }
     }
 
@@ -109,12 +138,24 @@ class Cric_shots : Fragment() {
                         newsList.clear()
                         newsList.addAll(it.toObjects(News::class.java))
                         newsAdapter.notifyDataSetChanged()
+
+                        // Check if both fetches are complete to dismiss the refresh indicator
+                        checkRefreshComplete()
                     }
                 }
             }
             ?.addOnFailureListener { e ->
-            //    Log.e("Firestore", "Error fetching news", e)
+                // Dismiss refresh indicator on failure too
+                checkRefreshComplete()
+                //Log.e("Firestore", "Error fetching news", e)
             }
+    }
+
+    // Helper method to check if both fetches are complete and dismiss the refresh indicator
+    private fun checkRefreshComplete() {
+        if (binding.llAnime.visibility == View.GONE && binding.llAnime2.visibility == View.GONE) {
+            binding.swipeRefreshLayout.isRefreshing = false
+        }
     }
 
     private fun openVideoPlayer(video: Video) {

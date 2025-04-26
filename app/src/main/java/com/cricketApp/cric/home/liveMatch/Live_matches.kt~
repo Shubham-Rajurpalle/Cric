@@ -116,7 +116,7 @@ class Live_matches : Fragment() {
                 if (isLoading) {
                     showLoadingState()
                 }
-                binding.llAnime2.visibility = if (isLoading) View.VISIBLE else View.GONE
+                // When loading ends, the matches observer will handle the visibility
             }
 
             // Observe matches data

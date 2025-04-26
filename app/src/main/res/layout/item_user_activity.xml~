@@ -76,6 +76,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             app:cardCornerRadius="@dimen/_20sdp"
+
             android:layout_marginTop="8dp"
             android:layout_height="wrap_content">
             <ImageView
@@ -83,7 +84,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:adjustViewBounds="true"
-                android:scaleType="fitXY"
+                android:scaleType="centerCrop"
+                android:maxHeight="@dimen/_150sdp"
                 android:visibility="gone" />
         </androidx.cardview.widget.CardView>
 

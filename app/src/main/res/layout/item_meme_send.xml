@@ -79,7 +79,6 @@
                     android:layout_height="wrap_content"
                     android:adjustViewBounds="true"
                     android:scaleType="fitXY"
-                    android:maxHeight="@dimen/_130sdp"
                     android:visibility="gone" />
             </androidx.cardview.widget.CardView>
 
