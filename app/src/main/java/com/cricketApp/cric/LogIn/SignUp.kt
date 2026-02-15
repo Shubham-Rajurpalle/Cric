@@ -103,7 +103,7 @@ class SignUp : AppCompatActivity() {
                 val downloadUrl = profileImageReference.downloadUrl.await()
                 downloadUrl.toString()
             } catch (e: Exception) {
-                Log.e("SignUp", "Profile photo upload failed", e)
+            //    Log.e("SignUp", "Profile photo upload failed", e)
                 ""
             }
         }
@@ -214,17 +214,17 @@ class SignUp : AppCompatActivity() {
     }
 
     private fun setIplTeams() {
-        val iplTeams = arrayOf(
-            "Select your com.cricketApp.cric.home.liveMatch.Team", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
+        val iplTeams = mutableListOf(
+            "Select your team", "None", "MI", "CSK", "DC", "RCB", "KKR", "RR", "PBKS", "SRH", "LSG", "GT"
         )
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, iplTeams)
+        val adapter = CustomSpinnerAdapter(this, R.layout.spinner_item, iplTeams)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.iplTeamTxt.adapter = adapter
     }
 
     private fun setCountries() {
         val countries = readCountriesFromFile()
-        val adapter = ArrayAdapter(this, R.layout.spinner_item, countries)
+        val adapter = CustomSpinnerAdapter(this, R.layout.spinner_item, countries)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.countryTxt.adapter = adapter
     }
@@ -253,6 +253,6 @@ class SignUp : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        coroutineScope.cancel() // Cancel any ongoing coroutines when activity is destroyed
+        coroutineScope.cancel()
     }
 }

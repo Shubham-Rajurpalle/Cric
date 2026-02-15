@@ -1,7 +1,13 @@
 package com.cricketApp.cric.Chat
 
+import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -9,32 +15,56 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
+import com.cricketApp.cric.LogIn.SignIn
+import com.cricketApp.cric.Meme.CloudVisionSafetyChecker
+import com.cricketApp.cric.Moderation.ChatModerationService
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.FragmentChatBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.lang.ref.WeakReference
 
 class ChatFragment : Fragment() {
 
-    private lateinit var binding: FragmentChatBinding
+    private var _binding: FragmentChatBinding? = null
+    private val binding get() = _binding!!
+    private val valueEventListeners = HashMap<DatabaseReference, ValueEventListener>()
+    private val childEventListeners = HashMap<DatabaseReference, ChildEventListener>()
     private lateinit var adapter: ChatAdapter
     private lateinit var messages: ArrayList<Any> // Can hold both ChatMessage and PollMessage
     private lateinit var database: FirebaseDatabase
-    private val currentUser = FirebaseAuth.getInstance().currentUser
+    private lateinit var storageRef: StorageReference
+    private lateinit var moderationService: ChatModerationService
+    private var currentUser = FirebaseAuth.getInstance().currentUser
     private var userTeam: String = "CSK" // Default team, will be updated from user profile
+    private val PICK_IMAGE_REQUEST = 1
+    private val LOGIN_REQUEST_CODE = 1001
+    private var selectedImageUri: Uri? = null
+    private lateinit var safetyChecker: CloudVisionSafetyChecker
+    private var highlightMessageId: String? = null
 
     // Map to keep track of message positions for efficient updates
     private val messagePositions = mutableMapOf<String, Int>()
@@ -42,12 +72,18 @@ class ChatFragment : Fragment() {
     // Selected filters
     private var selectedFilter = mutableSetOf<String>()
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        highlightMessageId = arguments?.getString("HIGHLIGHT_MESSAGE_ID")
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentChatBinding.inflate(inflater, container, false)
+        _binding = FragmentChatBinding.inflate(inflater, container, false)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime()) // Check if IME is visible
             val height = requireActivity().findViewById<BottomNavigationView>(R.id.bottomNavigation).height
@@ -67,21 +103,39 @@ class ChatFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Initialize moderation service
+        moderationService = ChatModerationService(requireContext())
+
+        // Initialize safety checker for images
+        safetyChecker = CloudVisionSafetyChecker(requireContext())
+
         // Initialize Firebase
         database = FirebaseDatabase.getInstance()
 
-        // Load profile photo
-        loadProfilePhoto()
+        // Initialize Firebase Storage
+        val storage = FirebaseStorage.getInstance()
+        storageRef = storage.reference
 
-        // Fetch user's team
-        fetchUserTeam()
+        // Update UI based on login status
+        updateUIBasedOnLoginStatus()
+
+        // Load profile photo if logged in
+        if (isUserLoggedIn()) {
+            loadProfilePhoto()
+            fetchUserTeam()
+        } else {
+            binding.profilePhoto.setImageResource(R.drawable.profile_icon)
+        }
 
         // Setup RecyclerView
         messages = ArrayList()
         adapter = ChatAdapter(messages)
         binding.recyclerViewMessages.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, true)
-            (layoutManager as LinearLayoutManager).stackFromEnd = true
+            val layoutManager = LinearLayoutManager(context)
+            layoutManager.orientation = LinearLayoutManager.VERTICAL
+            layoutManager.reverseLayout = true
+            layoutManager.stackFromEnd = true
+            this.layoutManager = layoutManager
             adapter = this@ChatFragment.adapter
         }
 
@@ -91,13 +145,36 @@ class ChatFragment : Fragment() {
         // Setup Firebase listeners
         setupFirebaseListeners()
 
-        // Setup send message button
+        // Setup send message button with moderation and login check
         binding.buttonSend.setOnClickListener {
-            sendMessage()
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to send messages")
+                return@setOnClickListener
+            }
+
+            val messageText = binding.editTextMessage.text.toString().trim()
+            if (messageText.isNotEmpty()) {
+                checkAndSendMessage(messageText)
+            }
         }
 
-        // Setup poll button
+        // Setup image attachment button with login check
+        binding.buttonMeme.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to share images")
+                return@setOnClickListener
+            }
+
+            openImagePicker()
+        }
+
+        // Setup poll button with login check
         binding.buttonPoll.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to create polls")
+                return@setOnClickListener
+            }
+
             showCreatePollDialog()
         }
 
@@ -113,6 +190,11 @@ class ChatFragment : Fragment() {
         }
 
         binding.profilePhoto.setOnClickListener {
+            if (!isUserLoggedIn()) {
+                showLoginPrompt("Login to view your profile")
+                return@setOnClickListener
+            }
+
             val bottomNavigation: BottomNavigationView = requireActivity().findViewById(R.id.bottomNavigation)
             bottomNavigation.selectedItemId = R.id.profileIcon
             val fragmentManager = parentFragmentManager
@@ -121,29 +203,132 @@ class ChatFragment : Fragment() {
             transaction.addToBackStack(null)
             transaction.commit()
         }
+
+        // Setup message highlighting if we have a message ID to highlight
+        if (!highlightMessageId.isNullOrEmpty()) {
+            // Wait for messages to load before trying to scroll
+            Handler(Looper.getMainLooper()).postDelayed({
+                scrollToAndHighlightMessage(highlightMessageId!!)
+            }, 500) // Small delay to allow messages to load
+        }
+    }
+
+    private fun scrollToAndHighlightMessage(messageId: String) {
+        if (!isAdded || _binding == null) return
+
+        // Find the position of the message in the adapter
+        val position = adapter.findPositionById(messageId)
+
+        if (position != -1) {
+            // Scroll to the position
+            binding.recyclerViewMessages.scrollToPosition(position)
+
+            // Create a weak reference to the fragment
+            val fragmentRef = WeakReference(this)
+
+            // Get the item view and apply highlight animation after a small delay
+            Handler(Looper.getMainLooper()).postDelayed({
+                val fragment = fragmentRef.get() ?: return@postDelayed
+                if (!fragment.isAdded || fragment._binding == null) return@postDelayed
+
+                val viewHolder = fragment.binding.recyclerViewMessages.findViewHolderForAdapterPosition(position)
+                viewHolder?.itemView?.let { view ->
+                    fragment.applyHighlightAnimation(view)
+                }
+            }, 100)
+        }
+    }
+
+
+    /**
+     * Apply a highlight animation to the given view
+     */
+    private fun applyHighlightAnimation(view: View) {
+        // Create a flash animation effect
+        val originalBackground = view.background
+        view.setBackgroundResource(R.drawable.highlighted_item_background)
+
+        // Reset background after animation
+        Handler(Looper.getMainLooper()).postDelayed({
+            view.background = originalBackground
+        }, 1500) // 1.5 seconds highlight
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    private fun showLoginPrompt(message: String) {
+        AlertDialog.Builder(requireContext(),R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(requireContext(), SignIn::class.java)
+                startActivityForResult(intent, LOGIN_REQUEST_CODE)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+
+    private fun updateUIBasedOnLoginStatus() {
+        val isLoggedIn = isUserLoggedIn()
+
+        // Show hint text for non-logged in users in the message input
+        if (!isLoggedIn) {
+            binding.editTextMessage.hint = "Login to send messages"
+            // Disable buttons for non-logged in users
+            binding.buttonSend.alpha = 0.5f
+            binding.buttonMeme.alpha = 0.5f
+            binding.buttonPoll.alpha = 0.5f
+        } else {
+            binding.editTextMessage.hint = "Type a message"
+            // Enable buttons for logged in users
+            binding.buttonSend.alpha = 1.0f
+            binding.buttonMeme.alpha = 1.0f
+            binding.buttonPoll.alpha = 1.0f
+        }
     }
 
     private fun loadProfilePhoto() {
+        // Safety checks to prevent NPE
+        if (!isAdded || _binding == null) return
+
         val userId = currentUser?.uid ?: return
         val userRef = database.getReference("Users/$userId/profilePhoto")
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Check again if fragment is still attached and binding is available
+                if (!isAdded || _binding == null) return
+
                 val photoUrl = snapshot.getValue(String::class.java)
                 if (!photoUrl.isNullOrEmpty()) {
-                    Glide.with(context ?: return)
-                        .load(photoUrl)
-                        .placeholder(R.drawable.profile_icon)
-                        .into(binding.profilePhoto)
+                    try {
+                        context?.let { ctx ->
+                            Glide.with(ctx)
+                                .load(photoUrl)
+                                .placeholder(R.drawable.profile_icon)
+                                .into(_binding?.profilePhoto ?: return)
+                        }
+                    } catch (e: Exception) {
+                        //Log.e("ChatFragment", "Error loading profile image", e)
+                    }
                 } else {
-                    Log.e("Profile", "No profile photo found")
+                    //Log.e("Profile", "No profile photo found")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ChatFragment", "Error loading profile photo", error.toException())
+               // Log.e("ChatFragment", "Error loading profile photo", error.toException())
             }
-        })
+        }
+
+        // Store listener for cleanup
+        userRef.addListenerForSingleValueEvent(listener)
+        valueEventListeners[userRef] = listener
     }
+
 
     private fun fetchUserTeam() {
         currentUser?.uid?.let { userId ->
@@ -159,6 +344,388 @@ class ChatFragment : Fragment() {
             })
         }
     }
+
+    private fun openImagePicker() {
+        val intent = Intent()
+        intent.type = "image/*"
+        intent.action = Intent.ACTION_GET_CONTENT
+        startActivityForResult(Intent.createChooser(intent, "Select Image"), PICK_IMAGE_REQUEST)
+    }
+
+    private fun showImagePreviewDialog() {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_image_preview, null)
+        val imagePreview = dialogView.findViewById<ImageView>(R.id.imagePreview)
+        val editTextCaption = dialogView.findViewById<EditText>(R.id.editTextCaption)
+
+        // Load image into preview
+        Glide.with(requireContext())
+            .load(selectedImageUri)
+            .into(imagePreview)
+
+        // Show dialog with preview and send button
+        MaterialAlertDialogBuilder(requireContext(),R.style.CustomAlertForImagePreview)
+            .setTitle("Send Image")
+            .setView(dialogView)
+            .setPositiveButton("Send") { _, _ ->
+                val caption = editTextCaption.text.toString().trim()
+
+                // Show loading indicator
+                val progressView = View.inflate(requireContext(), R.layout.loading_indicator, null)
+                val progressIndicator = progressView.findViewById<CircularProgressIndicator>(R.id.progressIndicator)
+
+                val progressDialog = MaterialAlertDialogBuilder(requireContext())
+                    .setView(progressView)
+                    .setCancelable(false)
+                    .setTitle("Uploading image...")
+                    .create()
+
+                progressDialog.show()
+
+                // Proceed with upload
+                uploadAndSendImage(caption) { success ->
+                    progressDialog.dismiss()
+                    if (!success) {
+                        Toast.makeText(context, "Image upload failed", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                selectedImageUri = null
+                dialog.dismiss()
+            }
+            .create()
+            .show()
+    }
+
+    // New method to check message and send if approved
+    private fun checkAndSendMessage(messageText: String) {
+        // Show loading indicator
+        binding.buttonSend.isEnabled = false
+        binding.progressSending.visibility = View.VISIBLE
+
+        moderationService.checkMessageContent(messageText, object : ChatModerationService.ModerationCallback {
+            override fun onMessageApproved(message: String) {
+                // Run on UI thread as the callback might be on a background thread
+                requireActivity().runOnUiThread {
+                    // Message is approved, send it
+                    sendMessageToFirebase(message)
+
+                    // Reset UI
+                    binding.buttonSend.isEnabled = true
+                    binding.progressSending.visibility = View.GONE
+                }
+            }
+
+            override fun onMessageRejected(message: String, reason: String) {
+                requireActivity().runOnUiThread {
+                    // Show feedback to user about rejection
+                    Toast.makeText(context, reason, Toast.LENGTH_LONG).show()
+
+                    // Reset UI
+                    binding.buttonSend.isEnabled = true
+                    binding.progressSending.visibility = View.GONE
+                }
+            }
+
+            override fun onError(errorMessage: String) {
+                requireActivity().runOnUiThread {
+                    Log.e("ChatFragment", "Moderation error: $errorMessage")
+
+                    // Show error message to user
+                    Toast.makeText(
+                        context,
+                        "Unable to check message content. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // Reset UI
+                    binding.buttonSend.isEnabled = true
+                    binding.progressSending.visibility = View.GONE
+                }
+            }
+        })
+    }
+
+    private fun sendMessageToFirebase(messageText: String) {
+        if (currentUser == null) {
+          //  Log.e("ChatFragment", "User not logged in")
+            Toast.makeText(context, "You must be logged in to send messages", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val chatRef = database.getReference("NoBallZone/chats").push()
+        val chatId = chatRef.key ?: return
+
+        // Get user's display name and profile picture
+        val userRef = database.getReference("Users/${currentUser!!.uid}")
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val userName = snapshot.child("username").getValue(String::class.java)
+                    ?: currentUser!!.displayName
+                    ?: "Anonymous"
+
+                val chatMessage = ChatMessage(
+                    id = chatId,
+                    senderId = currentUser!!.uid,
+                    senderName = userName,
+                    team = userTeam,
+                    message = messageText,
+                    timestamp = System.currentTimeMillis()
+                )
+
+                chatRef.setValue(chatMessage)
+                    .addOnSuccessListener {
+                        binding.editTextMessage.text.clear()
+                    }
+                    .addOnFailureListener {
+                        // Handle error
+                     //   Log.e("ChatFragment", "Error sending message", it)
+                        Toast.makeText(context, "Failed to send message", Toast.LENGTH_SHORT).show()
+                    }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+               // Log.e("ChatFragment", "Error fetching user data", error.toException())
+                Toast.makeText(context, "Failed to fetch user data", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+
+    private fun uploadAndSendImage(caption: String, onComplete: ((Boolean) -> Unit)? = null) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        selectedImageUri?.let { uri ->
+            // Create a reference to the image file in Firebase Storage
+            val storageRef = FirebaseStorage.getInstance().reference
+            val imageRef = storageRef.child("chat_images/${System.currentTimeMillis()}_${currentUser.uid}.jpg")
+
+            // Upload the image
+            imageRef.putFile(uri)
+                .addOnSuccessListener { taskSnapshot ->
+                    // Get the download URL
+                    imageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                        // Check caption for toxicity before sending
+                        if (caption.isNotEmpty()) {
+                            moderationService.checkMessageContent(caption, object : ChatModerationService.ModerationCallback {
+                                override fun onMessageApproved(message: String) {
+                                    // Send message with image and approved caption
+                                    sendImageMessageToFirebase(message, downloadUrl.toString())
+                                    onComplete?.invoke(true)
+                                }
+
+                                override fun onMessageRejected(message: String, reason: String) {
+                                    requireActivity().runOnUiThread {
+                                        Toast.makeText(context, reason, Toast.LENGTH_LONG).show()
+                                        // Send without caption
+                                        sendImageMessageToFirebase("", downloadUrl.toString())
+                                        onComplete?.invoke(true)
+                                    }
+                                }
+
+                                override fun onError(errorMessage: String) {
+                                    // On error, just send with original caption
+                                    sendImageMessageToFirebase(caption, downloadUrl.toString())
+                                    onComplete?.invoke(true)
+                                }
+                            })
+                        } else {
+                            // No caption to check, just send the image
+                            sendImageMessageToFirebase("", downloadUrl.toString())
+                            onComplete?.invoke(true)
+                        }
+
+                        // Clear selected image
+                        selectedImageUri = null
+                    }
+                }
+                .addOnFailureListener { e ->
+                    // Handle error
+                   // Log.e("ChatFragment", "Image upload failed: ${e.message}")
+                    onComplete?.invoke(false)
+                }
+        }
+    }
+
+    // Add these dialog methods for content safety feedback
+    private fun showContentBlockedDialog(issues: List<String>) {
+        val message = if (issues.isEmpty()) {
+            "This image has been blocked because our system detected prohibited content."
+        } else {
+            "This image has been blocked because our system detected:\n\n" +
+                    issues.take(3).joinToString("\n")
+        }
+
+        MaterialAlertDialogBuilder(requireContext(),R.style.CustomAlertDialogTheme)
+            .setTitle("Content Blocked")
+            .setMessage("$message\n\nOur community guidelines prohibit sharing content that contains adult material, violence, hate speech, or other potentially harmful imagery.")
+            .setPositiveButton("Select Different Image") { dialog, _ ->
+                dialog.dismiss()
+                selectedImageUri = null
+                openImagePicker()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                selectedImageUri = null
+            }
+            .show()
+    }
+
+    private fun showContentWarningDialog(issues: List<String>) {
+        val message = if (issues.isEmpty()) {
+            "This image may contain inappropriate content."
+        } else {
+            "This image may contain inappropriate content:\n\n" +
+                    issues.take(3).joinToString("\n")
+        }
+
+        MaterialAlertDialogBuilder(requireContext(),R.style.CustomAlertDialogTheme)
+            .setTitle("Content Warning")
+            .setMessage("$message\n\nWhile this image doesn't automatically violate our guidelines, it may be inappropriate for some viewers or contexts.")
+            .setPositiveButton("Upload Anyway") { dialog, _ ->
+                dialog.dismiss()
+                showImagePreviewDialog()
+            }
+            .setNeutralButton("Select Different Image") { dialog, _ ->
+                dialog.dismiss()
+                selectedImageUri = null
+                openImagePicker()
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                selectedImageUri = null
+            }
+            .show()
+    }
+
+    private fun sendImageMessageToFirebase(message: String, imageUrl: String) {
+        if (currentUser == null) {
+            return
+        }
+
+        val chatRef = database.getReference("NoBallZone/chats").push()
+        val chatId = chatRef.key ?: return
+
+        // Get user's display name and profile picture
+        val userRef = database.getReference("Users/${currentUser!!.uid}")
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val userName = snapshot.child("username").getValue(String::class.java)
+                    ?: currentUser!!.displayName
+                    ?: "Anonymous"
+                val userTeam = snapshot.child("iplTeam").getValue(String::class.java)
+                    ?: "No Team"
+
+                val chatMessage = ChatMessage(
+                    id = chatId,
+                    senderId = currentUser!!.uid,
+                    senderName = userName,
+                    team = userTeam,
+                    message = message,
+                    imageUrl = imageUrl,
+                    timestamp = System.currentTimeMillis()
+                )
+
+                chatRef.setValue(chatMessage)
+                    .addOnSuccessListener {
+                        binding.editTextMessage.text.clear()
+                    }
+                    .addOnFailureListener {
+                        // Handle error
+                      //  Log.e("ChatFragment", "Error sending message with image", it)
+                    }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+             //   Log.e("ChatFragment", "User data fetch cancelled", error.toException())
+            }
+        })
+    }
+
+    private fun checkImageSafetyAndShowPreview() {
+        if (selectedImageUri == null || !isUserLoggedIn()) {
+            return
+        }
+
+        // Create loading dialog
+        val progressView = View.inflate(requireContext(), R.layout.loading_indicator, null)
+        val progressIndicator = progressView.findViewById<CircularProgressIndicator>(R.id.progressIndicator)
+        val progressDialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(progressView)
+            .setCancelable(false)
+            .setTitle("Checking content safety...")
+            .create()
+
+        progressDialog.show()
+
+        // Check image content safety using Cloud Vision API
+        selectedImageUri?.let { uri ->
+            // Using coroutines for the async API call
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    val result = withContext(Dispatchers.IO) {
+                        safetyChecker.checkImageSafety(uri)
+                    }
+
+                    progressDialog.dismiss()
+
+                    if (result.isSafe) {
+                        // Image is safe, proceed with upload
+                        showImagePreviewDialog()
+                    } else if (result.autoBlock) {
+                        // Image is NOT safe and should be automatically blocked
+                        showContentBlockedDialog(result.issues)
+                    } else {
+                        // Image has potential issues but is not automatically blocked
+                        showContentWarningDialog(result.issues)
+                    }
+                } catch (e: Exception) {
+                    progressDialog.dismiss()
+                //    Log.e("ChatFragment", "Error checking image safety: ${e.message}", e)
+                    // Show error dialog
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Error")
+                        .setMessage("Failed to analyze image: ${e.message}")
+                        .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                        .show()
+                }
+            }
+        } ?: run {
+            progressDialog.dismiss()
+            Toast.makeText(context, "No image selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.data != null) {
+            selectedImageUri = data.data
+            // Use the safety checker before showing preview
+            checkImageSafetyAndShowPreview()
+        } else if (requestCode == LOGIN_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+            // User has successfully logged in
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
+            updateUIBasedOnLoginStatus()
+
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateUIBasedOnLoginStatus()
+
+        // Refresh profile photo if user just logged in
+        if (isUserLoggedIn() && currentUser != FirebaseAuth.getInstance().currentUser) {
+            currentUser = FirebaseAuth.getInstance().currentUser
+            loadProfilePhoto()
+            fetchUserTeam()
+        }
+    }
+
 
     private fun setupFilters() {
         binding.chipAll.setOnClickListener { resetFilters() }
@@ -199,46 +766,67 @@ class ChatFragment : Fragment() {
 
         val isSelected = selectedFilter.contains(filter)
 
-        if (isSelected) {
-            selectedFilter.remove(filter)
-            chip?.isChecked = false
-            chip?.isSelected = false
-            chip?.chipStrokeWidth = 2f
-        } else {
-            selectedFilter.add(filter)
-            chip?.isChecked = true
-            chip?.isSelected = true
-            chip?.chipStrokeWidth = 1f
+        // First, clear all existing filters and reset all chips
+        selectedFilter.clear()
+
+        // Reset visual state of all chips
+        val allChips = listOf(
+            binding.chipTopHits, binding.chipTopMiss, binding.chipPolls,
+            binding.chipCSK, binding.chipMI, binding.chipDC, binding.chipGT,
+            binding.chipKKR, binding.chipLSG, binding.chipRCB, binding.chipPBKS,
+            binding.chipRR, binding.chipSRH
+        )
+
+        allChips.forEach { c ->
+            c.apply {
+                isChecked = false
+                chipStrokeWidth = 0f
+                setTextColor(resources.getColor(R.color.white, null))
+            }
         }
 
-        applyFilters()
-    }
+        // Set the All chip as not checked initially
+        binding.chipAll.apply {
+            isChecked = false
+            chipStrokeWidth = 0f
+            setTextColor(resources.getColor(R.color.white, null))
+        }
 
-    private fun applyFilters() {
-        if (selectedFilter.isEmpty()) {
-            loadMessages()
+        // If the same filter was already selected (double-click case), go back to "All"
+        if (isSelected) {
+            resetFilters()
             return
         }
 
-        // Clear the current list
-        messages.clear()
-        adapter.notifyDataSetChanged()
+        // Otherwise, add the new filter and update the chip
+        selectedFilter.add(filter)
+        chip?.apply {
+            isChecked = true
+            chipStrokeWidth = 2f
+            setTextColor(resources.getColor(R.color.grey, null))
+        }
 
-        if (selectedFilter.contains("TopHits")) { loadTopHitMessages() }
-        if (selectedFilter.contains("TopMiss")) { loadTopMissMessages() }
-        if (selectedFilter.contains("Polls")) { loadPollsOnly() }
-
-        val selectedTeams = selectedFilter.filter { it !in listOf("TopHits", "TopMiss", "Polls") }
-        if (selectedTeams.isNotEmpty()) {
-            selectedTeams.forEach { team -> loadTeamMessages(team) }
+        // Apply the filter
+        if (selectedFilter.isEmpty()) {
+            resetFilters() // Should never happen as we just added a filter, but just in case
+        } else {
+            action.invoke() // This will call the specific filter method (loadTopHitMessages, loadTeamMessages, etc.)
         }
     }
 
+
     private fun resetFilters() {
+        // Clear the selected filters set
         selectedFilter.clear()
 
-        binding.chipAll.isChecked = true
+        // Set the All chip as checked
+        binding.chipAll.apply {
+            isChecked = true
+            chipStrokeWidth = 2f
+            setTextColor(resources.getColor(R.color.grey, null))
+        }
 
+        // Reset all other chips
         val allChips = listOf(
             binding.chipTopHits, binding.chipTopMiss, binding.chipPolls,
             binding.chipCSK, binding.chipMI, binding.chipDC, binding.chipGT,
@@ -247,16 +835,38 @@ class ChatFragment : Fragment() {
         )
 
         allChips.forEach { chip ->
-            chip.isChecked = false
-            chip.isSelected = false
-            chip.chipStrokeWidth = 2f
+            chip.apply {
+                isChecked = false
+                chipStrokeWidth = 0f
+                setTextColor(resources.getColor(R.color.white, null))
+            }
         }
 
+        // Clear existing messages and adapter state
+        messages.clear()
+        messagePositions.clear()
+        adapter.notifyDataSetChanged()
+
+        // Load all messages without filtering
         loadMessages()
     }
 
     private fun setupFirebaseListeners() {
-        // We'll use different listeners based on filter status
+        // Clear existing data and listeners
+        messages.clear()
+        messagePositions.clear()
+
+        // Clear existing listeners
+        valueEventListeners.forEach { (ref, listener) ->
+            ref.removeEventListener(listener)
+        }
+        childEventListeners.forEach { (ref, listener) ->
+            ref.removeEventListener(listener)
+        }
+        valueEventListeners.clear()
+        childEventListeners.clear()
+
+        // Load messages based on current filter
         loadMessages()
     }
 
@@ -276,17 +886,11 @@ class ChatFragment : Fragment() {
         loadInitialMessages()
     }
 
-    // Use these updated methods in your ChatFragment to fix the Firebase List vs HashMap issue
-
-// Replace the existing methods with these implementations:
-
-    // Use these updated methods in your ChatFragment to fix the Firebase List vs HashMap issue
-
-// Replace the existing methods with these implementations:
-
-    private fun setupChatListener(chatsRef: com.google.firebase.database.DatabaseReference) {
-        chatsRef.addChildEventListener(object : ChildEventListener {
+    private fun setupChatListener(chatsRef: DatabaseReference) {
+        val listener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                if (!isAdded || _binding == null) return
+
                 // Skip if already in our list (from initial load)
                 val chatId = snapshot.key ?: return
                 if (messagePositions.containsKey(chatId)) return
@@ -294,17 +898,18 @@ class ChatFragment : Fragment() {
                 // Use helper method to properly read the chat with comments
                 val chat = FirebaseDataHelper.getChatMessageFromSnapshot(snapshot) ?: return
 
-                // Add to the list (at the beginning for newest first)
+                // Add to the list (at the beginning for newest first since we're using reverseLayout)
                 messages.add(0, chat)
 
                 // Update positions map
                 updatePositionsMap()
 
                 adapter.notifyItemInserted(0)
-                binding.recyclerViewMessages.scrollToPosition(0)
             }
 
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                if (!isAdded || _binding == null) return
+
                 val chatId = snapshot.key ?: return
                 val position = messagePositions[chatId] ?: return
 
@@ -329,8 +934,15 @@ class ChatFragment : Fragment() {
                     adapter.notifyItemChanged(position, "hit_miss")
                 }
 
-                // Only update comments if they changed - using list size as proxy for change
-                if (currentChat.comments.size != updatedChat.comments.size) {
+                // Check for comment count change
+                if (snapshot.hasChild("commentCount")) {
+                    val commentCount = snapshot.child("commentCount").getValue(Int::class.java) ?: 0
+                    if (currentChat.commentCount != commentCount) {
+                        currentChat.commentCount = commentCount
+                        adapter.notifyItemChanged(position, "comments")
+                    }
+                } else if (currentChat.comments.size != updatedChat.comments.size) {
+                    // Fallback to comments list size if commentCount field is not available
                     currentChat.comments = updatedChat.comments
                     adapter.notifyItemChanged(position, "comments")
                 }
@@ -342,8 +954,9 @@ class ChatFragment : Fragment() {
                 }
             }
 
-            // Other methods remain the same
             override fun onChildRemoved(snapshot: DataSnapshot) {
+                if (!isAdded || _binding == null) return
+
                 val chatId = snapshot.key ?: return
                 val position = messagePositions[chatId] ?: return
 
@@ -364,29 +977,37 @@ class ChatFragment : Fragment() {
                 // Handle error
                 Log.e("ChatFragment", "Error with chat listener", error.toException())
             }
-        })
+        }
+
+        // Add and track the listener
+        chatsRef.addChildEventListener(listener)
+        childEventListeners[chatsRef] = listener
     }
 
-    private fun setupPollListener(pollsRef: com.google.firebase.database.DatabaseReference) {
-        pollsRef.addChildEventListener(object : ChildEventListener {
+    private fun setupPollListener(pollsRef: DatabaseReference) {
+        val listener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                if (!isAdded || _binding == null) return
+
+                // Skip if already in our list (from initial load)
                 val pollId = snapshot.key ?: return
                 if (messagePositions.containsKey(pollId)) return
 
                 // Use helper method to properly read the poll with comments
                 val poll = FirebaseDataHelper.getPollMessageFromSnapshot(snapshot) ?: return
 
-                // Add to the list (at the beginning for newest first)
+                // Add to the list (at the beginning for newest first since we're using reverseLayout)
                 messages.add(0, poll)
 
                 // Update positions map
                 updatePositionsMap()
 
                 adapter.notifyItemInserted(0)
-                binding.recyclerViewMessages.scrollToPosition(0)
             }
 
             override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                if (!isAdded || _binding == null) return
+
                 val pollId = snapshot.key ?: return
                 val position = messagePositions[pollId] ?: return
 
@@ -411,26 +1032,37 @@ class ChatFragment : Fragment() {
                     adapter.notifyItemChanged(position, "hit_miss")
                 }
 
-                // Only update comments if they changed - using list size as proxy for change
-                if (currentPoll.comments.size != updatedPoll.comments.size) {
+                // Check for comment count change
+                if (snapshot.hasChild("commentCount")) {
+                    val commentCount = snapshot.child("commentCount").getValue(Int::class.java) ?: 0
+                    if (currentPoll.commentCount != commentCount) {
+                        currentPoll.commentCount = commentCount
+                        adapter.notifyItemChanged(position, "comments")
+                    }
+                } else if (currentPoll.comments.size != updatedPoll.comments.size) {
+                    // Fallback to comments list size if commentCount field is not available
                     currentPoll.comments = updatedPoll.comments
                     adapter.notifyItemChanged(position, "comments")
                 }
 
                 // Poll options require a full update if changed
-                if (currentPoll.options != updatedPoll.options) {
+                if (currentPoll.options != updatedPoll.options ||
+                    currentPoll.voters != updatedPoll.voters) {
                     optionsChanged = true
                 }
 
                 // Do a full update if poll options changed
                 if (optionsChanged) {
-                    messages[position] = updatedPoll
+                    // Update the voters and options
+                    currentPoll.options = updatedPoll.options
+                    currentPoll.voters = updatedPoll.voters
                     adapter.notifyItemChanged(position)
                 }
             }
 
-            // Other methods remain the same
             override fun onChildRemoved(snapshot: DataSnapshot) {
+                if (!isAdded || _binding == null) return
+
                 val pollId = snapshot.key ?: return
                 val position = messagePositions[pollId] ?: return
 
@@ -449,12 +1081,20 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error with poll listener", error.toException())
+            //    Log.e("ChatFragment", "Error with poll listener", error.toException())
             }
-        })
+        }
+
+        // Add and track the listener
+        pollsRef.addChildEventListener(listener)
+        childEventListeners[pollsRef] = listener
     }
 
     private fun loadInitialMessages() {
+        // Show progress before loading
+        binding.llAnime2.visibility = View.VISIBLE
+        binding.recyclerViewMessages.visibility = View.GONE
+
         val chatsRef = database.getReference("NoBallZone/chats")
         val pollsRef = database.getReference("NoBallZone/polls")
 
@@ -462,65 +1102,104 @@ class ChatFragment : Fragment() {
         messages.clear()
         messagePositions.clear()
 
-        // Load chats first
+        // Create temporary lists to store both types of messages
+        val allMessages = ArrayList<Any>()
+        var chatsLoaded = false
+        var pollsLoaded = false
+
+        // Load chats
         chatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val tempMessages = ArrayList<Any>()
+                // Check if fragment is still attached to activity
+                if (!isAdded || _binding == null) return
 
                 for (chatSnapshot in snapshot.children) {
-                    // Use helper method to properly read the chat with comments
                     val chat = FirebaseDataHelper.getChatMessageFromSnapshot(chatSnapshot)
-                    chat?.let {
-                        tempMessages.add(it)
-                    }
+                    chat?.let { allMessages.add(it) }
                 }
 
-                // Now load poll messages
-                pollsRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        for (pollSnapshot in snapshot.children) {
-                            // Use helper method to properly read the poll with comments
-                            val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
-                            poll?.let {
-                                tempMessages.add(it)
-                            }
-                        }
-
-                        // Sort all messages by timestamp (descending)
-                        tempMessages.sortByDescending {
-                            when (it) {
-                                is ChatMessage -> it.timestamp
-                                is PollMessage -> it.timestamp
-                                else -> 0L
-                            }
-                        }
-
-                        // Add to main list
-                        messages.addAll(tempMessages)
-
-                        // Update positions map
-                        updatePositionsMap()
-
-                        adapter.notifyDataSetChanged()
-
-                        // Scroll to top after loading
-                        if (messages.isNotEmpty()) {
-                            binding.recyclerViewMessages.scrollToPosition(0)
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        // Handle error
-                        Log.e("ChatFragment", "Error loading polls", error.toException())
-                    }
-                })
+                chatsLoaded = true
+                // If both types are loaded, sort and update UI
+                if (pollsLoaded) {
+                    finishLoadingMessages(allMessages)
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle error
-                Log.e("ChatFragment", "Error loading chats", error.toException())
+                // Check if fragment is still attached to activity
+                if (!isAdded || _binding == null) return
+
+                chatsLoaded = true
+                binding.llAnime2.visibility = View.GONE
+                binding.recyclerViewMessages.visibility = View.VISIBLE
+            //    Log.e("ChatFragment", "Error loading chats", error.toException())
             }
         })
+
+        // Load polls
+        pollsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Check if fragment is still attached to activity
+                if (!isAdded || _binding == null) return
+
+                for (pollSnapshot in snapshot.children) {
+                    val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
+                    poll?.let { allMessages.add(it) }
+                }
+
+                pollsLoaded = true
+                // If both types are loaded, sort and update UI
+                if (chatsLoaded) {
+                    finishLoadingMessages(allMessages)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Check if fragment is still attached to activity
+                if (!isAdded || _binding == null) return
+
+                pollsLoaded = true
+                binding.llAnime2.visibility = View.GONE
+                binding.recyclerViewMessages.visibility = View.VISIBLE
+            //    Log.e("ChatFragment", "Error loading polls", error.toException())
+            }
+        })
+    }
+
+    // Helper method to finish the loading process
+    private fun finishLoadingMessages(allMessages: ArrayList<Any>) {
+        // Add a null check for binding here to prevent crashes
+        if (!isAdded || _binding == null) return
+
+        // Sort the incoming messages by timestamp
+        allMessages.sortByDescending {
+            when (it) {
+                is ChatMessage -> it.timestamp
+                is PollMessage -> it.timestamp
+                else -> 0L
+            }
+        }
+
+        // Clear the messages list to avoid duplicates
+        messages.clear()
+
+        // Add sorted messages to main list
+        messages.addAll(allMessages)
+
+        // Update positions map
+        updatePositionsMap()
+
+        // Update UI
+        adapter.notifyDataSetChanged()
+
+        // Hide progress indicators
+        binding.llAnime2.visibility = View.GONE
+        binding.recyclerViewMessages.visibility = View.VISIBLE
+
+        // Scroll to show the latest messages
+        if (messages.isNotEmpty()) {
+            binding.recyclerViewMessages.scrollToPosition(0)
+        }
     }
 
     private fun updatePositionsMap() {
@@ -534,8 +1213,14 @@ class ChatFragment : Fragment() {
         }
     }
 
+    // Replace the loadTopHitMessages, loadTopMissMessages, and loadTeamMessages methods with these fixed versions
+
     private fun loadTopHitMessages() {
         val chatsRef = database.getReference("NoBallZone/chats")
+
+        // Clear existing data
+        messages.clear()
+        messagePositions.clear()
 
         // Load chat messages with high hits (only messages with hits > 0)
         chatsRef.orderByChild("hit").startAt(1.0).addValueEventListener(object : ValueEventListener {
@@ -543,24 +1228,26 @@ class ChatFragment : Fragment() {
                 val tempMessages = ArrayList<Any>()
 
                 for (chatSnapshot in snapshot.children) {
-                    val chat = chatSnapshot.getValue(ChatMessage::class.java)
+                    // Use helper method to properly read the chat with comments
+                    val chat = FirebaseDataHelper.getChatMessageFromSnapshot(chatSnapshot)
                     chat?.let {
-                        it.id = chatSnapshot.key ?: ""
                         tempMessages.add(it)
                     }
                 }
 
                 // Add to main list
-                messages.clear()
                 messages.addAll(tempMessages)
 
-                // Load poll messages with high hits
+                // Update positions map
+                updatePositionsMap()
+
+                // Now load poll messages with high hits
                 loadTopHitPolls()
             }
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top hit messages", error.toException())
+            //    Log.e("ChatFragment", "Error loading top hit messages", error.toException())
             }
         })
     }
@@ -573,9 +1260,9 @@ class ChatFragment : Fragment() {
                 val tempPolls = ArrayList<Any>()
 
                 for (pollSnapshot in snapshot.children) {
-                    val poll = pollSnapshot.getValue(PollMessage::class.java)
+                    // Use helper method to properly read the poll with comments
+                    val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
                     poll?.let {
-                        it.id = pollSnapshot.key ?: ""
                         tempPolls.add(it)
                     }
                 }
@@ -610,7 +1297,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top hit polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading top hit polls", error.toException())
             }
         })
     }
@@ -618,30 +1305,36 @@ class ChatFragment : Fragment() {
     private fun loadTopMissMessages() {
         val chatsRef = database.getReference("NoBallZone/chats")
 
+        // Clear existing data
+        messages.clear()
+        messagePositions.clear()
+
         // Load chat messages with high misses (only messages with misses > 0)
         chatsRef.orderByChild("miss").startAt(1.0).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val tempMessages = ArrayList<Any>()
 
                 for (chatSnapshot in snapshot.children) {
-                    val chat = chatSnapshot.getValue(ChatMessage::class.java)
+                    // Use helper method to properly read the chat with comments
+                    val chat = FirebaseDataHelper.getChatMessageFromSnapshot(chatSnapshot)
                     chat?.let {
-                        it.id = chatSnapshot.key ?: ""
                         tempMessages.add(it)
                     }
                 }
 
                 // Add to main list
-                messages.clear()
                 messages.addAll(tempMessages)
 
-                // Load poll messages with high misses
+                // Update positions map
+                updatePositionsMap()
+
+                // Now load poll messages with high misses
                 loadTopMissPolls()
             }
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top miss messages", error.toException())
+            //    Log.e("ChatFragment", "Error loading top miss messages", error.toException())
             }
         })
     }
@@ -654,9 +1347,9 @@ class ChatFragment : Fragment() {
                 val tempPolls = ArrayList<Any>()
 
                 for (pollSnapshot in snapshot.children) {
-                    val poll = pollSnapshot.getValue(PollMessage::class.java)
+                    // Use helper method to properly read the poll with comments
+                    val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
                     poll?.let {
-                        it.id = pollSnapshot.key ?: ""
                         tempPolls.add(it)
                     }
                 }
@@ -691,50 +1384,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading top miss polls", error.toException())
-            }
-        })
-    }
-
-    private fun loadPollsOnly() {
-        val pollsRef = database.getReference("NoBallZone/polls")
-
-        messages.clear()
-
-        pollsRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                messages.clear()
-
-                for (pollSnapshot in snapshot.children) {
-                    val poll = pollSnapshot.getValue(PollMessage::class.java)
-                    poll?.let {
-                        it.id = pollSnapshot.key ?: ""
-                        messages.add(it)
-                    }
-                }
-
-                // Sort polls by timestamp
-                messages.sortByDescending {
-                    when (it) {
-                        is PollMessage -> it.timestamp
-                        else -> 0L
-                    }
-                }
-
-                // Update positions map
-                updatePositionsMap()
-
-                adapter.notifyDataSetChanged()
-
-                // Scroll to top after loading
-                if (messages.isNotEmpty()) {
-                    binding.recyclerViewMessages.scrollToPosition(0)
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error
-                Log.e("ChatFragment", "Error loading polls only", error.toException())
+            //    Log.e("ChatFragment", "Error loading top miss polls", error.toException())
             }
         })
     }
@@ -742,22 +1392,28 @@ class ChatFragment : Fragment() {
     private fun loadTeamMessages(team: String) {
         val chatsRef = database.getReference("NoBallZone/chats")
 
+        // Clear existing data
+        messages.clear()
+        messagePositions.clear()
+
         // Load team chat messages
         chatsRef.orderByChild("team").equalTo(team).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val tempMessages = ArrayList<Any>()
 
                 for (chatSnapshot in snapshot.children) {
-                    val chat = chatSnapshot.getValue(ChatMessage::class.java)
+                    // Use helper method to properly read the chat with comments
+                    val chat = FirebaseDataHelper.getChatMessageFromSnapshot(chatSnapshot)
                     chat?.let {
-                        it.id = chatSnapshot.key ?: ""
                         tempMessages.add(it)
                     }
                 }
 
                 // Add to main list
-                messages.clear()
                 messages.addAll(tempMessages)
+
+                // Update positions map
+                updatePositionsMap()
 
                 // Load team poll messages
                 loadTeamPolls(team)
@@ -765,7 +1421,7 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading team messages", error.toException())
+            //    Log.e("ChatFragment", "Error loading team messages", error.toException())
             }
         })
     }
@@ -778,9 +1434,9 @@ class ChatFragment : Fragment() {
                 val tempPolls = ArrayList<Any>()
 
                 for (pollSnapshot in snapshot.children) {
-                    val poll = pollSnapshot.getValue(PollMessage::class.java)
+                    // Use helper method to properly read the poll with comments
+                    val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
                     poll?.let {
-                        it.id = pollSnapshot.key ?: ""
                         tempPolls.add(it)
                     }
                 }
@@ -810,50 +1466,62 @@ class ChatFragment : Fragment() {
 
             override fun onCancelled(error: DatabaseError) {
                 // Handle error
-                Log.e("ChatFragment", "Error loading team polls", error.toException())
+            //    Log.e("ChatFragment", "Error loading team polls", error.toException())
             }
         })
     }
 
-    private fun sendMessage() {
-        val messageText = binding.editTextMessage.text.toString().trim()
-        if (messageText.isEmpty()) return
+    private fun loadPollsOnly() {
+        // Clear existing data
+        messages.clear()
+        messagePositions.clear()
+        adapter.notifyDataSetChanged() // Notify adapter about the clear to prevent issues
 
-        if (currentUser == null) {
-            // Handle not logged in
-            return
-        }
+        val pollsRef = database.getReference("NoBallZone/polls")
 
-        val chatRef = database.getReference("NoBallZone/chats").push()
-        val chatId = chatRef.key ?: return
-
-        // Get user's display name and profile picture
-        val userRef = database.getReference("Users/${currentUser.uid}")
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        pollsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val userName = snapshot.child("username").getValue(String::class.java) ?: currentUser.displayName ?: "Anonymous"
+                val tempPolls = ArrayList<Any>()
 
-                val chatMessage = ChatMessage(
-                    id = chatId,
-                    senderId = currentUser.uid,
-                    senderName = userName,
-                    team = userTeam,
-                    message = messageText,
-                    timestamp = System.currentTimeMillis()
-                )
+                for (pollSnapshot in snapshot.children) {
+                    // Use helper method to properly read the poll with comments
+                    val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
+                    poll?.let {
+                        tempPolls.add(it)
+                    }
+                }
 
-                chatRef.setValue(chatMessage)
-                    .addOnSuccessListener {
-                        binding.editTextMessage.text.clear()
+                // Sort all messages by timestamp (descending)
+                tempPolls.sortByDescending {
+                    when (it) {
+                        is PollMessage -> it.timestamp
+                        else -> 0L
                     }
-                    .addOnFailureListener {
-                        // Handle error
-                        Log.e("ChatFragment", "Error sending message", it)
-                    }
+                }
+
+                // Make sure list is clear before adding
+                if (messages.isNotEmpty()) {
+                    messages.clear()
+                    messagePositions.clear()
+                }
+
+                // Add to main list
+                messages.addAll(tempPolls)
+
+                // Update positions map
+                updatePositionsMap()
+
+                adapter.notifyDataSetChanged()
+
+                // Scroll to top after loading
+                if (messages.isNotEmpty()) {
+                    binding.recyclerViewMessages.scrollToPosition(0)
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                TODO("Not yet implemented")
+                // Handle error
+            //    Log.e("ChatFragment", "Error loading polls", error.toException())
             }
         })
     }
@@ -866,30 +1534,38 @@ class ChatFragment : Fragment() {
 
         val dialogView = LayoutInflater.from(context).inflate(R.layout.poll_create_dialog, null)
         val editTextQuestion = dialogView.findViewById<EditText>(R.id.editTextPollQuestion)
-        val layoutOptions = dialogView.findViewById<LinearLayout>(R.id.layoutAdditionalOptions)
+        val layoutOptions = dialogView.findViewById<LinearLayout>(R.id.layoutOptions)
+        val layoutAdditionalOptions = dialogView.findViewById<LinearLayout>(R.id.layoutAdditionalOptions)
         val buttonAddOption = dialogView.findViewById<Button>(R.id.buttonAddOption)
 
         // Set up the initial two options
         val optionLayouts = ArrayList<View>()
         val addOption = {
-            val optionView = LayoutInflater.from(context).inflate(R.layout.item_poll_option, null)
+            // Use the poll creation option layout which has the EditText
+            val optionView = LayoutInflater.from(context).inflate(R.layout.item_creation_poll_option, null)
+            layoutAdditionalOptions.addView(optionView)
+            optionLayouts.add(optionView)
+        }
+
+        // Add two options initially to the main options layout
+        for (i in 0 until 2) {
+            // Use the poll creation option layout which has the EditText
+            val optionView = LayoutInflater.from(context).inflate(R.layout.item_creation_poll_option, null)
             layoutOptions.addView(optionView)
             optionLayouts.add(optionView)
         }
 
-        // Add initial two options
-        addOption()
-        addOption()
-
         // Add option button
         buttonAddOption.setOnClickListener {
-            if (optionLayouts.size < 5) { // Limit to 6 options
+            if (optionLayouts.size < 6) { // Limit to 6 options total
                 addOption()
+            } else {
+                Toast.makeText(context, "Maximum 6 options allowed", Toast.LENGTH_SHORT).show()
             }
         }
 
         // Create and show dialog
-        val dialog = AlertDialog.Builder(requireContext())
+        val dialog = AlertDialog.Builder(requireContext(), R.style.CustomAlertForImagePreview)
             .setTitle("Create Poll")
             .setView(dialogView)
             .setPositiveButton("Create") { _, _ ->
@@ -906,10 +1582,10 @@ class ChatFragment : Fragment() {
 
         val options = mutableMapOf<String, Int>()
 
-        // Collect options
+        // Collect options - using the correct ID from item_poll_creation_option.xml
         for (optionView in optionViews) {
-            val editTextOption = optionView.findViewById<EditText>(R.id.editTextOption1)
-            val optionText = editTextOption.text.toString().trim()
+            val editTextOption = optionView.findViewById<EditText>(R.id.editTextOption)
+            val optionText = editTextOption?.text?.toString()?.trim() ?: ""
 
             if (optionText.isNotEmpty()) {
                 options[optionText] = 0
@@ -917,31 +1593,61 @@ class ChatFragment : Fragment() {
         }
 
         // Need at least two options
-        if (options.size < 2) return
+        if (options.size < 2) {
+            Toast.makeText(context, "Please provide at least two options", Toast.LENGTH_SHORT).show()
+            return
+        }
 
+        // Check question text for toxicity
+        moderationService.checkMessageContent(question, object : ChatModerationService.ModerationCallback {
+            override fun onMessageApproved(message: String) {
+                // Question is approved, proceed with creating poll
+                createPollInFirebase(message, options)
+            }
+
+            override fun onMessageRejected(message: String, reason: String) {
+                requireActivity().runOnUiThread {
+                    Toast.makeText(context, reason, Toast.LENGTH_LONG).show()
+                }
+            }
+
+            override fun onError(errorMessage: String) {
+                // On error, allow poll creation to avoid blocking users
+                createPollInFirebase(question, options)
+            }
+        })
+    }
+
+    private fun createPollInFirebase(question: String, options: MutableMap<String, Int>) {
         val pollRef = database.getReference("NoBallZone/polls").push()
         val pollId = pollRef.key ?: return
 
         // Get user's display name and team
-        val userRef = database.getReference("Users/${currentUser.uid}")
+        val userRef = database.getReference("Users/${currentUser?.uid}")
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val userName = snapshot.child("username").getValue(String::class.java) ?: currentUser.displayName ?: "Anonymous"
+                val userName = snapshot.child("username").getValue(String::class.java) ?: currentUser?.displayName ?: "Anonymous"
+                val userTeam = snapshot.child("iplTeam").getValue(String::class.java) ?: "No Team"
 
                 val pollMessage = PollMessage(
                     id = pollId,
-                    senderId = currentUser.uid,
+                    senderId = currentUser?.uid ?: "",
                     senderName = userName,
                     team = userTeam,
                     question = question,
                     options = options.toMutableMap(),
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    voters = mutableMapOf() // Initialize empty voters map
                 )
 
                 pollRef.setValue(pollMessage)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Poll created successfully", Toast.LENGTH_SHORT).show()
+                    }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("ChatFragment", "Error creating poll", it)
+                    //    Log.e("ChatFragment", "Error creating poll", it)
+                        Toast.makeText(context, "Failed to create poll", Toast.LENGTH_SHORT).show()
                     }
             }
 
@@ -949,20 +1655,50 @@ class ChatFragment : Fragment() {
                 // Fallback to default user info
                 val pollMessage = PollMessage(
                     id = pollId,
-                    senderId = currentUser.uid,
-                    senderName = currentUser.displayName ?: "Anonymous",
-                    team = userTeam,
+                    senderId = currentUser?.uid ?: "",
+                    senderName = currentUser?.displayName ?: "Anonymous",
+                    team = userTeam, // Using class member
                     question = question,
                     options = options.toMutableMap(),
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    voters = mutableMapOf() // Initialize empty voters map
                 )
 
                 pollRef.setValue(pollMessage)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Poll created successfully", Toast.LENGTH_SHORT).show()
+                    }
                     .addOnFailureListener {
                         // Handle error
-                        Log.e("ChatFragment", "Error creating poll", it)
+                //        Log.e("ChatFragment", "Error creating poll", it)
+                        Toast.makeText(context, "Failed to create poll", Toast.LENGTH_SHORT).show()
                     }
             }
         })
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Remove all Firebase listeners
+        valueEventListeners.forEach { (ref, listener) ->
+            ref.removeEventListener(listener)
+        }
+        childEventListeners.forEach { (ref, listener) ->
+            ref.removeEventListener(listener)
+        }
+
+        valueEventListeners.clear()
+        childEventListeners.clear()
+
+        // Cancel all pending handler callbacks
+        Handler(Looper.getMainLooper()).removeCallbacksAndMessages(null)
+
+        // Clear adapter reference
+        _binding?.recyclerViewMessages?.adapter = null
+
+        // Clear binding
+        _binding = null
+    }
+
 }

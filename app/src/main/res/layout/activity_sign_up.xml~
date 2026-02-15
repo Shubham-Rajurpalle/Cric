@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:fitsSystemWindows="true"
+    android:background="@color/black"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
+        android:background="#1E1E1E"
+        android:layout_height="@dimen/_40sdp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/backBtn"
+                android:layout_width="@dimen/_30sdp"
+                android:layout_height="@dimen/_40sdp"
+                android:src="@drawable/arrow_back"
+                android:layout_marginStart="@dimen/_10sdp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/poppins_bold"
+                android:text="Register"
+                android:textAlignment="center"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_20sdp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="1.0" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/black"
+            android:gravity="center_horizontal"
+            tools:context=".LogIn.SignUp">
+
+           <LinearLayout
+                android:layout_width="@dimen/_80sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_height="@dimen/_80sdp">
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/profileImgSetup"
+                    android:layout_width="match_parent"
+                    app:cardCornerRadius="@dimen/_40sdp"
+                    android:backgroundTint="@color/transparent"
+                    android:layout_height="match_parent">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <ImageView
+                            android:padding="@dimen/_5sdp"
+                            android:id="@+id/profileImg"
+                            android:scaleType="centerCrop"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:src="@drawable/profile_empty"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <ImageView
+                            android:layout_marginBottom="@dimen/_10sdp"
+                            android:layout_marginRight="@dimen/_10sdp"
+                            android:layout_width="@dimen/_20sdp"
+                            android:layout_height="@dimen/_20sdp"
+                            android:src="@drawable/camera_logo"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.cardview.widget.CardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Username"
+                    android:layout_weight="1"
+                    android:layout_marginTop="@dimen/_7sdp"
+                    android:layout_marginBottom="@dimen/_3sdp"
+                    android:textSize="@dimen/_13sdp"
+                    android:layout_gravity="left"
+                    android:textColor="@color/white"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="@dimen/_250sdp"
+                    android:layout_height="@dimen/_35sdp"
+                    android:backgroundTint="@color/transparent"
+                    app:cardCornerRadius="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:strokeColor="@color/grey">
+
+                    <EditText
+                        android:id="@+id/usernameTxt"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:background="@color/transparent"
+                        android:hint="Name"
+                        android:textColor="@color/white"
+                        android:textColorHint="@color/grey"
+                        android:textSize="@dimen/_11sdp" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Email"
+                    android:layout_weight="1"
+                    android:layout_marginTop="@dimen/_7sdp"
+                    android:layout_marginBottom="@dimen/_3sdp"
+                    android:textSize="@dimen/_13sdp"
+                    android:layout_gravity="left"
+                    android:textColor="@color/white"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="@dimen/_250sdp"
+                    android:layout_height="@dimen/_35sdp"
+                    android:backgroundTint="@color/transparent"
+                    app:cardCornerRadius="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:strokeColor="@color/grey">
+
+                    <EditText
+                        android:id="@+id/emailTxt"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:background="@color/transparent"
+                        android:inputType="textEmailAddress"
+                        android:hint="Email"
+                        android:textColor="@color/white"
+                        android:textColorHint="@color/grey"
+                        android:textSize="@dimen/_11sdp" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Password"
+                    android:layout_weight="1"
+                    android:layout_marginTop="@dimen/_7sdp"
+                    android:layout_marginBottom="@dimen/_3sdp"
+                    android:textSize="@dimen/_13sdp"
+                    android:layout_gravity="left"
+                    android:textColor="@color/white"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="@dimen/_250sdp"
+                    android:layout_height="@dimen/_35sdp"
+                    android:backgroundTint="@color/transparent"
+                    app:cardCornerRadius="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:strokeColor="@color/grey">
+
+                    <EditText
+                        android:id="@+id/passwordTxt"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="@dimen/_10sdp"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:inputType="textPassword"
+                        android:background="@color/transparent"
+                        android:hint="Password"
+                        android:textColor="@color/white"
+                        android:textColorHint="@color/grey"
+                        android:importantForAccessibility="yes"
+                        android:textSize="@dimen/_11sdp" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:layout_height="wrap_content">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="@dimen/_250sdp"
+                    android:layout_height="@dimen/_63sdp">
+
+
+                    <LinearLayout
+                        android:layout_width="@dimen/_250sdp"
+                        android:layout_height="@dimen/_63sdp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="left"
+                            android:layout_marginTop="@dimen/_7sdp"
+                            android:layout_marginBottom="@dimen/_3sdp"
+                            android:layout_weight="1"
+                            android:text="Confirm Password"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_13sdp" />
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="@dimen/_250sdp"
+                            android:layout_height="@dimen/_35sdp"
+                            android:backgroundTint="@color/transparent"
+                            app:cardCornerRadius="10dp"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:strokeColor="@color/grey">
+
+                            <EditText
+                                android:id="@+id/confirmPasswordTxt"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:layout_marginStart="@dimen/_10sdp"
+                                android:layout_marginEnd="@dimen/_10sdp"
+                                android:background="@color/transparent"
+                                android:hint="Confirm Password"
+                                android:importantForAccessibility="yes"
+                                android:inputType="textPassword"
+                                android:textColor="@color/white"
+                                android:textColorHint="@color/grey"
+                                android:textSize="@dimen/_11sdp" />
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+
+                    <ProgressBar
+                        android:id="@+id/progressBar"
+                        android:layout_width="@dimen/_30sdp"
+                        android:layout_height="@dimen/_30sdp"
+                        android:indeterminateTint="@color/white"
+                        android:visibility="invisible"
+                        android:layout_marginBottom="@dimen/_10sdp"
+                        app:layout_constraintBottom_toTopOf="@+id/creating_ac_txt"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/creating_ac_txt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Creating Account..."
+                        android:visibility="invisible"
+                        android:textColor="@android:color/holo_blue_bright"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Country"
+                    android:layout_weight="1"
+                    android:layout_marginTop="@dimen/_7sdp"
+                    android:layout_marginBottom="@dimen/_3sdp"
+                    android:textSize="@dimen/_13sdp"
+                    android:layout_gravity="left"
+                    android:textColor="@color/white"/>
+
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="@dimen/_250sdp"
+                    android:layout_height="@dimen/_35sdp"
+                    android:backgroundTint="@color/transparent"
+                    app:cardCornerRadius="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:strokeColor="@color/grey">
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <ImageView
+                            android:id="@+id/error_spinner_country"
+                            android:layout_width="@dimen/_30sdp"
+                            android:layout_height="match_parent"
+                            android:padding="@dimen/_5sdp"
+                            android:src="@drawable/error_img"
+                            android:visibility="invisible"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <Spinner
+                            android:id="@+id/countryTxt"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@color/transparent"
+                            android:hint="eg.India"
+                            android:paddingStart="@dimen/_10sdp"
+                            android:paddingEnd="@dimen/_10sdp"
+                            android:textColor="@color/white"
+                            android:textColorHint="@color/white"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintVertical_bias="0.0" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="IPL Team"
+                    android:layout_weight="1"
+                    android:layout_marginTop="@dimen/_7sdp"
+                    android:layout_marginBottom="@dimen/_3sdp"
+                    android:textSize="@dimen/_13sdp"
+                    android:layout_gravity="left"
+                    android:textColor="@color/white"/>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="@dimen/_250sdp"
+                    android:layout_height="@dimen/_35sdp"
+                    android:backgroundTint="@color/transparent"
+                    app:cardCornerRadius="10dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:strokeColor="@color/grey">
+
+
+                   <androidx.constraintlayout.widget.ConstraintLayout
+                       android:layout_width="match_parent"
+                       android:layout_height="match_parent">
+
+                       <ImageView
+                           android:id="@+id/error_spinner_ipl"
+                           android:layout_width="@dimen/_30sdp"
+                           android:layout_height="match_parent"
+                           android:src="@drawable/error_img"
+                           android:padding="@dimen/_5sdp"
+                           android:visibility="invisible"
+                           app:layout_constraintBottom_toBottomOf="parent"
+                           app:layout_constraintEnd_toEndOf="@+id/iplTeamTxt"
+                           app:layout_constraintTop_toTopOf="parent" />
+
+                       <Spinner
+                           android:id="@+id/iplTeamTxt"
+                           android:layout_width="match_parent"
+                           android:layout_height="match_parent"
+                           android:background="@color/transparent"
+                           android:hint="eg.CSK"
+                           android:paddingStart="@dimen/_10sdp"
+                           android:paddingEnd="@dimen/_10sdp"
+                           android:textColor="@color/white"
+                           android:textColorHint="@color/white"
+                           app:layout_constraintBottom_toBottomOf="parent"
+                           app:layout_constraintEnd_toEndOf="parent"
+                           app:layout_constraintStart_toStartOf="parent"
+                           app:layout_constraintTop_toTopOf="parent"
+                           app:layout_constraintVertical_bias="0.0" />
+                   </androidx.constraintlayout.widget.ConstraintLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="@dimen/_250sdp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:layout_height="@dimen/_40sdp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:gravity="center_horizontal"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_10sdp"
+                        android:textSize="@dimen/_10sdp"
+                        android:textAlignment="center"
+                        android:textColor="#D7D5D5"
+                        android:text="By signing up you agree to our "/>
+
+                    <TextView
+                        android:id="@+id/termsConditionsTxt"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_10sdp"
+                        android:textSize="@dimen/_10sdp"
+                        android:textAlignment="center"
+                        android:textColor="@color/blue"
+                        android:text="@string/terms_conditions"/>
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/privacyPolicyTxt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/_10sdp"
+                    android:textAlignment="center"
+                    android:textColor="@color/blue"
+                    android:text="@string/privacy_polixy"/>
+            </LinearLayout>
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/signUpBtn"
+                android:layout_width="@dimen/_250sdp"
+                android:layout_height="@dimen/_40sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:background="@drawable/button_rounded"
+                android:text="Sign Up"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_15sdp"
+                android:fontFamily="@font/poppins_bold"/>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_marginBottom="@dimen/_20sdp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Already have an Account? "
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/_12sdp"/>
+
+                <TextView
+                    android:id="@+id/LogInBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Log In"
+                    android:textColor="@color/blue"
+                    android:textSize="@dimen/_12sdp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

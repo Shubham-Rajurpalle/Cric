@@ -1,0 +1,10 @@
+<defaultsMap>
+    <entry>
+        <key>latest_version</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>force_update_required</key>
+        <value>false</value>
+    </entry>
+</defaultsMap>

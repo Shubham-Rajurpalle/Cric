@@ -17,13 +17,14 @@
         android:textSize="@dimen/_20sdp"
         android:textStyle="bold" />
 
-    <com.google.android.exoplayer2.ui.PlayerView
+    <!-- Update to use androidx.media3.ui.PlayerView instead of the deprecated exoplayer2 version -->
+    <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_marginTop="@dimen/_40sdp"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:keepScreenOn="true"
-        app:resize_mode="fill"></com.google.android.exoplayer2.ui.PlayerView>
+        app:resize_mode="fill" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -49,6 +50,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:layout_marginRight="@dimen/_10sdp"
         android:layout_alignParentRight="true"
         android:layout_centerInParent="true"
         android:orientation="vertical">
@@ -62,8 +64,8 @@
 
             <ImageView
                 android:id="@+id/likeButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="@dimen/_25sdp"
+                android:layout_height="@dimen/_25sdp"
                 android:src="@drawable/likebtn"
                 app:tint="@android:color/white" />
 
@@ -72,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="0 likes"
+                android:text="0"
                 android:textColor="@android:color/white"
                 android:textSize="14sp" />
         </LinearLayout>
@@ -87,8 +89,8 @@
 
             <ImageView
                 android:id="@+id/shareButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="@dimen/_25sdp"
+                android:layout_height="@dimen/_25sdp"
                 android:src="@drawable/sharebtn"
                 app:tint="@android:color/white" />
 
@@ -97,7 +99,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="0 shares"
+                android:text="0"
                 android:textColor="@android:color/white"
                 android:textSize="14sp" />
         </LinearLayout>

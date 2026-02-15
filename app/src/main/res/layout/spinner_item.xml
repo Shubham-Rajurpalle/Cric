@@ -1,6 +1,10 @@
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/text1"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:textColor="#FFFFFF"
     android:padding="10dp"
-    android:textSize="@dimen/_11sdp"/>
+    android:text="Select Option"
+    android:textSize="16sp"
+    android:textColor="@color/white" />

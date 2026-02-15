@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout android:id="@+id/swipeRefreshLayout"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+<FrameLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,13 +17,86 @@
         android:layout_height="match_parent"
         android:orientation="vertical"/>
 
+
+    <LinearLayout
+        android:id="@+id/llAnime2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_150sdp"
+            android:layout_gravity="center"
+            android:visibility="visible"
+            app:lottie_autoPlay="true"
+            android:alpha="0.2"
+            app:lottie_loop="true"
+            app:lottie_repeatCount="30"
+            app:lottie_repeatMode="restart"
+            app:lottie_rawRes="@raw/loading_v" />
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_150sdp"
+            android:layout_gravity="center"
+            android:visibility="visible"
+            app:lottie_autoPlay="true"
+            android:alpha="0.2"
+            app:lottie_loop="true"
+            app:lottie_repeatCount="30"
+            app:lottie_repeatMode="restart"
+            app:lottie_rawRes="@raw/loading_v" />
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_150sdp"
+            android:layout_gravity="center"
+            android:visibility="visible"
+            app:lottie_autoPlay="true"
+            android:alpha="0.2"
+            app:lottie_loop="true"
+            app:lottie_repeatCount="30"
+            app:lottie_repeatMode="restart"
+            app:lottie_rawRes="@raw/loading_v" />
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_150sdp"
+            android:layout_gravity="center"
+            android:visibility="visible"
+            app:lottie_autoPlay="true"
+            android:alpha="0.2"
+            app:lottie_loop="true"
+            app:lottie_repeatCount="30"
+            app:lottie_repeatMode="restart"
+            app:lottie_rawRes="@raw/loading_v" />
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_150sdp"
+            android:layout_gravity="center"
+            android:visibility="visible"
+            app:lottie_autoPlay="true"
+            android:alpha="0.2"
+            app:lottie_loop="true"
+            app:lottie_repeatCount="30"
+            app:lottie_repeatMode="restart"
+            app:lottie_rawRes="@raw/loading_v" />
+
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/emptyStateLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:visibility="gone">
 
     <ImageView
         android:layout_width="@dimen/_100sdp"
@@ -44,3 +124,6 @@
     </LinearLayout>
 
 </FrameLayout>
+
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

@@ -1,108 +1,179 @@
-package com.cricketApp.cric.Leaderboard
+    package com.cricketApp.cric.Leaderboard
 
-import android.os.Bundle
-import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Toast
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
-import com.cricketApp.cric.databinding.FragmentMissBinding
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+    import android.os.Bundle
+    import androidx.fragment.app.Fragment
+    import android.view.LayoutInflater
+    import android.view.View
+    import android.view.ViewGroup
+    import android.widget.Toast
+    import androidx.recyclerview.widget.LinearLayoutManager
+    import com.bumptech.glide.Glide
+    import com.cricketApp.cric.databinding.FragmentMissBinding
+    import com.google.firebase.database.DataSnapshot
+    import com.google.firebase.database.DatabaseError
+    import com.google.firebase.database.DatabaseReference
+    import com.google.firebase.database.FirebaseDatabase
+    import com.google.firebase.database.ValueEventListener
 
-class missFragment : Fragment() {
-    private var _binding: FragmentMissBinding? = null
-    private val binding get() = _binding!!
+    class missFragment : Fragment() {
+        private var _binding: FragmentMissBinding? = null
+        private val binding get() = _binding!!
 
-    private lateinit var databaseRef: DatabaseReference
-    private lateinit var adapter: MissLeaderboardAdapter
-    private val allTeams = mutableListOf<TeamData>()
+        private var databaseRef: DatabaseReference? = null
+        private var valueEventListener: ValueEventListener? = null
+        private lateinit var adapter: MissLeaderboardAdapter
+        private val allTeams = mutableListOf<TeamData>()
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = FragmentMissBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+        // Add a flag to track whether the fragment is attached
+        private var isFragmentActive = false
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        override fun onCreateView(
+            inflater: LayoutInflater, container: ViewGroup?,
+            savedInstanceState: Bundle?
+        ): View {
+            _binding = FragmentMissBinding.inflate(inflater, container, false)
+            return binding.root
+        }
 
-        // Initialize Firebase
-        databaseRef = FirebaseDatabase.getInstance().getReference("teams")
+        override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+            super.onViewCreated(view, savedInstanceState)
 
-        // Initialize RecyclerView
-        binding.leaderboardList.layoutManager = LinearLayoutManager(requireContext())
-        adapter = MissLeaderboardAdapter()
-        binding.leaderboardList.adapter = adapter
+            // Set flag to true when fragment is active
+            isFragmentActive = true
 
-        loadLeaderboardData()
-    }
+            // Initialize Firebase
+            databaseRef = FirebaseDatabase.getInstance().getReference("teams")
 
-    private fun loadLeaderboardData() {
-        databaseRef.orderByChild("misses").limitToLast(10).addValueEventListener(object :
-            ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                allTeams.clear()
+            // Initialize RecyclerView
+            binding.leaderboardList.layoutManager = LinearLayoutManager(requireContext())
+            adapter = MissLeaderboardAdapter()
+            binding.leaderboardList.adapter = adapter
 
-                for (dataSnapshot in snapshot.children) {
-                    val team = dataSnapshot.getValue(TeamData::class.java)
-                    if (team != null) {
-                        allTeams.add(team)
+            loadLeaderboardData()
+        }
+
+        private fun loadLeaderboardData() {
+            // If there's an existing listener, remove it first
+            if (valueEventListener != null && databaseRef != null) {
+                databaseRef?.removeEventListener(valueEventListener!!)
+            }
+
+            // Get reference to TeamStats for up-to-date hit/miss data
+            val teamStatsRef = FirebaseDatabase.getInstance().getReference("teams")
+
+            valueEventListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    // Check if fragment is still active before processing data
+                    if (!isFragmentActive || _binding == null) return
+
+                    allTeams.clear()
+
+                    // First get all teams data (for names, logos, etc.)
+                    for (dataSnapshot in snapshot.children) {
+                        val team = dataSnapshot.getValue(TeamData::class.java)
+                        team?.let {
+                            // Ensure we have the key as the team ID
+                            it.id = dataSnapshot.key ?: ""
+                            allTeams.add(it)
+                        }
                     }
+
+                    // Now fetch the hit/miss counts from TeamStats
+                    teamStatsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(statsSnapshot: DataSnapshot) {
+                            // Update hit/miss values for each team
+                            for (team in allTeams) {
+                                val teamStatsData = statsSnapshot.child(team.id)
+                                if (teamStatsData.exists()) {
+                                    // Update with latest hit/miss counts
+                                    team.hits = teamStatsData.child("hits").getValue(Int::class.java) ?: 0
+                                    team.misses = teamStatsData.child("misses").getValue(Int::class.java) ?: 0
+                                }
+                            }
+
+                            // Sort in descending order by misses
+                            allTeams.sortByDescending { it.misses }
+
+                            // Update UI with the combined data
+                            updateUI()
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            // Just log the error but continue with teams data we have
+                            if (!isFragmentActive || _binding == null) return
+                            updateUI() // Still update UI with the teams data we have
+                        }
+                    })
                 }
 
-                // Sort in descending order by misses
-                allTeams.sortByDescending { it.misses }
+                override fun onCancelled(error: DatabaseError) {
+                    // Check if fragment is still active before showing toast
+                    if (!isFragmentActive || _binding == null) return
 
-                updateUI()
+                    Toast.makeText(requireContext(), "Failed to load data", Toast.LENGTH_SHORT).show()
+                }
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load data", Toast.LENGTH_SHORT).show()
+            // Get all teams without filtering
+            databaseRef?.addValueEventListener(valueEventListener!!)
+        }
+
+        private fun updateUI() {
+            // Check if binding is null or fragment is not active
+            if (_binding == null || !isFragmentActive) return
+
+            if (allTeams.size >= 3) {
+                val firstPlace = allTeams[0]
+                val secondPlace = allTeams[1]
+                val thirdPlace = allTeams[2]
+
+                binding.firstTeam.text = firstPlace.name
+                binding.secondTeam.text = secondPlace.name
+                binding.thirdTeam.text = thirdPlace.name
+                binding.firstMisses.text = firstPlace.misses.toString()
+                binding.secondMisses.text = secondPlace.misses.toString()
+                binding.thirdMisses.text = thirdPlace.misses.toString()
+
+                try {
+                    // Use context instead of requireView() for safer Glide loading
+                    context?.let { ctx ->
+                        Glide.with(ctx)
+                            .load(firstPlace.logoUrl)
+                            .into(binding.firstTeamLogo)
+
+                        Glide.with(ctx)
+                            .load(secondPlace.logoUrl)
+                            .into(binding.secondTeamLogo)
+
+                        Glide.with(ctx)
+                            .load(thirdPlace.logoUrl)
+                            .into(binding.thirdTeamLogo)
+                    }
+                } catch (e: Exception) {
+                    // Handle any exceptions that might occur during image loading
+                    e.printStackTrace()
+                }
+
+                adapter.submitList(allTeams.subList(3, allTeams.size))
+            } else {
+                adapter.submitList(allTeams)
             }
-        })
-    }
+        }
 
-    private fun updateUI() {
-        if (allTeams.size >= 3) {
-            val firstPlace = allTeams[0]
-            val secondPlace = allTeams[1]
-            val thirdPlace = allTeams[2]
+        override fun onDestroyView() {
+            super.onDestroyView()
 
-            binding.firstTeam.text = firstPlace.name
-            binding.secondTeam.text = secondPlace.name
-            binding.thirdTeam.text = thirdPlace.name
-            binding.firstMisses.text = firstPlace.misses.toString()
-            binding.secondMisses.text = secondPlace.misses.toString()
-            binding.thirdMisses.text = thirdPlace.misses.toString()
+            // Remove the Firebase listener to prevent memory leaks
+            if (valueEventListener != null && databaseRef != null) {
+                databaseRef?.removeEventListener(valueEventListener!!)
+                valueEventListener = null
+            }
 
-            Glide.with(this)
-                .load(firstPlace.logoUrl)
-                .into(binding.firstTeamLogo)
+            // Clear adapter reference
+            binding.leaderboardList.adapter = null
 
-            Glide.with(this)
-                .load(secondPlace.logoUrl)
-                .into(binding.secondTeamLogo)
-
-            Glide.with(this)
-                .load(thirdPlace.logoUrl)
-                .into(binding.thirdTeamLogo)
-
-            adapter.submitList(allTeams.subList(3, allTeams.size))
-        } else {
-            adapter.submitList(allTeams)
+            // Set flag to false when fragment view is destroyed
+            isFragmentActive = false
+            _binding = null
         }
     }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-}

@@ -6,37 +6,131 @@
     android:layout_height="match_parent"
     tools:context=".home.Shots.Cric_shots">
 
-    <com.cricketApp.cric.home.Shots.InterceptableRecyclerView
-        android:id="@+id/shots_recycler_view"
-        android:layout_width="match_parent"
-        android:orientation="horizontal"
-        android:layout_marginTop="@dimen/_5sdp"
-        android:layout_height="@dimen/_200sdp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/news_recycle_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/shots_recycler_view" />
-
-
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/navHost"
-        android:name="androidx.navigation.fragment.NavHostFragment"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="@dimen/_60sdp"
-        app:defaultNavHost="true"
-        app:layout_constraintBottom_toBottomOf="@+id/news_recycle_view"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/llAnime"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_200sdp"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/loaderAnimation"
+                    android:layout_width="@dimen/_110sdp"
+                    android:layout_height="@dimen/_200sdp"
+                    android:layout_gravity="center"
+                    android:alpha="0.2"
+                    android:visibility="visible"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/loading_v" />
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/loaderAnimation2"
+                    android:layout_width="@dimen/_110sdp"
+                    android:layout_height="@dimen/_200sdp"
+                    android:layout_gravity="center"
+                    android:visibility="visible"
+                    android:alpha="0.2"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/loading_v" />
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/loaderAnimation3"
+                    android:layout_width="@dimen/_110sdp"
+                    android:layout_height="@dimen/_200sdp"
+                    android:layout_gravity="center"
+                    android:visibility="visible"
+                    app:lottie_autoPlay="true"
+                    android:alpha="0.2"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/loading_v" />
+            </LinearLayout>
+
+            <com.cricketApp.cric.home.Shots.InterceptableRecyclerView
+                android:id="@+id/shots_recycler_view"
+                android:layout_width="match_parent"
+                android:orientation="horizontal"
+                android:layout_marginLeft="@dimen/_5sdp"
+                android:layout_marginRight="@dimen/_5sdp"
+                android:layout_marginTop="@dimen/_5sdp"
+                android:layout_height="@dimen/_200sdp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <LinearLayout
+                android:id="@+id/llAnime2"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/llAnime">
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/loaderAnimation5"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_150sdp"
+                    android:layout_gravity="center"
+                    android:visibility="visible"
+                    app:lottie_autoPlay="true"
+                    android:alpha="0.2"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/loading_v" />
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/loaderAnimation6"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/_150sdp"
+                    android:layout_gravity="center"
+                    android:visibility="visible"
+                    android:alpha="0.2"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_rawRes="@raw/loading_v" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/news_recycle_view"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="@dimen/_5sdp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/shots_recycler_view" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/navHost"
+                android:name="androidx.navigation.fragment.NavHostFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="@dimen/_60sdp"
+                app:defaultNavHost="true"
+                app:layout_constraintBottom_toBottomOf="@+id/news_recycle_view"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

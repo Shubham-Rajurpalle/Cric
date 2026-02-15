@@ -44,13 +44,14 @@
                 </androidx.cardview.widget.CardView>
 
 
-                <ImageView
+                <Button
                     android:id="@+id/bell_icon"
                     android:layout_width="@dimen/_23sdp"
                     android:layout_height="@dimen/_23sdp"
                     android:layout_marginEnd="@dimen/_10sdp"
                     android:padding="@dimen/_2sdp"
-                    android:src="@drawable/bell_icon"
+                    android:backgroundTint="@color/transparent"
+                    android:background="@drawable/bell_icon"
                     app:layout_constraintBottom_toTopOf="@+id/appBarLayout"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -59,7 +60,7 @@
                     android:id="@+id/imageView"
                     android:layout_width="@dimen/_150sdp"
                     android:layout_height="@dimen/_60sdp"
-                    android:src="@drawable/cric_logo"
+                    android:src="@drawable/cric_header"
                     app:layout_constraintBottom_toTopOf="@+id/appBarLayout"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"

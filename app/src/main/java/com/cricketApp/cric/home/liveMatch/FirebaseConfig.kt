@@ -21,7 +21,7 @@ object FirebaseConfig {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("FirebaseConfig", "Failed to load API config: ${error.message}")
+            //    Log.e("FirebaseConfig", "Failed to load API config: ${error.message}")
             }
         })
     }

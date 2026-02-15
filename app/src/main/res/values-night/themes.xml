@@ -1,12 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-
-    <style name="Base.Theme.Cric" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Background Colors (Same for Light & Dark Mode) -->
+    <style name="Base.Theme.Cric" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Background Colors -->
         <item name="android:colorBackground">@color/background</item>
         <item name="android:windowBackground">@color/background</item>
 
         <!-- Primary Colors -->
-        <item name="colorPrimary">#B40000</item>
+        <item name="colorPrimary">#97FD3535</item>
         <item name="colorOnPrimary">@color/white</item>
 
         <!-- Status Bar Color -->
@@ -28,5 +27,26 @@
         <item name="android:background">@drawable/button_background</item>
         <item name="android:backgroundTint">@null</item>
         <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="CustomAlertDialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog.Alert">
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="title">@color/white</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:windowBackground">@drawable/rounded_dialog_background</item>
+        <item name="android:windowMinWidthMajor">80%</item> <!-- Controls width in landscape -->
+        <item name="android:windowMinWidthMinor">80%</item> <!-- Controls width in portrait -->
+        <item name="buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/NegativeButtonStyle</item>
+    </style>
+
+    <style name="PositiveButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="NegativeButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/white</item>
     </style>
 </resources>

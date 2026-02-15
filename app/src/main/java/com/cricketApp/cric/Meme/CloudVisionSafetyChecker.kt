@@ -1,0 +1,260 @@
+package com.cricketApp.cric.Meme
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
+import android.provider.MediaStore
+import android.util.Log
+import android.util.Base64
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
+
+class CloudVisionSafetyChecker(private val context: Context) {
+
+    companion object {
+        private const val TAG = "CloudVisionSafetyCheck"
+        private const val VISION_API_URL = "https://vision.googleapis.com/v1/images:annotate"
+
+        // Likelihood thresholds for different content types
+        private val BLOCK_THRESHOLDS = mapOf(
+            "adult" to Likelihood.POSSIBLE,
+            "violence" to Likelihood.POSSIBLE,
+            "medical" to Likelihood.LIKELY,
+            "spoof" to Likelihood.VERY_LIKELY,
+            "racy" to Likelihood.LIKELY
+        )
+    }
+
+    private val client = OkHttpClient()
+    private val gson = Gson()
+
+
+    private suspend fun getVisionApiKey(): String = suspendCancellableCoroutine { continuation ->
+        val configRef = FirebaseDatabase.getInstance().getReference("apiConfig/visionApiKey")
+
+        val listener = configRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val apiKey = snapshot.getValue(String::class.java)
+                if (!apiKey.isNullOrEmpty()) {
+                    continuation.resume(apiKey)
+                } else {
+                    continuation.resumeWithException(Exception("Failed to retrieve Vision API key"))
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                continuation.resumeWithException(Exception("Failed to retrieve Vision API key: ${error.message}"))
+            }
+        })
+
+        continuation.invokeOnCancellation {
+            configRef.removeEventListener(listener)
+        }
+    }
+
+    // Enum to represent SafeSearch likelihood levels
+    enum class Likelihood {
+        UNKNOWN,
+        VERY_UNLIKELY,
+        UNLIKELY,
+        POSSIBLE,
+        LIKELY,
+        VERY_LIKELY;
+
+        companion object {
+            fun fromString(value: String): Likelihood {
+                return try {
+                    valueOf(value)
+                } catch (e: IllegalArgumentException) {
+                    UNKNOWN
+                }
+            }
+        }
+    }
+
+    data class SafetyCheckResult(
+        val isSafe: Boolean,
+        val autoBlock: Boolean = false,
+        val issues: List<String> = emptyList(),
+        val likelihood: Map<String, Likelihood> = emptyMap()
+    )
+
+    // Cloud Vision API data classes
+    data class VisionRequest(
+        val requests: List<AnnotateImageRequest>
+    )
+
+    data class AnnotateImageRequest(
+        val image: Image,
+        val features: List<Feature>
+    )
+
+    data class Image(
+        val content: String
+    )
+
+    data class Feature(
+        val type: String,
+        val maxResults: Int
+    )
+
+    data class VisionResponse(
+        val responses: List<AnnotateImageResponse>?
+    )
+
+    data class AnnotateImageResponse(
+        val safeSearchAnnotation: SafeSearchAnnotation?
+    )
+
+    data class SafeSearchAnnotation(
+        val adult: String?,
+        val medical: String?,
+        val spoof: String?,
+        val violence: String?,
+        val racy: String?
+    )
+
+    /**
+     * Check if an image is safe using Google Cloud Vision API
+     * @param imageUri The URI of the image to check
+     * @return A SafetyCheckResult with the safety status
+     */
+    suspend fun checkImageSafety(imageUri: Uri): SafetyCheckResult = withContext(Dispatchers.IO) {
+        try {
+            // Load the bitmap from the URI
+            val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, imageUri)
+            checkBitmapSafety(bitmap)
+        } catch (e: IOException) {
+         //   Log.e(TAG, "Error loading image: ${e.message}")
+            SafetyCheckResult(false, true, listOf("Error loading image"))
+        }
+    }
+
+    /**
+     * Check if a bitmap is safe using Google Cloud Vision API
+     * @param bitmap The bitmap to check
+     * @return A SafetyCheckResult with the safety status
+     */
+    suspend fun checkBitmapSafety(bitmap: Bitmap): SafetyCheckResult = withContext(Dispatchers.IO) {
+        try {
+            // Get API key from Firebase
+            val apiKey = try {
+                getVisionApiKey()
+            } catch (e: Exception) {
+                // In production, you might want to fail closed (block content) if API key isn't available
+                return@withContext SafetyCheckResult(false, true, listOf("Unable to verify content safety"))
+            }
+
+            // Convert bitmap to base64
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream)
+            val imageBytes = byteArrayOutputStream.toByteArray()
+            val base64Image = Base64.encodeToString(imageBytes, Base64.NO_WRAP)
+
+            // Create request body
+            val requestJson = gson.toJson(
+                VisionRequest(
+                    requests = listOf(
+                        AnnotateImageRequest(
+                            image = Image(content = base64Image),
+                            features = listOf(
+                                Feature(type = "SAFE_SEARCH_DETECTION", maxResults = 1)
+                            )
+                        )
+                    )
+                )
+            )
+
+            // Create request with the fetched API key
+            val request = Request.Builder()
+                .url("$VISION_API_URL?key=$apiKey") // Use the fetched API key
+                .post(requestJson.toRequestBody("application/json".toMediaType()))
+                .build()
+
+            // Execute request
+            val response = suspendCoroutine<VisionResponse> { continuation ->
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        continuation.resumeWithException(
+                            IOException("Unexpected code ${response.code}")
+                        )
+                        return@use
+                    }
+
+                    val responseBody = response.body?.string()
+                    if (responseBody != null) {
+                        try {
+                            val visionResponse = gson.fromJson(responseBody, VisionResponse::class.java)
+                            continuation.resume(visionResponse)
+                        } catch (e: Exception) {
+                            continuation.resumeWithException(e)
+                        }
+                    } else {
+                        continuation.resumeWithException(IOException("Empty response"))
+                    }
+                }
+            }
+
+            // Process response
+            val safeSearchAnnotation = response.responses?.firstOrNull()?.safeSearchAnnotation
+            if (safeSearchAnnotation != null) {
+                val likelihoodMap = mapOf(
+                    "adult" to Likelihood.fromString(safeSearchAnnotation.adult ?: "UNKNOWN"),
+                    "medical" to Likelihood.fromString(safeSearchAnnotation.medical ?: "UNKNOWN"),
+                    "spoof" to Likelihood.fromString(safeSearchAnnotation.spoof ?: "UNKNOWN"),
+                    "violence" to Likelihood.fromString(safeSearchAnnotation.violence ?: "UNKNOWN"),
+                    "racy" to Likelihood.fromString(safeSearchAnnotation.racy ?: "UNKNOWN")
+                )
+
+                // Determine if content should be blocked
+                val issues = mutableListOf<String>()
+                var shouldBlock = false
+
+                if (likelihoodMap["adult"]!! >= BLOCK_THRESHOLDS["adult"]!!) {
+                    issues.add("Adult content detected (${likelihoodMap["adult"]})")
+                    shouldBlock = true
+                }
+
+                if (likelihoodMap["violence"]!! >= BLOCK_THRESHOLDS["violence"]!!) {
+                    issues.add("Violent content detected (${likelihoodMap["violence"]})")
+                    shouldBlock = true
+                }
+
+                if (likelihoodMap["medical"]!! >= BLOCK_THRESHOLDS["medical"]!!) {
+                    issues.add("Medical/injury content detected (${likelihoodMap["medical"]})")
+                    shouldBlock = true
+                }
+
+                if (likelihoodMap["racy"]!! >= BLOCK_THRESHOLDS["racy"]!!) {
+                    issues.add("Racy content detected (${likelihoodMap["racy"]})")
+                    shouldBlock = true
+                }
+
+                val isSafe = !shouldBlock
+
+                return@withContext SafetyCheckResult(isSafe, shouldBlock, issues, likelihoodMap)
+            } else {
+                // No annotation results
+                return@withContext SafetyCheckResult(false, true, listOf("Analysis failed or returned no results"))
+            }
+        } catch (e: Exception) {
+            // Handle errors appropriately - in production, remove the logging
+            return@withContext SafetyCheckResult(false, true, listOf("Error analyzing image: ${e.message}"))
+        }
+    }
+}

@@ -2,11 +2,17 @@ package com.cricketApp.cric.home.Shots
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.CardNewsBinding
 import com.google.firebase.firestore.FirebaseFirestore
@@ -29,9 +35,35 @@ class NewsAdapter(private var newsList: MutableList<News>, private val context: 
         holder.binding.viewCount.text = "${news.views} Views"
         holder.binding.timeBefore.text = getTimeAgo(news.timestamp)
 
+        val loadingProgress = holder.binding.loadingProgress
+        val imagePlayer = holder.binding.imagePlayer
+
         Glide.with(context)
             .load(news.imageUrl)
-            .placeholder(R.drawable.loading)
+            .listener(object : RequestListener<Drawable> {
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    loadingProgress.visibility = View.GONE // Hide progress if failed
+                    imagePlayer.visibility = View.VISIBLE  // Still show a placeholder
+                    return false
+                }
+
+                override fun onResourceReady(
+                    resource: Drawable?,
+                    model: Any?,
+                    target: Target<Drawable>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    loadingProgress.visibility = View.GONE // Hide progress when loaded
+                    imagePlayer.visibility = View.VISIBLE
+                    return false
+                }
+            })
             .into(holder.binding.imagePlayer)
 
         holder.binding.detailsButton.setOnClickListener {
@@ -60,10 +92,10 @@ class NewsAdapter(private var newsList: MutableList<News>, private val context: 
             .addOnSuccessListener {
                 news.views = newViewsCount
                 viewCountTextView.text = "$newViewsCount Views"
-                Log.d("Firestore", "Views updated for ${news.id}")
+            //    Log.d("Firestore", "Views updated for ${news.id}")
             }
             .addOnFailureListener { e ->
-                Log.e("Firestore", "Error updating views", e)
+            //    Log.e("Firestore", "Error updating views", e)
             }
     }
 

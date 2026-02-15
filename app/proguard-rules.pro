@@ -1,21 +1,54 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Cricket App ProGuard Rules - Disable Optimization
+# Use this configuration when optimization causes critical functionality to break
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Disable optimization completely
+-dontoptimize
+-dontpreverify
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Only obfuscate but don't remove any code
+-dontusemixedcaseclassnames
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+-keepattributes SourceFile,LineNumberTable
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Keep ALL classes and methods in your app
+-keep class com.cricketApp.cric.** { *; }
+
+# Keep all classes from Google Play Services and Firebase
+-keep class com.google.android.gms.** { *; }
+-keep class com.google.firebase.** { *; }
+
+# Keep ALL Android support library classes
+-keep class androidx.** { *; }
+-keep class android.** { *; }
+
+# Keep all external libraries
+-keep class retrofit2.** { *; }
+-keep class okhttp3.** { *; }
+-keep class okio.** { *; }
+-keep class com.google.gson.** { *; }
+-keep class kotlin.** { *; }
+-keep class kotlinx.** { *; }
+
+# Handle all warnings as just warnings, not errors
+-dontwarn **
+
+# Keep required metadata
+-keepattributes *Annotation*,Signature,Exceptions
+-keepattributes SourceFile,LineNumberTable
+
+# Keep native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# Keep resource references
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+# Keep app components
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+-keep public class * extends android.content.ContentProvider

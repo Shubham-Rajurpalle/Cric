@@ -1,0 +1,22 @@
+package com.cricketApp.cric.Meme
+import com.cricketApp.cric.Chat.CommentMessage
+
+
+data class MemeMessage(
+    var id: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val team: String = "",
+    val memeUrl: String = "",
+    var reactions: MutableMap<String, Int> = mutableMapOf(
+        "lol" to 0,
+        "rofl" to 0,
+        "savage" to 0,
+        "cringe" to 0
+    ),
+    var trending: Int = 0,
+    var dying: Int = 0,
+    var commentCount: Int = 0,
+    val timestamp: Long = System.currentTimeMillis(),
+    var comments: MutableList<CommentMessage> = mutableListOf()
+)

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardCornerRadius="@dimen/_10sdp"
-    android:layout_margin="@dimen/_5sdp"
+    android:layout_margin="@dimen/_10sdp"
     app:cardBackgroundColor="#1E1E1E">
 
     <!-- Main Container -->
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Header: IPL and Match Number -->
+        <!-- Header: League and Match Number -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -32,24 +32,27 @@
                     android:layout_height="@dimen/_20sdp"
                     app:cardCornerRadius="@dimen/_10sdp">
                     <ImageView
+                        android:id="@+id/league_logo"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:padding="2dp"/>
                 </androidx.cardview.widget.CardView>
 
                 <TextView
+                    android:id="@+id/league_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Indian Premier League"
+                    android:text="Series Name loading..."
                     android:textColor="@android:color/white"
                     android:textSize="16sp"
                     android:layout_marginStart="8dp"/>
             </LinearLayout>
 
             <TextView
+                android:id="@+id/match_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Match 78"
+                android:text="Match..."
                 android:textColor="#FFBF00"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -69,7 +72,7 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <!-- Left Team (CSK) -->
+                <!-- Left Team -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -77,44 +80,36 @@
                     android:orientation="vertical"
                     android:gravity="center">
 
-
                     <androidx.cardview.widget.CardView
                         android:layout_width="@dimen/_24sdp"
                         android:layout_height="@dimen/_24sdp"
                         app:cardCornerRadius="@dimen/_12sdp">
                         <ImageView
+                            android:id="@+id/team1_logo"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:padding="2dp"/>
                     </androidx.cardview.widget.CardView>
 
                     <TextView
+                        android:id="@+id/team1_score"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="180/3"
+                        android:text="Score..."
                         android:textColor="@android:color/white"
                         android:textSize="@dimen/_13sdp"
                         android:textStyle="bold"
                         android:layout_marginTop="8dp"/>
 
                     <TextView
+                        android:id="@+id/team1_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="CSK"
+                        android:text="Team..."
                         android:textColor="@android:color/white"
                         android:textSize="@dimen/_15sdp"
                         android:textStyle="bold"
                         android:layout_marginTop="8dp"/>
-
-                    <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="@dimen/_30sdp"
-                        android:layout_gravity="start"
-                        android:layout_marginTop="@dimen/_20sdp"
-                        android:text="Point Table"
-                        android:textColor="@android:color/white"
-                        android:textSize="@dimen/_12sdp"
-                        android:background="@drawable/button_background"/>
                 </LinearLayout>
 
                 <!-- Center V/S -->
@@ -134,15 +129,16 @@
                         android:textStyle="bold"/>
 
                     <TextView
+                        android:id="@+id/overs_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="19.3 Overs"
+                        android:text="Overs..."
                         android:textColor="#808080"
                         android:textSize="@dimen/_10sdp"
                         android:layout_marginTop="8dp"/>
                 </LinearLayout>
 
-                <!-- Right Team (MI) -->
+                <!-- Right Team -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -155,43 +151,46 @@
                         android:layout_height="@dimen/_24sdp"
                         app:cardCornerRadius="@dimen/_12sdp">
                         <ImageView
+                            android:id="@+id/team2_logo"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:padding="2dp"/>
                     </androidx.cardview.widget.CardView>
 
-
                     <TextView
+                        android:id="@+id/team2_score"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="180/3"
+                        android:text="Score..."
                         android:textColor="@android:color/white"
                         android:textSize="@dimen/_13sdp"
                         android:textStyle="bold"
                         android:layout_marginTop="8dp"/>
 
                     <TextView
+                        android:id="@+id/team2_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="MI"
+                        android:text="Team..."
                         android:textColor="@android:color/white"
                         android:textSize="@dimen/_15sdp"
                         android:textStyle="bold"
                         android:layout_marginTop="8dp"/>
-
-                    <Button
-                        android:layout_width="wrap_content"
-                        android:layout_height="@dimen/_30sdp"
-                        android:layout_marginTop="@dimen/_20sdp"
-                        android:layout_gravity="end"
-                        android:text="Details"
-                        android:textColor="@android:color/white"
-                        android:textSize="@dimen/_12sdp"
-                        android:background="@drawable/button_background"/>
-
-
                 </LinearLayout>
             </LinearLayout>
+
+            <!-- Match Status -->
+            <TextView
+                android:id="@+id/match_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="LIVE"
+                android:textColor="#4CAF50"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"/>
 
         </LinearLayout>
     </LinearLayout>

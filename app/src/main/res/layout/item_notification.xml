@@ -1,0 +1,115 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardBackgroundColor="@color/black"
+    android:foreground="?attr/selectableItemBackground">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <View
+            android:id="@+id/unreadIndicator"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:background="@drawable/circle_unread"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/iconNotificationType" />
+
+        <ImageView
+            android:id="@+id/iconNotificationType"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/bell_icon"
+            android:layout_marginStart="12dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white" />
+
+        <ImageView
+            android:id="@+id/iconReactionType"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="4dp"
+            android:src="@drawable/ic_fire"
+            app:layout_constraintStart_toEndOf="@id/iconNotificationType"
+            app:layout_constraintTop_toTopOf="@id/iconNotificationType"
+            app:layout_constraintBottom_toBottomOf="@id/iconNotificationType" />
+
+        <TextView
+            android:id="@+id/textNotificationTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            app:layout_constraintStart_toEndOf="@id/iconReactionType"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="User's message received 100 Fire reactions!" />
+
+        <TextView
+            android:id="@+id/textMessagePreview"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textStyle="italic"
+            app:layout_constraintStart_toStartOf="@id/textNotificationTitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/textNotificationTitle"
+            tools:text="'This is a preview of the message content...'" />
+
+        <LinearLayout
+            android:id="@+id/teamContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            app:layout_constraintStart_toStartOf="@id/textNotificationTitle"
+            app:layout_constraintTop_toBottomOf="@id/textMessagePreview">
+
+            <ImageView
+                android:id="@+id/imageTeamLogo"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                tools:src="@drawable/csk" />
+
+            <TextView
+                android:id="@+id/textTeam"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:layout_marginStart="4dp"
+                tools:text="CSK" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/textTimestamp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/grey"
+            android:textSize="11sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/teamContainer"
+            app:layout_constraintTop_toTopOf="@id/teamContainer"
+            tools:text="12:30 PM" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

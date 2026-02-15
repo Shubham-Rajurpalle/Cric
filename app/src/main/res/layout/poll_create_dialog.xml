@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/backgroud_bottom"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -15,6 +16,9 @@
             android:id="@+id/editTextPollQuestion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textColorLink="@color/white"
+            android:textColorHint="@color/white"
             android:hint="Question"
             android:inputType="textCapSentences"/>
     </com.google.android.material.textfield.TextInputLayout>
@@ -23,35 +27,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Options"
+        android:textColor="@color/white"
         android:textStyle="bold"
         android:layout_marginBottom="8dp"/>
 
-    <com.google.android.material.textfield.TextInputLayout
+    <!-- Initial options will be added dynamically -->
+    <LinearLayout
+        android:id="@+id/layoutOptions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
+        android:orientation="vertical"/>
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editTextOption1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Option 1"
-            android:inputType="text"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editTextOption2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Option 2"
-            android:inputType="text"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
+    <!-- Additional options will be added here -->
     <LinearLayout
         android:id="@+id/layoutAdditionalOptions"
         android:layout_width="match_parent"
@@ -62,7 +49,8 @@
         android:id="@+id/buttonAddOption"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="+ Add another option"/>
-
+        android:textColor="@color/white"
+        android:text="+ Add another option"
+        android:layout_marginTop="8dp"/>
 
 </LinearLayout>

@@ -1,7 +1,6 @@
 package com.cricketApp.cric.home.liveMatch
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.cricketApp.cric.R
 import com.cricketApp.cric.adapter.LiveMatchAdapter
 import com.cricketApp.cric.databinding.FragmentLiveMatchesBinding
 
@@ -18,69 +18,156 @@ class Live_matches : Fragment() {
     private val binding get() = _binding!!
     private lateinit var viewModel: MatchViewModel
     private lateinit var adapter: LiveMatchAdapter
+    private var isFragmentActive = false
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentLiveMatchesBinding.inflate(inflater, container, false)
-        viewModel = ViewModelProvider(this)[MatchViewModel::class.java]
+        isFragmentActive = true
 
-        setupRecyclerView()
-        setupSwipeRefresh()
-        observeViewModel()
+        // Use try-catch for better error handling
+        try {
+            viewModel = ViewModelProvider(
+                this,
+                MatchViewModelFactory(requireContext())
+            )[MatchViewModel::class.java]
+
+            setupRecyclerView()
+            binding.swipeRefreshLayout.setOnRefreshListener {
+                setupSwipeRefresh()
+            }
+            observeViewModel()
+
+            // Initially show loading animation
+            showLoadingState()
+
+            // Fetch matches data
+            viewModel.refreshMatches()
+        } catch (e: Exception) {
+            // Show error message if initialization fails
+            Toast.makeText(
+                context,
+                "Error initializing live matches: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
 
         return binding.root
     }
 
     private fun setupRecyclerView() {
-        adapter = LiveMatchAdapter(mutableListOf())
-        binding.liveMatchesRecyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.liveMatchesRecyclerView.adapter = adapter
+        if (!isFragmentActive || _binding == null) return
+
+        try {
+            adapter = LiveMatchAdapter(emptyList())
+            binding.liveMatchesRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+            binding.liveMatchesRecyclerView.adapter = adapter
+
+            // Set up the empty state reference
+            adapter.setEmptyStateViews(binding.liveMatchesRecyclerView, binding.emptyStateLayout)
+        } catch (e: Exception) {
+            // Log or handle recyclerview setup error
+        }
     }
 
     private fun setupSwipeRefresh() {
-        // If you have a SwipeRefreshLayout in your fragment layout
-        binding.root.findViewById<SwipeRefreshLayout>(
-            binding.root.resources.getIdentifier("swipe_refresh", "id", requireContext().packageName)
-        )?.setOnRefreshListener {
-            viewModel.refreshMatches()
-        }
+        if (!isFragmentActive || _binding == null) return
+
+        // Show loading animation when refreshing
+        showLoadingState()
+
+        // Refresh matches data
+        viewModel.refreshMatches()
+    }
+
+    private fun showLoadingState() {
+        binding.llAnime2.visibility = View.VISIBLE
+        binding.liveMatchesRecyclerView.visibility = View.GONE
+        binding.emptyStateLayout.visibility = View.GONE
+    }
+
+    private fun showEmptyState() {
+        binding.llAnime2.visibility = View.GONE
+        binding.liveMatchesRecyclerView.visibility = View.GONE
+        binding.emptyStateLayout.visibility = View.VISIBLE
+    }
+
+    private fun showMatchesData() {
+        binding.llAnime2.visibility = View.GONE
+        binding.liveMatchesRecyclerView.visibility = View.VISIBLE
+        binding.emptyStateLayout.visibility = View.GONE
     }
 
     private fun observeViewModel() {
-        // Observe matches data
-        viewModel.matches.observe(viewLifecycleOwner) { matches ->
-            if (matches.isNullOrEmpty()) {
-                Log.d("LiveMatches", "No live matches available")
-                binding.emptyStateLayout.visibility = View.VISIBLE
-            } else {
-                binding.root.findViewById<View>(
-                    binding.root.resources.getIdentifier("empty_state", "id", requireContext().packageName)
-                )?.visibility = View.GONE
+        if (!isFragmentActive || _binding == null) return
+
+        try {
+            // Observe loading state first
+            viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+                if (!isFragmentActive || _binding == null) return@observe
+
+                // Update SwipeRefreshLayout state
+                binding.swipeRefreshLayout.isRefreshing = isLoading
+
+                // When loading starts, show loading animation
+                if (isLoading) {
+                    showLoadingState()
+                }
+                binding.llAnime2.visibility = if (isLoading) View.VISIBLE else View.GONE
             }
-            adapter.updateData(matches)
-        }
 
-        // Observe loading state
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.root.findViewById<View>(
-                binding.root.resources.getIdentifier("progress_bar", "id", requireContext().packageName)
-            )?.visibility = if (isLoading) View.VISIBLE else View.GONE
+            // Observe matches data
+            viewModel.matches.observe(viewLifecycleOwner) { matches ->
+                if (!isFragmentActive || _binding == null) return@observe
 
-            // If you have a SwipeRefreshLayout, update its refresh state
-            binding.root.findViewById<SwipeRefreshLayout>(
-                binding.root.resources.getIdentifier("swipe_refresh", "id", requireContext().packageName)
-            )?.isRefreshing = isLoading
-        }
+                // Update adapter with new data
+                adapter.updateData(matches)
 
-        // Observe error state
-        viewModel.error.observe(viewLifecycleOwner) { errorMsg ->
-            errorMsg?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+                // Handle UI states based on data and loading state
+                if (viewModel.isLoading.value == false) {
+                    if (matches.isEmpty()) {
+                        showEmptyState()
+                    } else {
+                        showMatchesData()
+                    }
+                }
             }
+
+            // Observe error state
+            viewModel.error.observe(viewLifecycleOwner) { errorMsg ->
+                if (!isFragmentActive || _binding == null) return@observe
+
+                errorMsg?.let {
+                    Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+
+                    // If error and no data, show empty state
+                    if (viewModel.matches.value?.isEmpty() == true) {
+                        showEmptyState()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Show error if observation setup fails
+            Toast.makeText(
+                context,
+                "Error setting up live matches view: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+
+        // Set flag to false
+        isFragmentActive = false
+
+        // Clear adapter reference to prevent memory leaks
+        binding.liveMatchesRecyclerView.adapter = null
+
         _binding = null
     }
 }

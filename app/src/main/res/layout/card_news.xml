@@ -7,30 +7,34 @@
     app:cardCornerRadius="@dimen/_12sdp"
     app:cardElevation="4dp"
     app:cardUseCompatPadding="true"
-    app:cardPreventCornerOverlap="true"
-    android:background="@drawable/gradient_border_background">
+    app:cardPreventCornerOverlap="true">
 
 <RelativeLayout
 android:layout_width="match_parent"
 android:layout_height="match_parent">
 
-<ProgressBar
-    android:id="@+id/loadingProgress"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_centerInParent="true"
-    android:indeterminateTint="@color/white"
-    android:visibility="visible" />
+    <ImageView
+        android:id="@+id/imagePlayer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black"
+        android:contentDescription="Cricket player image"
+        android:scaleType="centerCrop"
+        android:visibility="visible" />
 
-<ImageView
-    android:id="@+id/imagePlayer"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_margin="2dp"
-    android:contentDescription="Cricket player image"
-    android:scaleType="centerCrop"
-    android:src="@drawable/loading"
-    android:visibility="visible" />
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/loadingProgress"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:visibility="visible"
+        app:lottie_autoPlay="true"
+        android:background="@color/black"
+        android:alpha="0.2"
+        app:lottie_loop="true"
+        app:lottie_repeatCount="30"
+        app:lottie_repeatMode="restart"
+        app:lottie_rawRes="@raw/loading_v" />
 
 <View
     android:layout_width="match_parent"
@@ -51,7 +55,7 @@ android:layout_height="match_parent">
         android:layout_marginBottom="4dp"
         android:ellipsize="end"
         android:maxLines="1"
-        android:text="RCB Jitegi - Full Match Highlights of IPL Finals"
+        android:text="Title loading..."
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:textStyle="bold" />
@@ -71,7 +75,7 @@ android:layout_height="match_parent">
         android:id="@+id/viewCount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="10K Views"
+        android:text="Views..."
         android:textColor="#E0E0E0"
         android:textSize="12sp" />
 
@@ -81,7 +85,7 @@ android:layout_height="match_parent">
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
-        android:text="1 hour ago"
+        android:text=""
         android:maxLines="1"
         android:textColor="#E0E0E0"
         android:textSize="12sp"

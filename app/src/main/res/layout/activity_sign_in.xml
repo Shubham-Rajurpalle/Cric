@@ -25,7 +25,7 @@
                 android:layout_width="@dimen/_280sdp"
                 android:layout_height="@dimen/_100sdp"
                 android:scaleType="centerInside"
-                android:src="@drawable/cric_logo"
+                android:src="@drawable/cric_header"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -188,7 +188,7 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="@dimen/_80sdp"
+                android:layout_width="@dimen/_40sdp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="@dimen/_5sdp"
                 android:layout_height="@dimen/_40sdp">
@@ -202,21 +202,12 @@
                         android:layout_height="match_parent"
                         android:src="@drawable/google_logo"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <ImageView
-                        android:id="@+id/facebookLoginBtn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="@dimen/_29sdp"
-                        android:src="@drawable/facebook_logo"
-                        app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </LinearLayout>
-
 
             <LinearLayout
                 android:layout_width="@dimen/_209sdp"
@@ -288,9 +279,6 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </LinearLayout>
 
-
-
     </LinearLayout>
 
 </ScrollView>
-

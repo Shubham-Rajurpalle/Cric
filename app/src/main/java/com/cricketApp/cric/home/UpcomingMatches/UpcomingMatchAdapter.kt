@@ -6,12 +6,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.CardUpcomingMatchesBinding
 import com.cricketApp.cric.home.upcomingMatch.MatchData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
     RecyclerView.Adapter<UpcomingMatchAdapter.MatchViewHolder>() {
@@ -20,7 +22,6 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(match: MatchData) {
-
             // Set initial loading state for series name
             binding.seriesName.text = "Loading..."
             fetchSeriesOrLeagueName(match)
@@ -42,17 +43,32 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
         }
 
         private fun loadTeamLogo(logoUrl: String?, imageView: ImageView) {
-            if (logoUrl != null) {
-                Glide.with(binding.root.context)
-                    .load(logoUrl)
-                    .centerCrop()
-                    .into(imageView)
-            } else {
-                // If logoUrl is null, fallback to a default drawable (icc_logo)
-                Glide.with(binding.root.context)
-                    .load(R.drawable.icc_logo) // Replace with your drawable
-                    .centerCrop()
-                    .into(imageView)
+            try {
+                if (!logoUrl.isNullOrEmpty()) {
+                    Glide.with(binding.root.context)
+                        .load(logoUrl)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(R.drawable.icc_logo)
+                        .error(R.drawable.icc_logo)
+                        .centerCrop()
+                        .into(imageView)
+                } else {
+                    // If logoUrl is null, fallback to a default drawable
+                    Glide.with(binding.root.context)
+                        .load(R.drawable.icc_logo)
+                        .centerCrop()
+                        .into(imageView)
+                }
+            } catch (e: Exception) {
+                // If any exception, still try to show default
+                try {
+                    Glide.with(binding.root.context)
+                        .load(R.drawable.icc_logo)
+                        .centerCrop()
+                        .into(imageView)
+                } catch (innerE: Exception) {
+                    // Last resort - just ignore rendering if context is invalid
+                }
             }
         }
 
@@ -65,9 +81,15 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                     else -> null
                 }
 
-                CoroutineScope(Dispatchers.Main).launch {
-                    binding.seriesName.text = seriesName ?: "N/A"
-                    loadSeriesLogo(match.series_id)
+                withContext(Dispatchers.Main) {
+                    try {
+                        if (binding != null) {
+                            binding.seriesName.text = seriesName ?: "N/A"
+                            loadSeriesLogo(match.seriesLogo ?: getDefaultSeriesLogo(match.series_id))
+                        }
+                    } catch (e: Exception) {
+                        // View might have been recycled or destroyed
+                    }
                 }
             }
         }
@@ -78,7 +100,6 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                 if (seriesId == 0) throw Exception("Failed to fetch series")
                 "Series #$seriesId"
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Failed to fetch series $seriesId: ${e.message}")
                 null
             }
         }
@@ -90,24 +111,37 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                 if (leagueId == 0) throw Exception("Failed to fetch league")
                 "League #$leagueId"
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Failed to fetch league $leagueId: ${e.message}")
                 null
             }
         }
 
-        private fun loadSeriesLogo(seriesId: Int?) {
-            if (seriesId != null && seriesId != 0) {
-                val seriesLogoUrl = "https://path.to.your.series.logo/$seriesId.png" // Replace with actual URL
-                Glide.with(binding.root.context)
-                    .load(seriesLogoUrl)
-                    .centerCrop()
-                    .into(binding.seriesLogo)
+        private fun getDefaultSeriesLogo(seriesId: Int?): String? {
+            return if (seriesId != null && seriesId != 0) {
+                "https://path.to.your.series.logo/$seriesId.png" // Replace with actual URL
             } else {
-                // If seriesId is null or 0, fallback to the default series logo (icc_logo)
-                Glide.with(binding.root.context)
-                    .load(R.drawable.icc_logo) // Replace with your default series logo
-                    .centerCrop()
-                    .into(binding.seriesLogo)
+                null
+            }
+        }
+
+        private fun loadSeriesLogo(logoUrl: String?) {
+            try {
+                if (!logoUrl.isNullOrEmpty()) {
+                    Glide.with(binding.root.context)
+                        .load(logoUrl)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .placeholder(R.drawable.icc_logo)
+                        .error(R.drawable.icc_logo)
+                        .centerCrop()
+                        .into(binding.seriesLogo)
+                } else {
+                    // Fallback to default logo
+                    Glide.with(binding.root.context)
+                        .load(R.drawable.icc_logo)
+                        .centerCrop()
+                        .into(binding.seriesLogo)
+                }
+            } catch (e: Exception) {
+                // In case context is invalid, etc.
             }
         }
 
@@ -131,7 +165,6 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
                     dateTimeString
                 }
             } catch (e: Exception) {
-                Log.e("DateFormat", "Error formatting date: $e")
                 dateTimeString
             }
         }
@@ -143,7 +176,9 @@ class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
     }
 
     override fun onBindViewHolder(holder: MatchViewHolder, position: Int) {
-        holder.bind(matchList[position])
+        if (position < matchList.size) {
+            holder.bind(matchList[position])
+        }
     }
 
     fun updateData(newMatches: List<MatchData>) {

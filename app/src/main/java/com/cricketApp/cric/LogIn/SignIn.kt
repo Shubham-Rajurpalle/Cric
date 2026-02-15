@@ -2,7 +2,6 @@ package com.cricketApp.cric.LogIn
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
@@ -15,22 +14,13 @@ import androidx.core.view.WindowInsetsCompat
 import com.cricketApp.cric.home.Home
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivitySignInBinding
-import com.facebook.CallbackManager
-import com.facebook.FacebookCallback
-import com.facebook.FacebookException
-import com.facebook.FacebookSdk
-import com.facebook.appevents.AppEventsLogger
-import com.facebook.login.LoginManager
-import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
-import java.util.Arrays
 
 
 class SignIn : AppCompatActivity() {
@@ -39,9 +29,6 @@ class SignIn : AppCompatActivity() {
     private lateinit var binding: ActivitySignInBinding
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
-    private lateinit var callbackManager: CallbackManager
-    private lateinit var loginManager: LoginManager
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,20 +43,6 @@ class SignIn : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-        // Facebook LogIn
-        FacebookSdk.sdkInitialize(applicationContext)
-        AppEventsLogger.activateApp(application)
-        callbackManager = CallbackManager.Factory.create();
-        facebookLogin();
-        binding.facebookLoginBtn.setOnClickListener{
-                loginManager.logInWithReadPermissions(
-                    this@SignIn,
-                    Arrays.asList(
-                        "email",
-                        "public_profile",
-                        "user_birthday"));
-            }
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
@@ -136,46 +109,15 @@ class SignIn : AppCompatActivity() {
         checkExistingGoogleUser()
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        callbackManager.onActivityResult(requestCode, resultCode, data);
-        super.onActivityResult(requestCode, resultCode, data)
-    }
-
-    fun facebookLogin() {
-        loginManager= LoginManager.getInstance()
-        loginManager
-            .registerCallback(
-                callbackManager,
-                object : FacebookCallback<LoginResult>{
-                    override fun onCancel() {
-                        Log.v("LoginScreen", "---onCancel")
-                    }
-                    override fun onError(error: FacebookException) {
-                        // here write code when get error
-                        Log.v(
-                            "LoginScreen", "----onError: "
-                                    + error.message
-                        )
-                    }
-                    override fun onSuccess(result: LoginResult) {
-                        val accessToken = result?.accessToken ?: return
-                        val credential = FacebookAuthProvider.getCredential(accessToken.token)
-                        auth.signInWithCredential(credential)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    checkUserInfo()
-                                } else {
-                                    Toast.makeText(this@SignIn, "Facebook Authentication Failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                    }
-                })
-    }
-
     private fun checkExistingGoogleUser() {
         val account = GoogleSignIn.getLastSignedInAccount(this)
         if (account != null) {
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.creatingAcTxt.visibility = View.INVISIBLE
             checkUserInfo()
+        } else {
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.creatingAcTxt.visibility = View.INVISIBLE
         }
     }
 
@@ -209,6 +151,10 @@ class SignIn : AppCompatActivity() {
         val userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
 
         userRef.get().addOnSuccessListener { snapshot ->
+            binding.progressBar.visibility = View.VISIBLE
+            binding.creatingAcTxt.visibility = View.VISIBLE
+            binding.creatingAcTxt.text = "Checking account information..."
+
             if (snapshot.exists()) {
                 val username = snapshot.child("username").getValue(String::class.java)
                 val country = snapshot.child("country").getValue(String::class.java)
@@ -226,6 +172,10 @@ class SignIn : AppCompatActivity() {
             }
             finish()
         }.addOnFailureListener {
+            // Also hide progress bar on failure
+            binding.progressBar.visibility = View.INVISIBLE
+            binding.creatingAcTxt.visibility = View.INVISIBLE
+
             Toast.makeText(this, "Failed to retrieve user data.", Toast.LENGTH_LONG).show()
         }
     }
@@ -247,12 +197,13 @@ class SignIn : AppCompatActivity() {
         FirebaseAuth.getInstance().signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
+                    binding.progressBar.visibility = View.VISIBLE
+                    binding.creatingAcTxt.visibility = View.VISIBLE
+                    binding.creatingAcTxt.text = "Signing in with Google..."
                     checkUserInfo()
                 } else {
                     Toast.makeText(this, "Authentication Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                 }
             }
     }
-
-
 }

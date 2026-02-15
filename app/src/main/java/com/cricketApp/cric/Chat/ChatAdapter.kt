@@ -1,19 +1,35 @@
 package com.cricketApp.cric.Chat
 
+import android.animation.ObjectAnimator
+import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
+import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
+import com.cricketApp.cric.Utils.MilestoneBadgeHelper
+import com.cricketApp.cric.Utils.ReactionTracker
+import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemPollMessageBinding
 import com.cricketApp.cric.databinding.ItemReceiveChatBinding
 import com.cricketApp.cric.databinding.ItemSendChatBinding
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.BuildConfig
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -21,7 +37,7 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 
-class ChatAdapter(private val items: List<Any>) :
+class ChatAdapter(private val items: MutableList<Any>) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -34,6 +50,9 @@ class ChatAdapter(private val items: List<Any>) :
         private const val PAYLOAD_HIT_MISS = "hit_miss"
         private const val PAYLOAD_COMMENTS = "comments"
     }
+
+    // Map to keep track of message positions for efficient updates
+    private val messagePositions = mutableMapOf<String, Int>()
 
     override fun getItemViewType(position: Int): Int {
         return when (items[position]) {
@@ -109,6 +128,84 @@ class ChatAdapter(private val items: List<Any>) :
 
     override fun getItemCount(): Int = items.size
 
+    /**
+     * Find a message's position by its ID
+     */
+    fun findPositionById(messageId: String): Int {
+        for (i in 0 until items.size) {
+            val itemId = when (val item = items[i]) {
+                is ChatMessage -> item.id
+                is PollMessage -> item.id
+                else -> null
+            }
+
+            if (itemId == messageId) {
+                return i
+            }
+        }
+        return -1  // Not found
+    }
+
+    /**
+     * Remove a message at the specified position
+     * Optional expectedId parameter to verify we're removing the correct message
+     */
+    fun removeMessage(position: Int, expectedId: String? = null) {
+        if (position < 0 || position >= items.size) {
+             //   Log.e("ChatAdapter", "Invalid position for removal: $position, size: ${items.size}")
+
+            return
+        }
+
+        // Get the message ID before removing it
+        val actualId = when (val message = items[position]) {
+            is ChatMessage -> message.id
+            is PollMessage -> message.id
+            else -> null
+        } ?: return
+
+        // Log before removal
+            //Log.d("ChatAdapter", "About to remove message at position $position, ID: $actualId")
+
+
+        // If an expected ID was provided and doesn't match, find the correct position
+        if (expectedId != null && expectedId != actualId) {
+
+              //  Log.e("ChatAdapter", "ID mismatch during removal! Expected: $expectedId, Actual: $actualId")
+
+            // Try to find the correct position for the expected ID
+            val correctPosition = findPositionById(expectedId)
+            if (correctPosition != -1) {
+               // Log.d("ChatAdapter", "Found expected message at position $correctPosition, removing from there")
+                removeMessage(correctPosition)
+                return
+            } else {
+               // Log.w("ChatAdapter", "Expected message $expectedId not found in list")
+                return
+            }
+        }
+
+        // Remove the item
+        items.removeAt(position)
+
+        // Update position mappings
+        updatePositionsMap()
+
+        // Only notify about the specific removal - no range changes
+        notifyItemRemoved(position)
+
+       // Log.d("ChatAdapter", "Removed message at position $position, ID: $actualId")
+       // Log.d("ChatAdapter", "New item count: ${items.size}")
+    }
+
+    // Helper method for showing full screen images
+    private fun showFullScreenImage(context: Context, imageUrl: String) {
+        val intent = Intent(context, ActivityImageViewer::class.java).apply {
+            putExtra("IMAGE_URL", imageUrl)
+        }
+        context.startActivity(intent)
+    }
+
     inner class ChatSendViewHolder(private val binding: ItemSendChatBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
@@ -117,6 +214,34 @@ class ChatAdapter(private val items: List<Any>) :
                 textViewName.text = chat.senderName
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
+
+                //For notification
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = chat.hit,
+                        miss = chat.miss,
+                        reactions = chat.reactions
+                    )
+                }
+
+                // Handle image content
+                if (chat.imageUrl.isNotEmpty()) {
+                    imageViewContent.visibility = View.VISIBLE
+                    // Load image with Glide
+                    Glide.with(itemView.context)
+                        .load(chat.imageUrl)
+                        .into(imageViewContent)
+
+                    // Make image clickable for full screen view
+                    imageViewContent.setOnClickListener {
+                        showFullScreenImage(itemView.context, chat.imageUrl)
+                    }
+                } else {
+                    imageViewContent.visibility = View.GONE
+                }
 
                 // Load profile picture
                 loadProfilePicture(chat.senderId, binding.imageViewProfile)
@@ -133,18 +258,91 @@ class ChatAdapter(private val items: List<Any>) :
                 // Set comment count
                 updateComments(chat)
 
-                // Set reaction click listeners without reloading
-                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(chat, "troll", adapterPosition) }
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(chat, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(chat, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set comment click listener
-                //textViewComments.setOnClickListener { openCommentsActivity(chat.id, "chat") }
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+// Update hit/miss buttons:
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                textViewComments.setOnClickListener {
+                    val context = itemView.context
+
+                    // Check if user is logged in first
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
+                    val intent = Intent(context, CommentActivity::class.java).apply {
+                        putExtra("MESSAGE_ID", chat.id)
+                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
+                    }
+                    context.startActivity(intent)
+                }
+
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access message options")
+                        return@setOnLongClickListener true
+                    }
+
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        chat,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMessage(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
+                }
             }
         }
 
@@ -161,8 +359,29 @@ class ChatAdapter(private val items: List<Any>) :
         }
 
         fun updateComments(chat: ChatMessage) {
-            binding.textViewComments.text = "View Comments (${chat.comments.size})"
+            // First check if commentCount is greater than 0, use that if available
+            val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
+            binding.textViewComments.text = "View Comments ($count)"
         }
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        return FirebaseAuth.getInstance().currentUser != null
+    }
+
+    /**
+     * Show login prompt
+     */
+    private fun showLoginPrompt(context: Context, message: String) {
+        AlertDialog.Builder(context,R.style.CustomAlertDialogTheme)
+            .setTitle("Login Required")
+            .setMessage(message)
+            .setPositiveButton("Login") { _, _ ->
+                val intent = Intent(context, SignIn::class.java)
+                context.startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     inner class ChatReceiveViewHolder(private val binding: ItemReceiveChatBinding) :
@@ -174,6 +393,34 @@ class ChatAdapter(private val items: List<Any>) :
                 textViewTeam.text = chat.team
                 textViewMessage.text = chat.message
 
+                // Update badge visibility based on milestone
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = chat.hit,
+                        miss = chat.miss,
+                        reactions = chat.reactions
+                    )
+                }
+
+                // Handle image content
+                if (chat.imageUrl.isNotEmpty()) {
+                    imageViewContent.visibility = View.VISIBLE
+                    // Load image with Glide
+                    Glide.with(itemView.context)
+                        .load(chat.imageUrl)
+                        .into(imageViewContent)
+
+                    // Make image clickable for full screen view
+                    imageViewContent.setOnClickListener {
+                        showFullScreenImage(itemView.context, chat.imageUrl)
+                    }
+                } else {
+                    imageViewContent.visibility = View.GONE
+                }
+
                 // Load profile picture
                 loadProfilePicture(chat.senderId, binding.imageViewProfile)
 
@@ -189,18 +436,91 @@ class ChatAdapter(private val items: List<Any>) :
                 // Set comment count
                 updateComments(chat)
 
-                // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(chat, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(chat, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(chat, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(chat, "troll", adapterPosition) }
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(chat, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(chat, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set comment click listener
-                //textViewComments.setOnClickListener { openCommentsActivity(chat.id, "chat") }
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(chat, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+// Update hit/miss buttons:
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(chat, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                textViewComments.setOnClickListener {
+                    val context = itemView.context
+
+                    // Check if user is logged in first
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
+                    val intent = Intent(context, CommentActivity::class.java).apply {
+                        putExtra("MESSAGE_ID", chat.id)
+                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
+                    }
+                    context.startActivity(intent)
+                }
+
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access message options")
+                        return@setOnLongClickListener true
+                    }
+
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        chat,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMessage(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
+                }
             }
         }
 
@@ -217,7 +537,8 @@ class ChatAdapter(private val items: List<Any>) :
         }
 
         fun updateComments(chat: ChatMessage) {
-            binding.textViewComments.text = "View Comments (${chat.comments.size})"
+            val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
+            binding.textViewComments.text = "View Comments ($count)"
         }
     }
 
@@ -229,6 +550,19 @@ class ChatAdapter(private val items: List<Any>) :
                 textViewName.text = poll.senderName
                 textViewTeam.text = poll.team
                 textViewMessage.text = poll.question
+                pollcount.text=poll.voters?.size.toString()+" Voters"
+
+                // Update badge visibility based on milestone
+                val badgeView = itemView.findViewById<TextView>(R.id.badgeTrending)
+                if (badgeView != null) {
+                    MilestoneBadgeHelper.updateMilestoneBadge(
+                        badgeView = badgeView,
+                        badgeText = badgeView,
+                        hit = poll.hit,
+                        miss = poll.miss,
+                        reactions = poll.reactions
+                    )
+                }
 
                 // Load profile picture
                 loadProfilePicture(poll.senderId, binding.imageViewProfile)
@@ -248,18 +582,90 @@ class ChatAdapter(private val items: List<Any>) :
                 // Set up poll options
                 setupPollOptions(poll)
 
-                // Set reaction click listeners
-                tvAngryEmoji.setOnClickListener { addReaction(poll, "fire", adapterPosition) }
-                tvHappyEmoji.setOnClickListener { addReaction(poll, "laugh", adapterPosition) }
-                tvCryingEmoji.setOnClickListener { addReaction(poll, "cry", adapterPosition) }
-                tvSadEmoji.setOnClickListener { addReaction(poll, "troll", adapterPosition) }
+                tvAngryEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "fire", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set hit/miss click listeners
-                buttonHit.setOnClickListener { updateHitOrMiss(poll, "hit", adapterPosition) }
-                buttonMiss.setOnClickListener { updateHitOrMiss(poll, "miss", adapterPosition) }
+                tvHappyEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "laugh", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
 
-                // Set comment click listener
-               // textViewComments.setOnClickListener { openCommentsActivity(poll.id, "poll") }
+                tvCryingEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "cry", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                tvSadEmoji.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        addReaction(poll, "troll", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to react to messages")
+                    }
+                }
+
+                // Update hit/miss buttons:
+                buttonHit.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(poll, "hit", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                buttonMiss.setOnClickListener {
+                    if (isUserLoggedIn()) {
+                        updateHitOrMiss(poll, "miss", adapterPosition)
+                    } else {
+                        showLoginPrompt(itemView.context, "Login to rate messages")
+                    }
+                }
+
+                textViewComments.setOnClickListener {
+                    val context = itemView.context
+
+                    // Check if user is logged in first
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(context, "Login to view and add comments")
+                        return@setOnClickListener
+                    }
+
+                    val intent = Intent(context, CommentActivity::class.java).apply {
+                        putExtra("MESSAGE_ID", poll.id)
+                        putExtra("MESSAGE_TYPE", "poll") // Make sure type is set correctly
+                    }
+                    context.startActivity(intent)
+                }
+
+                // Add long-press listener for message options
+                itemView.setOnLongClickListener {
+                    if (!isUserLoggedIn()) {
+                        showLoginPrompt(itemView.context, "Login to access message options")
+                        return@setOnLongClickListener true
+                    }
+
+                    MessageActionsHandler.showMessageOptionsBottomSheet(
+                        itemView.context,
+                        poll,
+                        adapterPosition
+                    ) { message, position, messageId ->
+                        // Use the modified method that checks the ID
+                        if (position != RecyclerView.NO_POSITION) {
+                            removeMessage(position, messageId)
+                        }
+                    }
+                    true // Consume the long click
+                }
             }
         }
 
@@ -275,19 +681,29 @@ class ChatAdapter(private val items: List<Any>) :
             binding.buttonMiss.text = "❌ ${poll.miss}"
         }
 
-        fun updateComments(poll: PollMessage) {
-            binding.textViewComments.text = "View Comments (${poll.comments.size})"
+        fun updateComments(chat: PollMessage) {
+            val count = if (chat.commentCount > 0) chat.commentCount else chat.comments.size
+            binding.textViewComments.text = "View Comments ($count)"
         }
 
         fun setupPollOptions(poll: PollMessage) {
             val context = itemView.context
             val layoutInflater = LayoutInflater.from(context)
+            val currentUser = FirebaseAuth.getInstance().currentUser
 
             // Clear previous options
             binding.linearLayoutOptions.removeAllViews()
 
             // Calculate total votes
             val totalVotes = poll.options.values.sum()
+
+            // Check if current user has voted
+            val currentUserVote = if (currentUser != null && poll.voters != null) {
+                poll.voters!![currentUser.uid]
+            } else null
+
+            // Keep track of all radio buttons to enforce mutual exclusivity
+            val allRadioButtons = mutableListOf<RadioButton>()
 
             // Add options
             for ((option, votes) in poll.options) {
@@ -297,6 +713,9 @@ class ChatAdapter(private val items: List<Any>) :
                 val textPercentage = optionView.findViewById<TextView>(R.id.textViewPercentage)
                 val progressBar = optionView.findViewById<ProgressBar>(R.id.progressBarOption)
 
+                // Add this radio button to our list
+                allRadioButtons.add(radioButton)
+
                 // Calculate percentage
                 val percentage = if (totalVotes > 0) (votes * 100 / totalVotes) else 0
 
@@ -305,180 +724,209 @@ class ChatAdapter(private val items: List<Any>) :
                 textOption.text = option
                 textPercentage.text = "$percentage%"
 
-                // Fix progress bar to show percentage instead of loading state
+                // Check if this is the user's selection
+                val isUserChoice = option == currentUserVote
+                radioButton.isChecked = isUserChoice
+
+                // Style the selected option differently
+                if (isUserChoice) {
+                    textOption.setTextColor(ContextCompat.getColor(context, R.color.grey))
+                    textOption.setTypeface(null, Typeface.BOLD)
+                } else {
+                    textOption.setTextColor(ContextCompat.getColor(context, R.color.white))
+                    textOption.setTypeface(null, Typeface.NORMAL)
+                }
+
+                // Set up progress bar
                 progressBar.isIndeterminate = false
                 progressBar.max = 100
                 progressBar.progress = percentage
 
-                // Set click listener for option selection
+                // Set direct click listener for the radio button
                 radioButton.setOnClickListener {
-                    votePollOption(poll, option, adapterPosition)
+                    if (currentUser != null && option != currentUserVote) {
+                        // Update UI immediately
+                        for (rb in allRadioButtons) {
+                            rb.isChecked = false
+                        }
+                        radioButton.isChecked = true
+
+                        // Update Firebase and refresh UI
+                        votePoll(itemView,poll, option, adapterPosition)
+                    }
+                }
+
+                // Set click listener for the whole row
+                optionView.setOnClickListener {
+                    if (currentUser != null) {
+                        if (option != currentUserVote) {
+                            // Update UI immediately
+                            for (rb in allRadioButtons) {
+                                rb.isChecked = false
+                            }
+                            radioButton.isChecked = true
+
+                            // Update Firebase and refresh UI
+                            votePoll(itemView,poll, option, adapterPosition)
+                        }
+                    } else {
+                        Toast.makeText(context, "Please log in to vote", Toast.LENGTH_SHORT).show()
+                    }
                 }
 
                 binding.linearLayoutOptions.addView(optionView)
             }
         }
-
-        private fun votePollOption(poll: PollMessage, option: String, position: Int) {
-            val currentUser = FirebaseAuth.getInstance().currentUser ?: return
-            val userId = currentUser.uid
-
-            // Check if user already voted
-            val pollRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${poll.id}")
-            val votersRef = pollRef.child("voters")
-
-            votersRef.child(userId).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        // User already voted
-                        val previousVote = snapshot.getValue(String::class.java)
-                        if (previousVote != null && previousVote != option) {
-                            // Change vote
-                            pollRef.child("options").child(previousVote).addListenerForSingleValueEvent(object : ValueEventListener {
-                                override fun onDataChange(snapshot: DataSnapshot) {
-                                    val currentVotes = snapshot.getValue(Int::class.java) ?: 0
-                                    if (currentVotes > 0) {
-                                        pollRef.child("options").child(previousVote).setValue(currentVotes - 1)
-
-                                        // Increment new option
-                                        pollRef.child("options").child(option).addListenerForSingleValueEvent(object : ValueEventListener {
-                                            override fun onDataChange(snapshot: DataSnapshot) {
-                                                val newOptionVotes = snapshot.getValue(Int::class.java) ?: 0
-                                                pollRef.child("options").child(option).setValue(newOptionVotes + 1)
-                                                votersRef.child(userId).setValue(option)
-                                            }
-
-                                            override fun onCancelled(error: DatabaseError) {}
-                                        })
-                                    }
-                                }
-
-                                override fun onCancelled(error: DatabaseError) {}
-                            })
-                        }
-                    } else {
-                        // New vote
-                        pollRef.child("options").child(option).addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(snapshot: DataSnapshot) {
-                                val currentVotes = snapshot.getValue(Int::class.java) ?: 0
-                                pollRef.child("options").child(option).setValue(currentVotes + 1)
-                                votersRef.child(userId).setValue(option)
-                            }
-
-                            override fun onCancelled(error: DatabaseError) {}
-                        })
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {}
-            })
-        }
     }
 
-    // Utility method to update a reaction (without reloading)
+    // Add this function at the same level as addReaction and updateHitOrMiss
+    private fun votePoll(itemView:View,poll: PollMessage, selectedOption: String, position: Int) {
+        if (position == RecyclerView.NO_POSITION) return
+
+        // Check if user is logged in first
+        if (!isUserLoggedIn()) {
+            showLoginPrompt(itemView.context, "Login to vote in polls")
+            return
+        }
+
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val userId = currentUser.uid
+
+        // Get poll reference
+        val pollRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${poll.id}")
+
+        // Get previous vote if any
+        val previousVote = poll.voters?.get(userId)
+
+        // Update options map
+        if (previousVote != null && previousVote != selectedOption) {
+            // Handle previous vote
+            val prevRef = pollRef.child("options").child(previousVote)
+            prevRef.runTransaction(object : Transaction.Handler {
+                override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                    val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                    if (currentValue > 0) {
+                        mutableData.value = currentValue - 1
+                    }
+                    return Transaction.success(mutableData)
+                }
+
+                override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                    // Just log completion
+                    if (error != null) {
+                       // Log.e("PollVoting", "Error decrementing previous vote: ${error.message}")
+                    }
+                }
+            })
+        }
+
+        // Increment selected option
+        val selectedRef = pollRef.child("options").child(selectedOption)
+        selectedRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(mutableData: MutableData): Transaction.Result {
+                val currentValue = mutableData.getValue(Int::class.java) ?: 0
+                mutableData.value = currentValue + 1
+                return Transaction.success(mutableData)
+            }
+
+            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
+                if (committed && error == null) {
+                    // Once option is updated, update voters map
+                    pollRef.child("voters").child(userId).setValue(selectedOption)
+                        .addOnSuccessListener {
+                            // On success, trigger UI refresh by notifying the adapter
+                            // This will do a full bind for all fields
+                            if (position < items.size) {
+                                notifyItemChanged(position)
+                            }
+                        }
+                } else if (error != null) {
+                   // Log.e("PollVoting", "Error updating vote: ${error.message}")
+                }
+            }
+        })
+    }
+
+    // Utility method to update a reaction (fixed to prevent double counting)
     private fun addReaction(message: Any, reactionType: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
         val messageId: String
-        val dbPath: String
+        val contentType: ReactionTracker.ContentType
 
         when (message) {
             is ChatMessage -> {
                 messageId = message.id
-                dbPath = "NoBallZone/chats"
+                contentType = ReactionTracker.ContentType.CHAT
             }
             is PollMessage -> {
                 messageId = message.id
-                dbPath = "NoBallZone/polls"
+                contentType = ReactionTracker.ContentType.POLL
             }
             else -> return
         }
 
-        val reactionRef = FirebaseDatabase.getInstance()
-            .getReference("$dbPath/$messageId/reactions/$reactionType")
-
-        reactionRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null) {
-                    // Update was successful, now update the item in our local data
-                    when (message) {
-                        is ChatMessage -> {
-                            val currentValue = message.reactions[reactionType] ?: 0
-                            message.reactions[reactionType] = currentValue + 1
-                            notifyItemChanged(position, PAYLOAD_REACTION)
-                        }
-                        is PollMessage -> {
-                            val currentValue = message.reactions[reactionType] ?: 0
-                            message.reactions[reactionType] = currentValue + 1
-                            notifyItemChanged(position, PAYLOAD_REACTION)
-                        }
+        // Use ReactionTracker to handle the reaction
+        ReactionTracker.addEmojiReaction(
+            contentType = contentType,
+            contentId = messageId,
+            reactionType = reactionType
+        ) { success, newValue ->
+            if (success) {
+                when (message) {
+                    is ChatMessage -> {
+                        message.reactions[reactionType] = newValue
+                        notifyItemChanged(position, PAYLOAD_REACTION)
+                    }
+                    is PollMessage -> {
+                        message.reactions[reactionType] = newValue
+                        notifyItemChanged(position, PAYLOAD_REACTION)
                     }
                 }
             }
-        })
+        }
     }
 
-    // Utility method to update hit or miss counts
+    // Utility method to update hit or miss counts (fixed to prevent double counting)
     private fun updateHitOrMiss(message: Any, type: String, position: Int) {
         if (position == RecyclerView.NO_POSITION) return
 
+        val isHit = type == "hit"
         val messageId: String
-        val dbPath: String
+        val contentType: ReactionTracker.ContentType
 
         when (message) {
             is ChatMessage -> {
                 messageId = message.id
-                dbPath = "NoBallZone/chats"
+                contentType = ReactionTracker.ContentType.CHAT
             }
             is PollMessage -> {
                 messageId = message.id
-                dbPath = "NoBallZone/polls"
+                contentType = ReactionTracker.ContentType.POLL
             }
             else -> return
         }
 
-        val hitMissRef = FirebaseDatabase.getInstance().getReference("$dbPath/$messageId/$type")
-
-        hitMissRef.runTransaction(object : Transaction.Handler {
-            override fun doTransaction(currentData: MutableData): Transaction.Result {
-                val currentValue = currentData.getValue(Int::class.java) ?: 0
-                currentData.value = currentValue + 1
-                return Transaction.success(currentData)
-            }
-
-            override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
-                if (committed && error == null) {
-                    // Update was successful, update local data
-                    when (message) {
-                        is ChatMessage -> {
-                            if (type == "hit") message.hit += 1 else message.miss += 1
-                            notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                        }
-                        is PollMessage -> {
-                            if (type == "hit") message.hit += 1 else message.miss += 1
-                            notifyItemChanged(position, PAYLOAD_HIT_MISS)
-                        }
+        // Use ReactionTracker to handle the hit/miss
+        ReactionTracker.updateHitOrMiss(
+            contentType = contentType,
+            contentId = messageId,
+            isHit = isHit
+        ) { success, newValue ->
+            if (success) {
+                when (message) {
+                    is ChatMessage -> {
+                        if (isHit) message.hit = newValue else message.miss = newValue
+                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
+                    }
+                    is PollMessage -> {
+                        if (isHit) message.hit = newValue else message.miss = newValue
+                        notifyItemChanged(position, PAYLOAD_HIT_MISS)
                     }
                 }
             }
-        })
+        }
     }
-
-    // Common utility method to open comments
-//    private fun openCommentsActivity(messageId: String, type: String) {
-//        val context = itemView.context
-//        val intent = Intent(context, CommentActivity::class.java).apply {
-//            putExtra("MESSAGE_ID", messageId)
-//            putExtra("MESSAGE_TYPE", type)
-//        }
-//        context.startActivity(intent)
-//    }
 
     // Common utility methods
     private fun loadProfilePicture(userId: String, imageView: ImageView) {
@@ -519,5 +967,17 @@ class ChatAdapter(private val items: List<Any>) :
         )
         val logoResource = teamLogoMap[teamName] ?: R.drawable.icc_logo
         imageView.setImageResource(logoResource)
+    }
+
+
+    // Update the positions map (called after any list changes)
+    fun updatePositionsMap() {
+        messagePositions.clear()
+        items.forEachIndexed { index, message ->
+            when (message) {
+                is ChatMessage -> messagePositions[message.id] = index
+                is PollMessage -> messagePositions[message.id] = index
+            }
+        }
     }
 }

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#4A011C6B">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- User Info -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/userIcon"
+                android:layout_width="@dimen/_15sdp"
+                android:layout_height="@dimen/_15sdp"
+                android:src="@drawable/profile_empty"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+
+                <TextView
+                    android:id="@+id/activityUsername"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Username"
+                    android:textSize="@dimen/_11sdp"
+                    android:textStyle="bold"
+                    android:textColor="#00A3FF"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/teamName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CSK"
+                android:textStyle="bold"
+                android:textSize="@dimen/_10sdp"
+                android:layout_marginRight="@dimen/_5sdp"
+                android:textColor="#FFD300"/>
+
+            <ImageView
+                android:id="@+id/teamIcon"
+                android:layout_width="@dimen/_15sdp"
+                android:layout_height="@dimen/_15sdp"
+                android:src="@drawable/icc_logo"
+                android:background="@drawable/circular_background"
+                android:padding="2dp"/>
+        </LinearLayout>
+
+        <!-- Activity Content -->
+        <TextView
+            android:id="@+id/activityContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Activity content goes here"
+            android:textSize="@dimen/_10sdp"
+            android:textColor="#FFFFFF"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            app:cardCornerRadius="@dimen/_20sdp"
+            android:layout_marginTop="8dp"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:id="@+id/activityImage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:scaleType="fitXY"
+                android:visibility="gone" />
+        </androidx.cardview.widget.CardView>
+
+        <!-- Poll Options Container (for polls) -->
+        <LinearLayout
+            android:id="@+id/pollOptionsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <!-- Reactions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
+
+            <TextView
+                android:id="@+id/tvHappyEmoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😁 2.2k"
+                android:padding="4dp"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textSize="@dimen/_10sdp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/reaction_background"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/tvAngryEmoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🤬 2.2k"
+                android:padding="4dp"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_10sdp"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/reaction_background"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/tvSadEmoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💔 2.2k"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textSize="@dimen/_10sdp"
+                android:padding="4dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/reaction_background"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/tvCryingEmoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="😭 2.2k"
+                android:textColor="@color/white"
+                android:gravity="center"
+                android:textSize="@dimen/_10sdp"
+                android:layout_weight="1"
+                android:padding="4dp"
+                android:background="@drawable/reaction_background"
+                android:clickable="true"/>
+        </LinearLayout>
+
+        <!-- Hit/Miss Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <TextView
+                android:id="@+id/buttonHit"
+                android:layout_width="@dimen/_70sdp"
+                android:gravity="center"
+                android:layout_height="wrap_content"
+                android:text="🔥 5.5K"
+                android:textColor="#FFFFFF"
+                android:textSize="@dimen/_10sdp"
+                android:background="@drawable/hit_button_background"
+                android:padding="@dimen/_5sdp"
+                android:layout_marginEnd="8dp"
+                android:clickable="true"/>
+
+            <TextView
+                android:id="@+id/buttonMiss"
+                android:layout_width="@dimen/_70sdp"
+                android:gravity="center"
+                android:layout_height="wrap_content"
+                android:text="❌ 1.1K"
+                android:textColor="#FF0000"
+                android:textSize="@dimen/_10sdp"
+                android:background="@drawable/miss_button_background"
+                android:padding="@dimen/_5sdp"
+                android:layout_marginStart="4dp"
+                android:clickable="true"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"/>
+
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

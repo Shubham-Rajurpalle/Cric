@@ -13,13 +13,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
+class UpcomingMatchAdapter(private var matchList: List<MatchData>) :
     RecyclerView.Adapter<UpcomingMatchAdapter.MatchViewHolder>() {
 
     inner class MatchViewHolder(private val binding: CardUpcomingMatchesBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(match: MatchData) {
+
             // Set initial loading state for series name
             binding.seriesName.text = "Loading..."
             fetchSeriesOrLeagueName(match)
@@ -67,12 +68,6 @@ class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
                 CoroutineScope(Dispatchers.Main).launch {
                     binding.seriesName.text = seriesName ?: "N/A"
                     loadSeriesLogo(match.series_id)
-
-                    // Now that data is ready, notify adapter to update the current item
-                    val position = adapterPosition
-                    if (position != RecyclerView.NO_POSITION) {
-                        notifyItemChanged(position) // This ensures only the updated item is redrawn
-                    }
                 }
             }
         }
@@ -83,7 +78,7 @@ class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
                 if (seriesId == 0) throw Exception("Failed to fetch series")
                 "Series #$seriesId"
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Failed to fetch series $seriesId: ${e.message}")
+            //    Log.e("API_ERROR", "Failed to fetch series $seriesId: ${e.message}")
                 null
             }
         }
@@ -95,7 +90,7 @@ class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
                 if (leagueId == 0) throw Exception("Failed to fetch league")
                 "League #$leagueId"
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Failed to fetch league $leagueId: ${e.message}")
+             //   Log.e("API_ERROR", "Failed to fetch league $leagueId: ${e.message}")
                 null
             }
         }
@@ -136,7 +131,7 @@ class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
                     dateTimeString
                 }
             } catch (e: Exception) {
-                Log.e("DateFormat", "Error formatting date: $e")
+            //    Log.e("DateFormat", "Error formatting date: $e")
                 dateTimeString
             }
         }
@@ -152,9 +147,8 @@ class UpcomingMatchAdapter(private var matchList: MutableList<MatchData>) :
     }
 
     fun updateData(newMatches: List<MatchData>) {
-        // Update data and notify changes incrementally
-        matchList.addAll(newMatches)
-        notifyItemRangeInserted(matchList.size - newMatches.size, newMatches.size)
+        matchList = newMatches
+        notifyDataSetChanged()
     }
 
     override fun getItemCount() = matchList.size

@@ -12,18 +12,18 @@ android {
         applicationId = "com.cricketApp.cric"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
+        versionCode = 18
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
+                "okhttp-proguard-rules.pro"
             )
         }
     }
@@ -54,10 +54,11 @@ dependencies {
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.androidx.ui.test.android)
+    androidTestImplementation(libs.androidx.ui.test.android)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.core)
+    implementation(libs.vision.common)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,6 +78,7 @@ dependencies {
     implementation ("com.google.firebase:firebase-firestore")
     implementation ("com.google.firebase:firebase-storage")
     implementation ("com.google.android.gms:play-services-auth:20.7.0")
+    implementation ("com.google.firebase:firebase-config-ktx:21.6.0")
 
     // Facebook Login
     implementation("com.facebook.android:facebook-login:16.3.0")
@@ -91,14 +93,18 @@ dependencies {
     implementation ("com.google.android.material:material:1.9.0")
 
     // Navigation Components
-    implementation ("androidx.navigation:navigation-fragment-ktx:2.6.0 ")
+    implementation ("androidx.navigation:navigation-fragment-ktx:2.6.0")
     implementation ("androidx.navigation:navigation-ui-ktx:2.6.0")
 
     // RecyclerView for displaying video list
     implementation ("androidx.recyclerview:recyclerview:1.2.1")
 
-    // ExoPlayer for playing videos
-    implementation ("com.google.android.exoplayer:exoplayer:2.18.1")
+    // Media3 for playing videos (replacing ExoPlayer)
+    implementation ("androidx.media3:media3-exoplayer:1.2.1")
+    implementation ("androidx.media3:media3-ui:1.2.1")
+    implementation ("androidx.media3:media3-exoplayer-dash:1.2.1")
+    implementation ("androidx.media3:media3-exoplayer-hls:1.2.1")
+
 
     //Glide for Thumbnail loading
     implementation ("com.github.bumptech.glide:glide:4.15.1")
@@ -112,5 +118,39 @@ dependencies {
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
     implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
     implementation ("androidx.core:core-ktx:1.12.0")
+
+    // ML Kit for Image Labeling
+    implementation("com.google.mlkit:image-labeling:17.0.7")
+
+    // ML Kit for Face Detection
+    implementation ("com.google.mlkit:face-detection:16.1.5")
+
+    // ML Kit Object Detection (optional, but useful for additional checks)
+    implementation ("com.google.mlkit:object-detection:17.0.0")
+
+    // Task API
+    implementation ("com.google.android.gms:play-services-tasks:18.0.2")
+
+    // OkHttp for network requests
+    implementation ("com.squareup.okhttp3:okhttp:4.10.0")
+
+    // Gson for JSON parsing
+    implementation ("com.google.code.gson:gson:2.9.0")
+
+    // Coroutines for async work
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+
+    //Notification Firebase Cloud Messaging
+    implementation ("com.google.firebase:firebase-messaging:23.2.1")
+
+    //Admob
+    implementation ("com.google.android.gms:play-services-ads:22.0.0")
+
+    //http logging
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
+
+    //Lottie Animations
+    implementation ("com.airbnb.android:lottie:6.1.0")
 
 }

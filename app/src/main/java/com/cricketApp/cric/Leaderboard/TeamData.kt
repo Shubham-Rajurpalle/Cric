@@ -1,9 +1,9 @@
 package com.cricketApp.cric.Leaderboard
 
 data class TeamData(
-    val id: String = "",
+    var id: String = "",
     val name: String = "",
-    val hits: Int = 0,
     val logoUrl: String = "",
-    val misses:Int=0
+    var hits: Int = 0,
+    var misses: Int = 0
 )

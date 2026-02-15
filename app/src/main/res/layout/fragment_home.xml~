@@ -25,24 +25,33 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <ImageView
-                    android:id="@+id/profilePhoto"
-                    android:layout_width="@dimen/_23sdp"
-                    android:layout_height="@dimen/_23sdp"
-                    android:padding="@dimen/_2sdp"
+                <androidx.cardview.widget.CardView
+                    android:layout_width="@dimen/_24sdp"
+                    android:layout_height="@dimen/_24sdp"
+                    app:cardCornerRadius="@dimen/_12sdp"
+
                     android:layout_marginStart="@dimen/_10sdp"
-                    android:src="@drawable/profile_icon"
                     app:layout_constraintBottom_toBottomOf="@+id/imageView"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent">
+                    <ImageView
+                        android:id="@+id/profilePhoto"
+                        android:layout_width="@dimen/_24sdp"
+                        android:layout_height="@dimen/_24sdp"
+                        android:scaleType="centerCrop"
+                        android:padding="@dimen/_2sdp"
+                        android:src="@drawable/profile_icon" />
+                </androidx.cardview.widget.CardView>
 
-                <ImageView
+
+                <Button
                     android:id="@+id/bell_icon"
                     android:layout_width="@dimen/_23sdp"
                     android:layout_height="@dimen/_23sdp"
                     android:layout_marginEnd="@dimen/_10sdp"
                     android:padding="@dimen/_2sdp"
-                    android:src="@drawable/bell_icon"
+                    android:backgroundTint="@color/transparent"
+                    android:background="@drawable/bell_icon"
                     app:layout_constraintBottom_toTopOf="@+id/appBarLayout"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
