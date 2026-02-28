@@ -171,6 +171,24 @@
                 android:layout_marginTop="6dp">
 
                 <TextView
+                    android:id="@+id/tvShareMeme"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↗ Share"
+                    android:textSize="@dimen/_8sdp"
+                    android:textColor="#AAFFFFFF"
+                    android:layout_gravity="center_vertical"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/share_button_background"
+                    android:clickable="true"
+                    android:focusable="true"/>
+
+
+                <TextView
                     android:id="@+id/textViewComments"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

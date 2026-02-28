@@ -50,6 +50,7 @@ object MessageActionsHandler {
         context: Context,
         message: Any,
         position: Int,
+        onShareClick: (() -> Unit)? = null,
         onDelete: (Any, Int, String) -> Unit  // Updated to include messageId
     ) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return

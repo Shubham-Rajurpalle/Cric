@@ -2,7 +2,6 @@ package com.cricketApp.cric.Profile
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -320,8 +319,8 @@ class UserActivityAdapter(
                 "RCB" to R.drawable.rcb,
                 "KKR" to R.drawable.kkr,
                 "DC" to R.drawable.dc,
-                "SRH" to R.drawable.sh,
-                "PBKS" to R.drawable.pk,
+                "SRH" to R.drawable.srh,
+                "PBKS" to R.drawable.pbks,
                 "RR" to R.drawable.rr,
                 "GT" to R.drawable.gt,
                 "LSG" to R.drawable.lsg

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_90sdp"
+    android:layout_marginStart="@dimen/_10sdp"
+    android:layout_marginEnd="@dimen/_10sdp"
+    android:layout_marginBottom="@dimen/_8sdp"
+    app:cardCornerRadius="@dimen/_12sdp"
+    app:cardElevation="6dp"
+    android:foreground="?attr/selectableItemBackground">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Layer 1: Dark base background -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#111111"/>
+
+        <!-- Layer 2: Team logo/banner — right side -->
+
+
+        <!-- Layer 3: Colored triangle from top-left → bottom-center (custom view) -->
+        <com.cricketApp.cric.Chat.DiagonalSplitView
+            android:id="@+id/teamColorBg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <!-- Layer 4: Soft gradient blend over diagonal edge -->
+        <View
+            android:id="@+id/diagonalMask"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/diagonal_mask_left"/>
+
+        <ImageView
+            android:id="@+id/bannerImage"
+            android:layout_width="@dimen/_130sdp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:scaleType="fitCenter"
+            android:padding="@dimen/_8sdp"
+            android:alpha="0.95"/>
+
+        <!-- LIVE chip top-right -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipLive"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_20sdp"
+            android:layout_gravity="top|end"
+            android:layout_margin="@dimen/_8sdp"
+            android:text="● LIVE"
+            android:textSize="@dimen/_8sdp"
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:chipBackgroundColor="#CCE53935"
+            app:chipMinHeight="@dimen/_20sdp"
+            app:chipStartPadding="6dp"
+            app:chipEndPadding="6dp"/>
+
+        <!-- Team tag chip bottom-right -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipTeamTag"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_20sdp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/_8sdp"
+            android:textSize="@dimen/_9sdp"
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:chipMinHeight="@dimen/_20sdp"
+            app:chipStartPadding="8dp"
+            app:chipEndPadding="8dp"/>
+
+        <!-- Text bottom-left on top of triangle -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:orientation="vertical"
+            android:padding="@dimen/_10sdp"
+            android:maxWidth="190dp">
+
+            <TextView
+                android:id="@+id/roomName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="@dimen/_13sdp"
+                android:textStyle="bold"
+                android:shadowColor="#BB000000"
+                android:shadowRadius="6"
+                android:shadowDx="0"
+                android:shadowDy="1"
+                android:text="Room Name"/>
+
+            <TextView
+                android:id="@+id/roomDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#DDFFFFFF"
+                android:textSize="@dimen/_9sdp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:shadowColor="#99000000"
+                android:shadowRadius="4"
+                android:text="Description"/>
+
+            <TextView
+                android:id="@+id/activeUsersText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#AAFFFFFF"
+                android:textSize="@dimen/_8sdp"
+                android:visibility="gone"
+                android:text="0 online"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</androidx.cardview.widget.CardView>

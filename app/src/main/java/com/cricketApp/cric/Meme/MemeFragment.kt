@@ -26,7 +26,6 @@ import com.cricketApp.cric.Leaderboard.LeaderboardFragment
 import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.cricketApp.cric.R
-import com.cricketApp.cric.databinding.FragmentChatBinding
 import com.cricketApp.cric.databinding.FragmentMemeBinding
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder

@@ -2,7 +2,6 @@ package com.cricketApp.cric.Chat
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -19,14 +17,11 @@ import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
 import com.cricketApp.cric.Utils.MilestoneBadgeHelper
 import com.cricketApp.cric.Utils.ReactionTracker
-import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemSendCommentBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.MutableData
-import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 
 class CommentAdapter(
@@ -321,8 +316,8 @@ class CommentAdapter(
                 "RCB" to R.drawable.rcb,
                 "KKR" to R.drawable.kkr,
                 "DC" to R.drawable.dc,
-                "SRH" to R.drawable.sh,
-                "PBKS" to R.drawable.pk,
+                "SRH" to R.drawable.srh,
+                "PBKS" to R.drawable.pbks,
                 "RR" to R.drawable.rr,
                 "GT" to R.drawable.gt,
                 "LSG" to R.drawable.lsg

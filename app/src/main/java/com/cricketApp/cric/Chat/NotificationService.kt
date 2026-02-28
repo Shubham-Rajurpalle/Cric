@@ -39,7 +39,7 @@ class NotificationService(private val context: Context) {
         private const val REQUEST_CODE_BASE = 1000
 
         // Cooldown period between notifications (15 minutes in milliseconds)
-        private const val NOTIFICATION_COOLDOWN = 60*5*1000 // 15 minutes
+        private const val NOTIFICATION_COOLDOWN = 1000// 15 minutes
 
         // Map to track when we last sent a notification for a specific content item
         private val notificationTimestamps = ConcurrentHashMap<String, Long>()

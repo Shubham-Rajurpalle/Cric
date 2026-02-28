@@ -1,17 +1,12 @@
 package com.cricketApp.cric.Chat
 
-import android.animation.ObjectAnimator
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RadioButton
@@ -24,12 +19,10 @@ import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.R
 import com.cricketApp.cric.Utils.MilestoneBadgeHelper
 import com.cricketApp.cric.Utils.ReactionTracker
-import com.cricketApp.cric.Utils.TeamStatsUtility
 import com.cricketApp.cric.databinding.ItemPollMessageBinding
 import com.cricketApp.cric.databinding.ItemReceiveChatBinding
 import com.cricketApp.cric.databinding.ItemSendChatBinding
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.BuildConfig
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -37,7 +30,8 @@ import com.google.firebase.database.MutableData
 import com.google.firebase.database.Transaction
 import com.google.firebase.database.ValueEventListener
 
-class ChatAdapter(private val items: MutableList<Any>) :
+class ChatAdapter(private val items: MutableList<Any>,
+                  private val roomBasePath: String = "NoBallZone" ) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     companion object {
@@ -318,7 +312,8 @@ class ChatAdapter(private val items: MutableList<Any>) :
 
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", chat.id)
-                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
+                        putExtra("MESSAGE_TYPE", "chat")
+                        putExtra("ROOM_BASE_PATH", roomBasePath)// Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
@@ -496,7 +491,8 @@ class ChatAdapter(private val items: MutableList<Any>) :
 
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", chat.id)
-                        putExtra("MESSAGE_TYPE", "chat") // Make sure type is set correctly
+                        putExtra("MESSAGE_TYPE", "chat")
+                        putExtra("ROOM_BASE_PATH", roomBasePath) // Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
@@ -642,7 +638,8 @@ class ChatAdapter(private val items: MutableList<Any>) :
 
                     val intent = Intent(context, CommentActivity::class.java).apply {
                         putExtra("MESSAGE_ID", poll.id)
-                        putExtra("MESSAGE_TYPE", "poll") // Make sure type is set correctly
+                        putExtra("MESSAGE_TYPE", "poll")
+                        putExtra("ROOM_BASE_PATH", roomBasePath) // Make sure type is set correctly
                     }
                     context.startActivity(intent)
                 }
@@ -793,7 +790,7 @@ class ChatAdapter(private val items: MutableList<Any>) :
         val userId = currentUser.uid
 
         // Get poll reference
-        val pollRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${poll.id}")
+        val pollRef = FirebaseDatabase.getInstance().getReference("$roomBasePath/polls/${poll.id}")
 
         // Get previous vote if any
         val previousVote = poll.voters?.get(userId)
@@ -870,7 +867,8 @@ class ChatAdapter(private val items: MutableList<Any>) :
         ReactionTracker.addEmojiReaction(
             contentType = contentType,
             contentId = messageId,
-            reactionType = reactionType
+            reactionType = reactionType,
+            roomBasePath = roomBasePath
         ) { success, newValue ->
             if (success) {
                 when (message) {
@@ -911,7 +909,8 @@ class ChatAdapter(private val items: MutableList<Any>) :
         ReactionTracker.updateHitOrMiss(
             contentType = contentType,
             contentId = messageId,
-            isHit = isHit
+            isHit = isHit,
+            roomBasePath = roomBasePath
         ) { success, newValue ->
             if (success) {
                 when (message) {
@@ -959,8 +958,8 @@ class ChatAdapter(private val items: MutableList<Any>) :
             "RCB" to R.drawable.rcb,
             "KKR" to R.drawable.kkr,
             "DC" to R.drawable.dc,
-            "SRH" to R.drawable.sh,
-            "PBKS" to R.drawable.pk,
+            "SRH" to R.drawable.srh,
+            "PBKS" to R.drawable.pbks,
             "RR" to R.drawable.rr,
             "GT" to R.drawable.gt,
             "LSG" to R.drawable.lsg

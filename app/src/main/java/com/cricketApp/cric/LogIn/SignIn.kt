@@ -6,35 +6,36 @@ import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.cricketApp.cric.home.Home
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.lifecycle.lifecycleScope
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivitySignInBinding
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
+import com.cricketApp.cric.home.Home
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.database.FirebaseDatabase
-
+import kotlinx.coroutines.launch
 
 class SignIn : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivitySignInBinding
-    private lateinit var googleSignInClient: GoogleSignInClient
-    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+    private lateinit var credentialManager: CredentialManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Use ViewBinding properly
         binding = ActivitySignInBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -44,85 +45,124 @@ class SignIn : AppCompatActivity() {
             insets
         }
 
-        // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
+        credentialManager = CredentialManager.create(this)
 
-        // Configure Google Sign-In
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.default_web_client_id)) // Ensure this is correct
-            .requestEmail()
-            .build()
+        binding.googleLoginBtn.setOnClickListener { signInWithGoogle() }
 
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-
-        // Register Google Sign-In launcher
-        googleSignInLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                try {
-                    val account = task.getResult(ApiException::class.java)
-                    firebaseAuthWithGoogle(account.idToken!!)
-                } catch (e: ApiException) {
-                    Toast.makeText(this, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-        // Google Sign-In Button Click
-        binding.googleLoginBtn.setOnClickListener {
-            signInWithGoogle()
-        }
-
-        // Email/Password Sign-In
         binding.logInBtn.setOnClickListener {
             binding.progressBar.visibility = View.VISIBLE
             binding.creatingAcTxt.visibility = View.VISIBLE
-
             val email = binding.emailTxtLogIn.text.toString()
             val password = binding.passwordTxtLogIn.text.toString()
-
-            if (email.isEmpty()) {
-                showError(binding.emailTxtLogIn, "Email cannot be empty")
-                return@setOnClickListener
-            }
-
-            if (password.isEmpty()) {
-                showError(binding.passwordTxtLogIn, "Password cannot be empty")
-                return@setOnClickListener
-            }
-
+            if (email.isEmpty()) { showError(binding.emailTxtLogIn, "Email cannot be empty"); return@setOnClickListener }
+            if (password.isEmpty()) { showError(binding.passwordTxtLogIn, "Password cannot be empty"); return@setOnClickListener }
             userLogin(email, password)
         }
 
-        // Navigation Buttons
-        binding.createAccountBtn.setOnClickListener {
-            startActivity(Intent(this@SignIn, SignUp::class.java))
-        }
+        binding.createAccountBtn.setOnClickListener { startActivity(Intent(this, SignUp::class.java)) }
+        binding.forgotPasswordBtn.setOnClickListener { startActivity(Intent(this, forgotPassword::class.java)) }
 
-        binding.forgotPasswordBtn.setOnClickListener {
-            startActivity(Intent(this@SignIn, forgotPassword::class.java))
-        }
-
-        // Check if user is already signed in
-        checkExistingGoogleUser()
+        binding.progressBar.visibility = View.INVISIBLE
+        binding.creatingAcTxt.visibility = View.INVISIBLE
     }
 
-    private fun checkExistingGoogleUser() {
-        val account = GoogleSignIn.getLastSignedInAccount(this)
-        if (account != null) {
+    // ── Google Sign-In: fast path first, fallback to full picker ─────────────
+
+    private fun signInWithGoogle() {
+        binding.progressBar.visibility = View.VISIBLE
+        binding.creatingAcTxt.visibility = View.VISIBLE
+        binding.creatingAcTxt.text = "Signing in with Google..."
+
+        lifecycleScope.launch {
+            val usedFastPath = tryGoogleIdOption()
+            if (!usedFastPath) trySignInWithGoogleOption()
+        }
+    }
+
+    /** Fast path — for accounts that previously signed in */
+    private suspend fun tryGoogleIdOption(): Boolean {
+        return try {
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setServerClientId(getString(R.string.default_web_client_id))
+                .setFilterByAuthorizedAccounts(false)
+                .setAutoSelectEnabled(false)
+                .build()
+
+            val result = credentialManager.getCredential(
+                request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build(),
+                context = this@SignIn
+            )
+            handleGoogleCredential(result.credential)
+            true
+        } catch (e: GetCredentialException) {
+            false // fall through to full picker
+        }
+    }
+
+    /** Fallback — always shows full Google account picker */
+    private suspend fun trySignInWithGoogleOption() {
+        try {
+            val signInWithGoogleOption = GetSignInWithGoogleOption
+                .Builder(getString(R.string.default_web_client_id))
+                .build()
+
+            val result = credentialManager.getCredential(
+                request = GetCredentialRequest.Builder()
+                    .addCredentialOption(signInWithGoogleOption)
+                    .build(),
+                context = this@SignIn
+            )
+            handleGoogleCredential(result.credential)
+        } catch (e: GetCredentialException) {
             binding.progressBar.visibility = View.INVISIBLE
             binding.creatingAcTxt.visibility = View.INVISIBLE
-            checkUserInfo()
+            Toast.makeText(this, "Google sign-in failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun handleGoogleCredential(credential: androidx.credentials.Credential) {
+        if (credential is CustomCredential &&
+            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+        ) {
+            try {
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                firebaseAuthWithGoogle(googleIdTokenCredential.idToken)
+            } catch (e: GoogleIdTokenParsingException) {
+                binding.progressBar.visibility = View.INVISIBLE
+                binding.creatingAcTxt.visibility = View.INVISIBLE
+                Toast.makeText(this, "Invalid Google ID token.", Toast.LENGTH_SHORT).show()
+            }
         } else {
             binding.progressBar.visibility = View.INVISIBLE
             binding.creatingAcTxt.visibility = View.INVISIBLE
+            Toast.makeText(this, "Unexpected credential type.", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun firebaseAuthWithGoogle(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    binding.creatingAcTxt.text = "Checking account information..."
+                    checkUserInfo()
+                } else {
+                    binding.progressBar.visibility = View.INVISIBLE
+                    binding.creatingAcTxt.visibility = View.INVISIBLE
+                    Toast.makeText(this, "Authentication Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+    }
+
+    // ── Email/Password ────────────────────────────────────────────────────────
+
     private fun showError(itemView: EditText, errorMessage: String) {
         itemView.error = errorMessage
+        binding.progressBar.visibility = View.INVISIBLE
+        binding.creatingAcTxt.visibility = View.INVISIBLE
     }
 
     private fun userLogin(email: String, password: String) {
@@ -137,14 +177,12 @@ class SignIn : AppCompatActivity() {
                         Toast.makeText(this, "Please verify your email first.", Toast.LENGTH_LONG).show()
                     }
                 } else {
-                    Toast.makeText(
-                        baseContext,
-                        "Authentication failed: ${task.exception?.message}",
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                    Toast.makeText(baseContext, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                 }
             }
     }
+
+    // ── User info check ───────────────────────────────────────────────────────
 
     private fun checkUserInfo() {
         val userId = auth.currentUser?.uid ?: return
@@ -161,7 +199,9 @@ class SignIn : AppCompatActivity() {
                 val iplTeam = snapshot.child("iplTeam").getValue(String::class.java)
                 val profilePhoto = snapshot.child("profilePhoto").getValue(String::class.java)
 
-                if (username.isNullOrEmpty() || country.isNullOrEmpty() || iplTeam.isNullOrEmpty() || profilePhoto.isNullOrEmpty()) {
+                if (username.isNullOrEmpty() || country.isNullOrEmpty() ||
+                    iplTeam.isNullOrEmpty() || profilePhoto.isNullOrEmpty()
+                ) {
                     startActivity(Intent(this@SignIn, UserInfo::class.java))
                 } else {
                     saveLoginState(true)
@@ -172,38 +212,14 @@ class SignIn : AppCompatActivity() {
             }
             finish()
         }.addOnFailureListener {
-            // Also hide progress bar on failure
             binding.progressBar.visibility = View.INVISIBLE
             binding.creatingAcTxt.visibility = View.INVISIBLE
-
             Toast.makeText(this, "Failed to retrieve user data.", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun saveLoginState(isLoggedIn: Boolean) {
-        val sharedRef = getSharedPreferences("user_login_info", MODE_PRIVATE)
-        val editor = sharedRef.edit()
-        editor.putBoolean("isLoggedIn", isLoggedIn)
-        editor.apply()
-    }
-
-    private fun signInWithGoogle() {
-        val signInIntent = googleSignInClient.signInIntent
-        googleSignInLauncher.launch(signInIntent)
-    }
-
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        FirebaseAuth.getInstance().signInWithCredential(credential)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    binding.progressBar.visibility = View.VISIBLE
-                    binding.creatingAcTxt.visibility = View.VISIBLE
-                    binding.creatingAcTxt.text = "Signing in with Google..."
-                    checkUserInfo()
-                } else {
-                    Toast.makeText(this, "Authentication Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
-                }
-            }
+        getSharedPreferences("user_login_info", MODE_PRIVATE)
+            .edit().putBoolean("isLoggedIn", true).apply()
     }
 }

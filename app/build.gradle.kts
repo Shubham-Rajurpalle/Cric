@@ -77,14 +77,16 @@ dependencies {
     implementation("com.google.firebase:firebase-database")
     implementation ("com.google.firebase:firebase-firestore")
     implementation ("com.google.firebase:firebase-storage")
-    implementation ("com.google.android.gms:play-services-auth:20.7.0")
     implementation ("com.google.firebase:firebase-config-ktx:21.6.0")
 
     // Facebook Login
     implementation("com.facebook.android:facebook-login:16.3.0")
 
     //Google Login
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
 
     //Gson for json parsing
     implementation ("com.google.code.gson:gson:2.8.8")
@@ -152,5 +154,7 @@ dependencies {
 
     //Lottie Animations
     implementation ("com.airbnb.android:lottie:6.1.0")
+
+
 
 }

@@ -2,7 +2,6 @@ package com.cricketApp.cric.home.Shots
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -49,23 +48,18 @@ class Cric_shots : Fragment() {
 
     private fun setupSwipeRefreshLayout() {
         binding.swipeRefreshLayout.setOnRefreshListener {
-            // Refresh data
             refreshData()
         }
     }
 
     private fun refreshData() {
-        // Show loading animations again if they're not visible
-        binding.llAnime.visibility = View.VISIBLE
-        binding.llAnime2.visibility = View.VISIBLE
-
-        // Clear existing data
+        val b = _binding ?: return
+        b.llAnime.visibility = View.VISIBLE
+        b.llAnime2.visibility = View.VISIBLE
         videoList.clear()
         newsList.clear()
         videoAdapter.notifyDataSetChanged()
         newsAdapter.notifyDataSetChanged()
-
-        // Fetch fresh data
         fetchVideos()
         fetchNews()
     }
@@ -82,19 +76,15 @@ class Cric_shots : Fragment() {
 
     private fun setupCricShotsRecyclerView() {
         val viewPager2 = requireActivity().findViewById<ViewPager2>(R.id.viewPager)
-
         binding.shotsRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             (this as? InterceptableRecyclerView)?.viewPager2 = viewPager2
         }
-        videoAdapter = VideoAdapter(videoList) { video ->
-            openVideoPlayer(video)
-        }
+        videoAdapter = VideoAdapter(videoList) { video -> openVideoPlayer(video) }
         binding.shotsRecyclerView.adapter = videoAdapter
     }
 
     private fun fetchVideos() {
-        // Check if firestore and fragment are still active
         val firestoreInstance = firestore ?: return
         if (!isAdded) return
 
@@ -102,28 +92,22 @@ class Cric_shots : Fragment() {
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { snapshot ->
-                // Check again if fragment is still attached
-                binding.llAnime.visibility = View.GONE
-                if (!isAdded) return@addOnSuccessListener
+                // Guard: fragment may have been destroyed by the time this fires
+                if (!isAdded || _binding == null) return@addOnSuccessListener
 
+                _binding?.llAnime?.visibility = View.GONE
                 snapshot?.let {
                     if (!it.isEmpty) {
                         videoList.clear()
                         videoList.addAll(it.toObjects(Video::class.java))
                         videoAdapter.notifyDataSetChanged()
-
-                        // Check if both fetches are complete to dismiss the refresh indicator
                         checkRefreshComplete()
                     }
                 }
             }
-            .addOnFailureListener { e ->
-                // Check again if fragment is still attached
-                if (!isAdded) return@addOnFailureListener
-
-                // Dismiss refresh indicator on failure too
+            .addOnFailureListener {
+                if (!isAdded || _binding == null) return@addOnFailureListener
                 checkRefreshComplete()
-                //Log.e("Firestore", "Error fetching videos", e)
             }
     }
 
@@ -132,29 +116,29 @@ class Cric_shots : Fragment() {
             ?.orderBy("timestamp", Query.Direction.DESCENDING)
             ?.get()
             ?.addOnSuccessListener { snapshot ->
-                binding.llAnime2.visibility = View.GONE
+                // Guard: fragment may have been destroyed by the time this fires
+                if (!isAdded || _binding == null) return@addOnSuccessListener
+
+                _binding?.llAnime2?.visibility = View.GONE
                 snapshot?.let {
                     if (!it.isEmpty) {
                         newsList.clear()
                         newsList.addAll(it.toObjects(News::class.java))
                         newsAdapter.notifyDataSetChanged()
-
-                        // Check if both fetches are complete to dismiss the refresh indicator
                         checkRefreshComplete()
                     }
                 }
             }
-            ?.addOnFailureListener { e ->
-                // Dismiss refresh indicator on failure too
+            ?.addOnFailureListener {
+                if (!isAdded || _binding == null) return@addOnFailureListener
                 checkRefreshComplete()
-                //Log.e("Firestore", "Error fetching news", e)
             }
     }
 
-    // Helper method to check if both fetches are complete and dismiss the refresh indicator
     private fun checkRefreshComplete() {
-        if (binding.llAnime.visibility == View.GONE && binding.llAnime2.visibility == View.GONE) {
-            binding.swipeRefreshLayout.isRefreshing = false
+        val b = _binding ?: return
+        if (b.llAnime.visibility == View.GONE && b.llAnime2.visibility == View.GONE) {
+            b.swipeRefreshLayout.isRefreshing = false
         }
     }
 
@@ -168,18 +152,14 @@ class Cric_shots : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-
-        // Nullify adapter references
-        binding.shotsRecyclerView.adapter = null
-        binding.newsRecycleView.adapter = null
-
-        // Clear reference to binding
+        // Use _binding (nullable) not binding here — view is already being destroyed
+        _binding?.shotsRecyclerView?.adapter = null
+        _binding?.newsRecycleView?.adapter = null
         _binding = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        // Clear Firestore reference
         firestore = null
     }
 }

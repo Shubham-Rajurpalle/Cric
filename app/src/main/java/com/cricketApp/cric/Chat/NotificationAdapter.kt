@@ -1,19 +1,12 @@
 package com.cricketApp.cric
 
-import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.cricketApp.cric.Notifications.NotificationItem
-import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ItemNotificationBinding
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class NotificationsAdapter(
     private val notifications: List<NotificationItem>,
@@ -98,8 +91,8 @@ class NotificationsAdapter(
                 "RCB" to R.drawable.rcb,
                 "KKR" to R.drawable.kkr,
                 "DC" to R.drawable.dc,
-                "SRH" to R.drawable.sh,
-                "PBKS" to R.drawable.pk,
+                "SRH" to R.drawable.srh,
+                "PBKS" to R.drawable.pbks,
                 "RR" to R.drawable.rr,
                 "GT" to R.drawable.gt,
                 "LSG" to R.drawable.lsg

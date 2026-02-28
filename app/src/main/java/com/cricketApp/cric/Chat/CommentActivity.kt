@@ -59,6 +59,8 @@ class CommentActivity : AppCompatActivity() {
     var messageId: String = ""
     var messageType: String = ""
 
+    private var roomBasePath: String = "NoBallZone"
+
     private var selectedImageUri: Uri? = null
     private val PICK_IMAGE_REQUEST = 1
 
@@ -82,6 +84,7 @@ class CommentActivity : AppCompatActivity() {
         // Get message details from intent
         messageId = intent.getStringExtra("MESSAGE_ID") ?: ""
         messageType = intent.getStringExtra("MESSAGE_TYPE") ?: ""
+        roomBasePath = intent.getStringExtra("ROOM_BASE_PATH") ?: "NoBallZone"
 
         if (messageId.isEmpty() || messageType.isEmpty()) {
             Toast.makeText(this, "Error: Invalid message data", Toast.LENGTH_SHORT).show()
@@ -198,9 +201,9 @@ class CommentActivity : AppCompatActivity() {
     private fun getCommentsPath(): String {
         // Fix for poll comments - ensure the correct path is used
         return when (messageType) {
-            "chat" -> "NoBallZone/chats/$messageId/comments"
-            "poll" -> "NoBallZone/polls/$messageId/comments"
-            "meme" -> "NoBallZone/memes/$messageId/comments"
+            "chat" -> "$roomBasePath/chats/$messageId/comments"
+            "poll" -> "$roomBasePath/polls/$messageId/comments"
+            "meme" -> "$roomBasePath/memes/$messageId/comments"
             else -> {
             //    Log.e("CommentActivity", "Unknown message type: $messageType, defaulting to chats")
                 "NoBallZone/chats/$messageId/comments" // Default path
@@ -799,9 +802,9 @@ class CommentActivity : AppCompatActivity() {
 
     private fun updateParentMessageCommentCount() {
         val parentRef = when (messageType) {
-            "chat" -> database.getReference("NoBallZone/chats/$messageId")
-            "poll" -> database.getReference("NoBallZone/polls/$messageId")
-            "meme" -> database.getReference("NoBallZone/memes/$messageId")
+            "chat" -> database.getReference("$roomBasePath/chats/$messageId")
+            "poll" -> database.getReference("$roomBasePath/polls/$messageId")
+            "meme" -> database.getReference("$roomBasePath/memes/$messageId")
             else -> {
             //    Log.e("CommentActivity", "Unknown message type when updating count: $messageType")
                 database.getReference("NoBallZone/chats/$messageId") // Default path

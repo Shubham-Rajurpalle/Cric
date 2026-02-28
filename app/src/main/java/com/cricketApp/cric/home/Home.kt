@@ -20,6 +20,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.cricketApp.cric.Chat.ChatFragment
+import com.cricketApp.cric.Chat.ChatLobbyFragment
 import com.cricketApp.cric.Chat.NotificationActivity
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
 import com.cricketApp.cric.LogIn.SignIn
@@ -79,26 +80,25 @@ class Home : AppCompatActivity() {
         loadProfileImageForBottomNav()
         setupBottomNav()
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                val navHostFragment = supportFragmentManager.findFragmentById(R.id.navHost)
-                val currentFragment = navHostFragment?.childFragmentManager?.fragments?.lastOrNull()
-
-                if (currentFragment !is HomeFragment) {
-                    supportFragmentManager.beginTransaction()
-                        .replace(R.id.navHost, HomeFragment())
-                        .addToBackStack(null)
-                        .commit()
-
-                    binding.bottomNavigation.post {
-                        binding.bottomNavigation.selectedItemId = R.id.homeIcon
-                    }
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
-                }
-            }
-        })
+          onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+              override fun handleOnBackPressed() {
+                  val currentFragment = supportFragmentManager.findFragmentById(R.id.navHost)
+                  when {
+                      currentFragment is ChatFragment -> {
+                          switchFragment(ChatLobbyFragment(), "Chat")
+                          binding.bottomNavigation.selectedItemId = R.id.chatIcon
+                      }
+                      currentFragment !is HomeFragment -> {
+                          switchFragment(HomeFragment(), "Home")
+                          binding.bottomNavigation.selectedItemId = R.id.homeIcon
+                      }
+                      else -> {
+                          isEnabled = false
+                          onBackPressedDispatcher.onBackPressed()
+                      }
+                  }
+              }
+          })
 
         if (savedInstanceState == null) {
             switchFragment(HomeFragment(), "Home")
@@ -293,7 +293,7 @@ class Home : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.homeIcon -> switchFragment(HomeFragment(), "Home")
-                R.id.chatIcon -> switchFragment(ChatFragment(), "Chat")
+                R.id.chatIcon -> switchFragment(ChatLobbyFragment(), "Chat")
                 R.id.memeIcon -> switchFragment(MemeFragment(), "Meme")
                 R.id.leaderboardIcon -> switchFragment(LeaderboardFragment(), "Leaderboard")
                 R.id.profileIcon -> {
@@ -376,23 +376,18 @@ class Home : AppCompatActivity() {
         try {
             val fragmentManager = supportFragmentManager
 
-            // Don't replace if it's the same fragment
+            // Don't replace if it's the same fragment type
             val currentFragment = fragmentManager.findFragmentById(R.id.navHost)
             if (currentFragment != null && currentFragment.javaClass == fragment.javaClass) {
                 return
             }
 
-            // Use commitAllowingStateLoss to prevent IllegalStateException
-            val transaction = fragmentManager.beginTransaction()
-            transaction.replace(R.id.navHost, fragment, tag)
+            fragmentManager.beginTransaction()
+                .replace(R.id.navHost, fragment, tag)
+                .commitAllowingStateLoss()
 
-            if (tag != "Home") {
-                transaction.addToBackStack("Home")
-            }
-
-            transaction.commitAllowingStateLoss()
         } catch (e: Exception) {
-        //    Log.e("Home", "Error switching fragment: ${e.message}", e)
+            // Log.e("Home", "Error switching fragment: ${e.message}", e)
         }
     }
 
