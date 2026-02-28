@@ -106,7 +106,7 @@ object ReactionTracker {
 
                 if (committed && error == null) {
                     val newValue = currentData?.getValue(Int::class.java) ?: 0
-                    if (newValue == 100) {
+                    if (newValue >= 100) {
                         createMilestoneNotification(contentType, contentId, parentId, "reaction", reactionType, newValue, roomBasePath)
                     }
                 }
@@ -250,7 +250,7 @@ object ReactionTracker {
 
                         if (committed && error == null) {
                             val newValue = currentData?.getValue(Int::class.java) ?: 0
-                            if (newValue == 100) {
+                            if (newValue >= 100) {
                                 createMilestoneNotification(contentType, contentId, parentId, "hitMiss", if (isHit) "hit" else "miss", newValue, roomBasePath)
                             }
                         }
@@ -393,49 +393,67 @@ object ReactionTracker {
         reactionCategory: String,
         reactionValue: String,
         count: Int,
-        roomBasePath: String = "NoBallZone"          // ← NEW
+        roomBasePath: String = "NoBallZone"
     ) {
         if (count < 100) return
 
         val contentRef = getFullContentRef(contentType, contentId, parentId, roomBasePath)
 
+        // ADD THIS - verify the path is correct
+        Log.d("MilestoneDebug", "Fetching content at: ${contentRef.path}")
+
         contentRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val senderId   = snapshot.child("senderId").getValue(String::class.java)   ?: ""
-                val senderName = snapshot.child("senderName").getValue(String::class.java) ?: ""
-                val team       = snapshot.child("team").getValue(String::class.java)       ?: ""
-                val message    = when (contentType) {
-                    ContentType.POLL -> snapshot.child("question").getValue(String::class.java) ?: ""
-                    ContentType.MEME -> "Meme"
-                    else             -> snapshot.child("message").getValue(String::class.java) ?: ""
-                }
 
-                val notificationsRef = FirebaseDatabase.getInstance().getReference(NOTIFICATIONS_PATH).push()
+                // ADD THIS - verify data exists
+                Log.d("MilestoneDebug", "Snapshot exists: ${snapshot.exists()}, value: ${snapshot.value}")
+
+                val senderId   = snapshot.child("senderId").getValue(String::class.java) ?: ""
+                val senderName = snapshot.child("senderName").getValue(String::class.java) ?: ""
+
+                val notificationsRef = FirebaseDatabase.getInstance()
+                    .getReference(NOTIFICATIONS_PATH).push()
                 val notification = mapOf(
                     "contentType"      to contentType.toString(),
                     "contentId"        to contentId,
                     "parentId"         to (parentId ?: ""),
                     "senderId"         to senderId,
                     "senderName"       to senderName,
-                    "team"             to team,
-                    "message"          to message,
+                    "team"             to (snapshot.child("team").getValue(String::class.java) ?: ""),
+                    "message"          to when (contentType) {
+                        ContentType.POLL -> snapshot.child("question").getValue(String::class.java) ?: ""
+                        ContentType.MEME -> "Meme"
+                        else             -> snapshot.child("message").getValue(String::class.java) ?: ""
+                    },
                     "reactionCategory" to reactionCategory,
                     "reactionValue"    to reactionValue,
                     "count"            to count,
                     "timestamp"        to System.currentTimeMillis(),
-                    "read"             to false
+                    "read"             to false,
+                    "roomBasePath"     to roomBasePath
                 )
 
                 notificationsRef.setValue(notification)
                     .addOnSuccessListener {
+                        // ADD THIS
+                        Log.d("MilestoneDebug", "✅ Notification written successfully")
                         sendCloudNotification(
-                            contentType.toString(), contentId, senderName, team,
-                            message, reactionCategory, reactionValue, count
+                            contentType.toString(), contentId,
+                            senderId, snapshot.child("team").getValue(String::class.java) ?: "",
+                            notification["message"] as String,
+                            reactionCategory, reactionValue, count
                         )
+                    }
+                    .addOnFailureListener { e ->
+                        // ADD THIS - this reveals Firebase Rules rejections
+                        Log.e("MilestoneDebug", "❌ Notification write FAILED: ${e.message}")
                     }
             }
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                // ADD THIS
+                Log.e("MilestoneDebug", "❌ Content fetch cancelled: ${error.message}, code: ${error.code}")
+            }
         })
     }
 

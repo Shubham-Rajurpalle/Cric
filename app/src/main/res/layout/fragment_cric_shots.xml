@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -15,122 +16,383 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:fillViewport="true">
 
             <LinearLayout
-                android:id="@+id/llAnime"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/_200sdp"
-                android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent">
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/loaderAnimation"
-                    android:layout_width="@dimen/_110sdp"
-                    android:layout_height="@dimen/_200sdp"
-                    android:layout_gravity="center"
-                    android:alpha="0.2"
-                    android:visibility="visible"
-                    app:lottie_autoPlay="true"
-                    app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/loading_v" />
-
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/loaderAnimation2"
-                    android:layout_width="@dimen/_110sdp"
-                    android:layout_height="@dimen/_200sdp"
-                    android:layout_gravity="center"
-                    android:visibility="visible"
-                    android:alpha="0.2"
-                    app:lottie_autoPlay="true"
-                    app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/loading_v" />
-
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/loaderAnimation3"
-                    android:layout_width="@dimen/_110sdp"
-                    android:layout_height="@dimen/_200sdp"
-                    android:layout_gravity="center"
-                    android:visibility="visible"
-                    app:lottie_autoPlay="true"
-                    android:alpha="0.2"
-                    app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/loading_v" />
-            </LinearLayout>
-
-            <com.cricketApp.cric.home.Shots.InterceptableRecyclerView
-                android:id="@+id/shots_recycler_view"
-                android:layout_width="match_parent"
-                android:orientation="horizontal"
-                android:layout_marginLeft="@dimen/_5sdp"
-                android:layout_marginRight="@dimen/_5sdp"
-                android:layout_marginTop="@dimen/_5sdp"
-                android:layout_height="@dimen/_200sdp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-
-            <LinearLayout
-                android:id="@+id/llAnime2"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:orientation="vertical"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/llAnime">
-
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/loaderAnimation5"
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!--  SECTION 1: LIVE MATCH BANNER                        -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <LinearLayout
+                    android:id="@+id/sectionLiveMatch"
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/_150sdp"
-                    android:layout_gravity="center"
-                    android:visibility="visible"
-                    app:lottie_autoPlay="true"
-                    android:alpha="0.2"
-                    app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/loading_v" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
-                <com.airbnb.lottie.LottieAnimationView
-                    android:id="@+id/loaderAnimation6"
+                    <!-- Header row: live dot + label + "Join Chat" -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="@dimen/_12sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:paddingTop="@dimen/_10sdp"
+                        android:paddingBottom="@dimen/_4sdp">
+
+                        <!-- Pulsing red dot -->
+                        <View
+                            android:id="@+id/livePulseDot"
+                            android:layout_width="@dimen/_8sdp"
+                            android:layout_height="@dimen/_8sdp"
+                            android:background="@color/red"
+                            android:layout_marginEnd="@dimen/_6sdp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🏟️ Live Match"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_12sdp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvJoinChat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Join Chat →"
+                            android:textColor="#FF3D3D"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="@dimen/_4sdp" />
+                    </LinearLayout>
+
+                    <!-- Thin red accent line under Live Match header -->
+                    <View
+                        android:layout_width="@dimen/_40sdp"
+                        android:layout_height="@dimen/_2sdp"
+                        android:layout_marginStart="@dimen/_12sdp"
+                        android:layout_marginBottom="@dimen/_6sdp"
+                        android:background="#FF3D3D" />
+
+                    <include
+                        android:id="@+id/liveMatchCard"
+                        layout="@layout/item_chat_room_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_90sdp" />
+
+                </LinearLayout>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!--  SECTION 2: TOP MEMES                                 -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <LinearLayout
+                    android:id="@+id/sectionTopMemes"
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/_150sdp"
-                    android:layout_gravity="center"
-                    android:visibility="visible"
-                    android:alpha="0.2"
-                    app:lottie_autoPlay="true"
-                    app:lottie_loop="true"
-                    app:lottie_rawRes="@raw/loading_v" />
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="@dimen/_12sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:paddingTop="@dimen/_10sdp"
+                        android:paddingBottom="@dimen/_4sdp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🔥 Top Memes"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_12sdp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvSeeAllMemes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="See All →"
+                            android:textColor="#AAFFFFFF"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="@dimen/_4sdp" />
+                    </LinearLayout>
+
+                    <!-- Accent line -->
+                    <View
+                        android:layout_width="@dimen/_40sdp"
+                        android:layout_height="@dimen/_2sdp"
+                        android:layout_marginStart="@dimen/_12sdp"
+                        android:layout_marginBottom="@dimen/_6sdp"
+                        android:background="#FF6B00" />
+                    <LinearLayout
+                        android:id="@+id/llAnime3"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_200sdp"
+                        android:orientation="horizontal">
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation8"
+                            android:layout_width="@dimen/_110sdp"
+                            android:layout_height="@dimen/_200sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation7"
+                            android:layout_width="@dimen/_110sdp"
+                            android:layout_height="@dimen/_200sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation4"
+                            android:layout_width="@dimen/_110sdp"
+                            android:layout_height="@dimen/_200sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+                    </LinearLayout>
+
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvTopMemes"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_200sdp"
+                        android:paddingStart="@dimen/_8sdp"
+                        android:paddingEnd="@dimen/_8sdp"
+                        android:clipToPadding="false"
+                        android:nestedScrollingEnabled="false"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        android:orientation="horizontal" />
+
+                </LinearLayout>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!--  SECTION 3 + 4: SHOTS (header + loader + recycler)   -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <LinearLayout
+                    android:id="@+id/sectionShots"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Shots section header — same pattern as Top Memes -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="@dimen/_12sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:paddingTop="@dimen/_10sdp"
+                        android:paddingBottom="@dimen/_4sdp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🎬 Shots"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_12sdp"
+                            android:textStyle="bold" />
+
+                        <!-- Optional: "See All" for shots if you want it later -->
+                        <TextView
+                            android:id="@+id/tvSeeAllShots"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="See All →"
+                            android:textColor="#AAFFFFFF"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="@dimen/_4sdp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Accent line -->
+                    <View
+                        android:layout_width="@dimen/_40sdp"
+                        android:layout_height="@dimen/_2sdp"
+                        android:layout_marginStart="@dimen/_12sdp"
+                        android:layout_marginBottom="@dimen/_6sdp"
+                        android:background="#1E90FF" />
+
+                    <!-- Lottie skeleton loader for shots -->
+                    <LinearLayout
+                        android:id="@+id/llAnime"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_200sdp"
+                        android:orientation="horizontal">
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation"
+                            android:layout_width="@dimen/_110sdp"
+                            android:layout_height="@dimen/_200sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation2"
+                            android:layout_width="@dimen/_110sdp"
+                            android:layout_height="@dimen/_200sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation3"
+                            android:layout_width="@dimen/_110sdp"
+                            android:layout_height="@dimen/_200sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+                    </LinearLayout>
+
+                    <!-- Shots horizontal RecyclerView -->
+                    <com.cricketApp.cric.home.Shots.InterceptableRecyclerView
+                        android:id="@+id/shots_recycler_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/_200sdp"
+                        android:layout_marginLeft="@dimen/_5sdp"
+                        android:layout_marginRight="@dimen/_5sdp"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        android:orientation="horizontal"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!--  SECTION 5 + 6: NEWS (header + loader + recycler)    -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <LinearLayout
+                    android:id="@+id/sectionNews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- News section header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="@dimen/_12sdp"
+                        android:paddingEnd="@dimen/_12sdp"
+                        android:paddingTop="@dimen/_10sdp"
+                        android:paddingBottom="@dimen/_4sdp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📰 Latest News"
+                            android:textColor="@color/white"
+                            android:textSize="@dimen/_12sdp"
+                            android:textStyle="bold" />
+
+                        <!-- Optional "See All" for news -->
+                        <TextView
+                            android:id="@+id/tvSeeAllNews"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="See All →"
+                            android:textColor="#AAFFFFFF"
+                            android:textSize="@dimen/_10sdp"
+                            android:padding="@dimen/_4sdp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+                    <!-- Accent line -->
+                    <View
+                        android:layout_width="@dimen/_40sdp"
+                        android:layout_height="@dimen/_2sdp"
+                        android:layout_marginStart="@dimen/_12sdp"
+                        android:layout_marginBottom="@dimen/_6sdp"
+                        android:background="#00C853" />
+
+                    <!-- Lottie skeleton loader for news -->
+                    <LinearLayout
+                        android:id="@+id/llAnime2"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation5"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/_150sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/loaderAnimation6"
+                            android:layout_width="match_parent"
+                            android:layout_height="@dimen/_150sdp"
+                            android:layout_gravity="center"
+                            android:alpha="0.2"
+                            android:visibility="visible"
+                            app:lottie_autoPlay="true"
+                            app:lottie_loop="true"
+                            app:lottie_rawRes="@raw/loading_v" />
+                    </LinearLayout>
+
+                    <!-- News vertical RecyclerView -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/news_recycle_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/_5sdp"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+
+                <!-- FragmentContainerView at bottom -->
+                <androidx.fragment.app.FragmentContainerView
+                    android:id="@+id/navHost"
+                    android:name="androidx.navigation.fragment.NavHostFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/_60sdp"
+                    app:defaultNavHost="true" />
+
             </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/news_recycle_view"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="@dimen/_5sdp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/shots_recycler_view" />
-
-            <androidx.fragment.app.FragmentContainerView
-                android:id="@+id/navHost"
-                android:name="androidx.navigation.fragment.NavHostFragment"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginBottom="@dimen/_60sdp"
-                app:defaultNavHost="true"
-                app:layout_constraintBottom_toBottomOf="@+id/news_recycle_view"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

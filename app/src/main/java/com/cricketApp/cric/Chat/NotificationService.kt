@@ -34,6 +34,7 @@ class NotificationService(private val context: Context) {
         private const val CHANNEL_ID = "content_milestones"
         private const val CHANNEL_NAME = "Content Milestones"
         private const val CHANNEL_DESCRIPTION = "Notifications for popular content"
+        private var notificationId = 100
 
         // Request code for pending intents
         private const val REQUEST_CODE_BASE = 1000
@@ -45,7 +46,7 @@ class NotificationService(private val context: Context) {
         private val notificationTimestamps = ConcurrentHashMap<String, Long>()
     }
 
-    private var notificationId = 100
+
 
     /**
      * Check if the app has notification permission
@@ -88,6 +89,7 @@ class NotificationService(private val context: Context) {
      */
     fun startListening() {
         val database = FirebaseDatabase.getInstance()
+        val startTime = System.currentTimeMillis()
         val notificationsRef = database.getReference("Notifications")
 
         // First get a count of all notifications for debugging
@@ -103,6 +105,7 @@ class NotificationService(private val context: Context) {
 
         // Listen for new notifications with ChildEventListener
         notificationsRef.orderByChild("timestamp")
+            .startAt(startTime.toDouble())
             .addChildEventListener(object : ChildEventListener {
                 override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                     // Log new notification detected
@@ -142,6 +145,7 @@ class NotificationService(private val context: Context) {
         //    Log.d(TAG, "Processing notification data: ${snapshot.key}")
 
             // Extract notification data
+            val roomBasePath = snapshot.child("roomBasePath").getValue(String::class.java) ?: "NoBallZone"
             val contentType = snapshot.child("contentType").getValue(String::class.java) ?: ""
             val contentId = snapshot.child("contentId").getValue(String::class.java) ?: ""
             val senderId = snapshot.child("senderId").getValue(String::class.java) ?: ""
@@ -153,6 +157,8 @@ class NotificationService(private val context: Context) {
             val count = snapshot.child("count").getValue(Int::class.java) ?: 0
             val timestamp = snapshot.child("timestamp").getValue(Long::class.java) ?: 0L
             val read = snapshot.child("read").getValue(Boolean::class.java) ?: false
+
+
 
             // Skip if missing critical info or count not at threshold
             if (contentId.isEmpty() || contentType.isEmpty() || count < 100) {
@@ -230,7 +236,7 @@ class NotificationService(private val context: Context) {
         //    Log.d(TAG, "Notification message: $notificationMessage")
 
             // Create pending intent for when notification is tapped
-            val pendingIntent = createContentPendingIntent(contentType, contentId)
+            val pendingIntent = createContentPendingIntent(contentType, contentId, roomBasePath)
 
             // Create a pending intent to open all notifications
             val allNotificationsIntent = createAllNotificationsPendingIntent()
@@ -297,12 +303,13 @@ class NotificationService(private val context: Context) {
     /**
      * Create appropriate PendingIntent for when the notification is tapped
      */
-    private fun createContentPendingIntent(contentType: String, contentId: String): PendingIntent {
+    private fun createContentPendingIntent(contentType: String, contentId: String, roomBasePath: String): PendingIntent {
         // Create an intent for the Home activity, which will handle proper navigation
         val intent = Intent(context, Home::class.java).apply {
             putExtra("NOTIFICATION_CONTENT_TYPE", contentType)
             putExtra("NOTIFICATION_CONTENT_ID", contentId)
             putExtra("SHOULD_NAVIGATE", true)
+            putExtra("NOTIFICATION_ROOM_BASE_PATH", roomBasePath)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 

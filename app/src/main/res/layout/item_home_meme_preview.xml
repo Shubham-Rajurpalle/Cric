@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_home_meme_preview.xml
+    Compact meme card used in the horizontal "Top Memes" strip on the home screen.
+    Width is fixed so exactly 2.5 cards are visible at a time (peek effect).
+-->
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardMemePreview"
+    android:layout_width="@dimen/_140sdp"
+    android:layout_height="@dimen/_190sdp"
+    android:layout_marginEnd="@dimen/_8sdp"
+    app:cardCornerRadius="@dimen/_12sdp"
+    app:cardElevation="4dp"
+    android:foreground="?attr/selectableItemBackground">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Meme image fills card -->
+        <ImageView
+            android:id="@+id/ivMemePreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="Meme preview" />
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieLoader"
+            android:layout_width="@dimen/_60sdp"
+            android:layout_height="@dimen/_60sdp"
+            android:layout_gravity="center"
+            android:alpha="0.6"
+            android:visibility="visible"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/loading_v" />
+
+        <!-- Dark gradient scrim at bottom -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_70sdp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/gradient_bottom_scrim" />
+
+        <!-- Rank badge — top left -->
+        <TextView
+            android:id="@+id/tvMemeRank"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="@dimen/_6sdp"
+            android:background="@drawable/bg_rank_badge"
+            android:paddingStart="@dimen/_5sdp"
+            android:paddingEnd="@dimen/_5sdp"
+            android:paddingTop="@dimen/_2sdp"
+            android:paddingBottom="@dimen/_2sdp"
+            android:text="#1 🥇"
+            android:textColor="@color/white"
+            android:textSize="@dimen/_9sdp"
+            android:textStyle="bold" />
+
+        <!-- Team tag — bottom left -->
+        <TextView
+            android:id="@+id/tvMemeTeam"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="@dimen/_6sdp"
+            android:layout_marginBottom="@dimen/_18sdp"
+            android:textColor="#DDFFFFFF"
+            android:textSize="@dimen/_9sdp"
+            android:textStyle="bold"
+            android:shadowColor="#AA000000"
+            android:shadowRadius="4"
+            android:text="CSK" />
+
+        <!-- Hit count — bottom right -->
+        <TextView
+            android:id="@+id/tvMemeHit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="@dimen/_6sdp"
+            android:layout_marginBottom="@dimen/_18sdp"
+            android:textColor="#DDFFFFFF"
+            android:textSize="@dimen/_9sdp"
+            android:textStyle="bold"
+            android:shadowColor="#AA000000"
+            android:shadowRadius="4"
+            android:text="🔥 0" />
+
+        <!-- Tap to see all hint — very bottom center -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_marginBottom="@dimen/_4sdp"
+            android:gravity="center"
+            android:text="Tap to see all"
+            android:textColor="#99FFFFFF"
+            android:textSize="@dimen/_8sdp" />
+
+    </FrameLayout>
+
+</androidx.cardview.widget.CardView>

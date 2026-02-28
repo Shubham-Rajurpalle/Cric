@@ -230,44 +230,41 @@ class Home : AppCompatActivity() {
         val contentType = intent.getStringExtra("NOTIFICATION_CONTENT_TYPE")
         val contentId = intent.getStringExtra("NOTIFICATION_CONTENT_ID")
         val shouldNavigate = intent.getBooleanExtra("SHOULD_NAVIGATE", false)
+        val roomBasePath = intent.getStringExtra("NOTIFICATION_ROOM_BASE_PATH") ?: "NoBallZone"  // ← ADD
 
         if (contentType != null && contentId != null && shouldNavigate) {
-            // Navigate based on content type
             when (contentType) {
                 "CHAT" -> {
-                    // Navigate to ChatFragment and highlight the message
                     val fragment = ChatFragment().apply {
                         arguments = Bundle().apply {
                             putString("HIGHLIGHT_MESSAGE_ID", contentId)
+                            putString("ROOM_BASE_PATH", roomBasePath)   // ← ADD
                         }
                     }
                     switchFragment(fragment, "Chat")
                     binding.bottomNavigation.selectedItemId = R.id.chatIcon
                 }
                 "POLL" -> {
-                    // Polls are in ChatFragment too
                     val fragment = ChatFragment().apply {
                         arguments = Bundle().apply {
                             putString("HIGHLIGHT_MESSAGE_ID", contentId)
+                            putString("ROOM_BASE_PATH", roomBasePath)   // ← ADD
                         }
                     }
                     switchFragment(fragment, "Chat")
                     binding.bottomNavigation.selectedItemId = R.id.chatIcon
                 }
                 "MEME" -> {
-                    // Navigate to MemeFragment and highlight the meme
                     val fragment = MemeFragment().apply {
                         arguments = Bundle().apply {
                             putString("HIGHLIGHT_MESSAGE_ID", contentId)
+                            // No ROOM_BASE_PATH — memes are always NoBallZone
                         }
                     }
                     switchFragment(fragment, "Meme")
                     binding.bottomNavigation.selectedItemId = R.id.memeIcon
                 }
                 "COMMENT" -> {
-                    // Comments require parent info which we don't have here,
-                    // So just navigate to either Chat or Meme based on parent type
-                    // This would ideally be handled by having more info in the notification
                     val parentType = intent.getStringExtra("PARENT_TYPE") ?: "chat"
                     if (parentType.contains("meme")) {
                         binding.bottomNavigation.selectedItemId = R.id.memeIcon
@@ -276,7 +273,6 @@ class Home : AppCompatActivity() {
                     }
                 }
             }
-            // Clear navigation flags
             intent.removeExtra("SHOULD_NAVIGATE")
         }
     }

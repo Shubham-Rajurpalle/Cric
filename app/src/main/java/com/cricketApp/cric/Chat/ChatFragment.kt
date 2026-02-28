@@ -96,6 +96,24 @@ class ChatFragment : Fragment() {
         roomId   = arguments?.getString("ROOM_ID")   ?: "global"
         roomType = RoomType.valueOf(arguments?.getString("ROOM_TYPE") ?: "GLOBAL")
         roomName = arguments?.getString("ROOM_NAME")  ?: "No Ball Zone"
+
+        val notifRoomPath = arguments?.getString("ROOM_BASE_PATH")
+        if (notifRoomPath != null) {
+            when {
+                notifRoomPath == "NoBallZone" -> {
+                    roomType = RoomType.GLOBAL
+                    roomId   = "global"
+                }
+                notifRoomPath.startsWith("TeamRooms/") -> {
+                    roomType = RoomType.TEAM
+                    roomId   = notifRoomPath.removePrefix("TeamRooms/")
+                }
+                notifRoomPath.startsWith("NoBallZone/liveRooms/") -> {
+                    roomType = RoomType.LIVE
+                    roomId   = notifRoomPath.removePrefix("NoBallZone/liveRooms/")
+                }
+            }
+        }
     }
 
     override fun onCreateView(
