@@ -20,7 +20,7 @@ class InterceptableRecyclerView @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                viewPager2?.postDelayed({ viewPager2?.isUserInputEnabled = true }, 200)
+                viewPager2?.postDelayed({ viewPager2?.isUserInputEnabled = false }, 200)
             }
         }
         return super.onInterceptTouchEvent(ev)

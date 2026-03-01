@@ -80,12 +80,11 @@ class ChatLobbyAdapter(
                 if (room.bannerImageUrl.isNotEmpty()) {
                     Glide.with(ctx)
                         .load(room.bannerImageUrl)
-                        .placeholder(R.drawable.noballzone)
-                        .error(R.drawable.noballzone)
-                        .fitCenter()
+                        .placeholder(R.drawable.cric_logo)
+                        .centerCrop()
                         .into(holder.bannerImage)
                 } else {
-                    holder.bannerImage.setImageResource(R.drawable.noballzone)
+                    holder.bannerImage.setImageResource(R.drawable.cric_logo)
                 }
 
                 // Dim card slightly if match is delayed/rain

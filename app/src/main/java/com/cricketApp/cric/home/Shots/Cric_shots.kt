@@ -1,6 +1,7 @@
 package com.cricketApp.cric.home.Shots
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,8 +16,13 @@ import com.cricketApp.cric.Chat.RoomType
 import com.cricketApp.cric.Meme.MemeFragment
 import com.cricketApp.cric.Meme.MemeMessage
 import com.cricketApp.cric.R
+import com.cricketApp.cric.LiveScoreStripAdapter
 import com.cricketApp.cric.databinding.FragmentCricShotsBinding
-import com.cricketApp.cric.databinding.ItemChatRoomCardBinding
+import com.cricketApp.cric.home.liveMatch.LeagueData
+import com.cricketApp.cric.home.liveMatch.MatchData
+import com.cricketApp.cric.home.liveMatch.ScoreData
+import com.cricketApp.cric.home.liveMatch.StageData
+import com.cricketApp.cric.home.liveMatch.TeamData
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -33,15 +39,24 @@ class Cric_shots : Fragment() {
     private lateinit var videoAdapter: VideoAdapter
     private lateinit var newsAdapter: NewsAdapter
     private val videoList = mutableListOf<Video>()
-    private val newsList = mutableListOf<News>()
-    private val memeList = mutableListOf<MemeMessage>()
+    private val newsList  = mutableListOf<News>()
+    private val memeList  = mutableListOf<MemeMessage>()
     private var firestore: FirebaseFirestore? = null
 
     private val database = FirebaseDatabase.getInstance()
     private var liveRoomListener: ValueEventListener? = null
-    private var memesListener: ValueEventListener? = null
+    private var memesListener:    ValueEventListener? = null
 
     private lateinit var topMemeAdapter: HomeMemePreviewAdapter
+
+    // ── Live score strip (same as Chat / Meme) ────────────────────────────────
+    private val liveStripMatches = mutableListOf<MatchData>()
+    private lateinit var liveStripAdapter: LiveScoreStripAdapter
+
+    private val activeStatuses = setOf(
+        "Live", "Delayed", "Innings Break",
+        "Lunch", "Tea", "Rain", "1st Innings", "2nd Innings"
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,9 +77,9 @@ class Cric_shots : Fragment() {
         setupCricShotsRecyclerView()
         setupNewsRecyclerView()
         setupTopMemesRecyclerView()
+        setupLiveScoreStrip()          // ← replaces observeLiveMatch()
         fetchVideos()
         fetchNews()
-        observeLiveMatch()
         fetchTopMemes()
     }
 
@@ -76,12 +91,10 @@ class Cric_shots : Fragment() {
 
     private fun refreshData() {
         val b = _binding ?: return
-        // Show all three loaders when refreshing
-        b.llAnime.visibility  = View.VISIBLE   // shots loader
-        b.llAnime2.visibility = View.VISIBLE   // news loader
-        b.llAnime3.visibility = View.VISIBLE   // memes loader
+        b.llAnime.visibility  = View.VISIBLE
+        b.llAnime2.visibility = View.VISIBLE
+        b.llAnime3.visibility = View.VISIBLE
 
-        // Hide recyclers while refreshing so loaders are visible
         b.shotsRecyclerView.visibility = View.GONE
         b.newsRecycleView.visibility   = View.GONE
         b.rvTopMemes.visibility        = View.GONE
@@ -98,7 +111,7 @@ class Cric_shots : Fragment() {
         fetchTopMemes()
     }
 
-    // ── Recycler setup ────────────────────────────────────────────────────────
+    // ── Recycler setups ───────────────────────────────────────────────────────
 
     private fun setupNewsRecyclerView() {
         binding.newsRecycleView.layoutManager = LinearLayoutManager(
@@ -135,9 +148,7 @@ class Cric_shots : Fragment() {
 
     private fun fetchTopMemes() {
         val b = _binding ?: return
-
-        // Show meme lottie loader, hide RecyclerView while fetching
-        b.llAnime3.visibility = View.VISIBLE
+        b.llAnime3.visibility   = View.VISIBLE
         b.rvTopMemes.visibility = View.GONE
 
         val ref = database.getReference("NoBallZone/memes")
@@ -164,11 +175,8 @@ class Cric_shots : Fragment() {
                     if (meme.memeUrl.isNotEmpty()) tempMemes.add(meme)
                 }
 
-                val top3 = tempMemes
-                    .sortedByDescending { it.hit - it.miss }
-                    .take(3)
+                val top3 = tempMemes.sortedByDescending { it.hit - it.miss }.take(3)
 
-                // Hide loader, show RecyclerView with results
                 _binding?.llAnime3?.visibility   = View.GONE
                 _binding?.rvTopMemes?.visibility = View.VISIBLE
 
@@ -183,7 +191,6 @@ class Cric_shots : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Hide loader even on failure
                 _binding?.llAnime3?.visibility   = View.GONE
                 _binding?.rvTopMemes?.visibility = View.VISIBLE
                 checkRefreshComplete()
@@ -194,9 +201,25 @@ class Cric_shots : Fragment() {
         memesListener = listener
     }
 
-    // ── Live Match Banner ─────────────────────────────────────────────────────
+    // ── Live Score Strip (identical pattern to Chat / Meme fragments) ─────────
 
-    private fun observeLiveMatch() {
+    private fun setupLiveScoreStrip() {
+        liveStripAdapter = LiveScoreStripAdapter(liveStripMatches) { match ->
+            openMatchRoom(match)
+        }
+
+        binding.liveScoreStripRecycler.apply {
+            layoutManager = LinearLayoutManager(
+                requireContext(), LinearLayoutManager.HORIZONTAL, false
+            )
+            adapter = liveStripAdapter
+            isNestedScrollingEnabled = false
+        }
+
+        fetchLiveScoreStrip()
+    }
+
+    private fun fetchLiveScoreStrip() {
         val ref = database.getReference("NoBallZone/liveRooms")
         liveRoomListener?.let { ref.removeEventListener(it) }
 
@@ -204,119 +227,86 @@ class Cric_shots : Fragment() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (!isAdded || _binding == null) return
 
-                val activeStatuses = setOf(
-                    "Live", "Delayed", "Innings Break",
-                    "Lunch", "Tea", "Rain", "1st Innings", "2nd Innings"
-                )
+                val temp = mutableListOf<MatchData>()
 
-                var activeRoom: ChatRoomItem? = null
-
-                for (matchSnapshot in snapshot.children) {
-                    val scores = matchSnapshot.child("scores")
+                for (roomSnapshot in snapshot.children) {
+                    val matchName = roomSnapshot.key ?: continue
+                    val scores    = roomSnapshot.child("scores")
                     if (!scores.exists()) continue
 
                     val isLive = scores.child("live").getValue(Boolean::class.java) ?: false
                     val status = scores.child("status").getValue(String::class.java) ?: ""
                     if (!isLive && status !in activeStatuses) continue
 
-                    val localTeamName   = scores.child("localteam").child("name").getValue(String::class.java) ?: "Home"
-                    val visitorTeamName = scores.child("visitorteam").child("name").getValue(String::class.java) ?: "Away"
-                    val matchName       = scores.child("matchName").getValue(String::class.java) ?: matchSnapshot.key ?: ""
-
-                    val leagueImagePath  = scores.child("league").child("imagePath").getValue(String::class.java) ?: ""
-                    val localImagePath   = scores.child("localteam").child("imagePath").getValue(String::class.java) ?: ""
-                    val visitorImagePath = scores.child("visitorteam").child("imagePath").getValue(String::class.java) ?: ""
-                    val bannerImageUrl   = when {
-                        leagueImagePath.isNotEmpty()  -> leagueImagePath
-                        localImagePath.isNotEmpty()   -> localImagePath
-                        visitorImagePath.isNotEmpty() -> visitorImagePath
-                        else -> ""
-                    }
-
-                    val localRuns      = scores.child("localteamScore").child("runs").getValue(Int::class.java) ?: 0
-                    val localWickets   = scores.child("localteamScore").child("wickets").getValue(Int::class.java) ?: 0
-                    val localOvers     = scores.child("localteamScore").child("overs").getValue(Double::class.java) ?: 0.0
-                    val visitorRuns    = scores.child("visitorteamScore").child("runs").getValue(Int::class.java) ?: 0
-                    val visitorWickets = scores.child("visitorteamScore").child("wickets").getValue(Int::class.java) ?: 0
-                    val visitorOvers   = scores.child("visitorteamScore").child("overs").getValue(Double::class.java) ?: 0.0
-
-                    val note        = scores.child("note").getValue(String::class.java)  ?: ""
-                    val round       = scores.child("round").getValue(String::class.java) ?: ""
-                    val type        = scores.child("type").getValue(String::class.java)  ?: ""
-                    val activeUsers = matchSnapshot.child("activeUsers").getValue(Int::class.java) ?: 0
-
-                    val description = buildString {
-                        if (type.isNotEmpty())  append(type)
-                        if (round.isNotEmpty()) append(" • $round")
-                        if (status.isNotEmpty() && status != "Live") append(" • ⚠️ $status")
-                        if (note.isNotEmpty()) append("\n$note")
-                        append("\n$localTeamName: $localRuns/$localWickets (${localOvers} ov)")
-                        append("\n$visitorTeamName: $visitorRuns/$visitorWickets (${visitorOvers} ov)")
-                    }
-
-                    activeRoom = ChatRoomItem(
-                        id             = matchSnapshot.key ?: continue,
-                        name           = matchName,
-                        description    = description,
-                        type           = RoomType.LIVE,
-                        bannerImageUrl = bannerImageUrl,
-                        isLive         = isLive,
-                        activeUsers    = activeUsers,
-                        createdAt      = System.currentTimeMillis()
+                    temp.add(
+                        MatchData(
+                            matchId    = scores.child("matchId").getValue(Any::class.java)?.toString() ?: "",
+                            matchName  = matchName,
+                            status     = status,
+                            note       = scores.child("note").getValue(String::class.java) ?: "",
+                            live       = isLive,
+                            type       = scores.child("type").getValue(String::class.java) ?: "",
+                            round      = scores.child("round").getValue(String::class.java) ?: "",
+                            startingAt = scores.child("startingAt").getValue(String::class.java) ?: "",
+                            updatedAt  = scores.child("updatedAt").getValue(String::class.java) ?: "",
+                            league = LeagueData(
+                                id        = scores.child("league/id").getValue(Any::class.java)?.toString() ?: "",
+                                name      = scores.child("league/name").getValue(String::class.java) ?: "",
+                                imagePath = scores.child("league/imagePath").getValue(String::class.java) ?: ""
+                            ),
+                            stage = StageData(
+                                id   = scores.child("stage/id").getValue(Any::class.java)?.toString() ?: "",
+                                name = scores.child("stage/name").getValue(String::class.java) ?: ""
+                            ),
+                            localteam = TeamData(
+                                id        = scores.child("localteam/id").getValue(Any::class.java)?.toString() ?: "",
+                                name      = scores.child("localteam/name").getValue(String::class.java) ?: "Team 1",
+                                code      = scores.child("localteam/code").getValue(String::class.java) ?: "",
+                                imagePath = scores.child("localteam/imagePath").getValue(String::class.java) ?: ""
+                            ),
+                            visitorteam = TeamData(
+                                id        = scores.child("visitorteam/id").getValue(Any::class.java)?.toString() ?: "",
+                                name      = scores.child("visitorteam/name").getValue(String::class.java) ?: "Team 2",
+                                code      = scores.child("visitorteam/code").getValue(String::class.java) ?: "",
+                                imagePath = scores.child("visitorteam/imagePath").getValue(String::class.java) ?: ""
+                            ),
+                            localteamScore = ScoreData(
+                                runs    = scores.child("localteamScore/runs").getValue(Int::class.java) ?: 0,
+                                wickets = scores.child("localteamScore/wickets").getValue(Int::class.java) ?: 0,
+                                overs   = scores.child("localteamScore/overs").getValue(Double::class.java) ?: 0.0
+                            ),
+                            visitorteamScore = ScoreData(
+                                runs    = scores.child("visitorteamScore/runs").getValue(Int::class.java) ?: 0,
+                                wickets = scores.child("visitorteamScore/wickets").getValue(Int::class.java) ?: 0,
+                                overs   = scores.child("visitorteamScore/overs").getValue(Double::class.java) ?: 0.0
+                            )
+                        )
                     )
-                    break
                 }
 
-                if (activeRoom != null) {
-                    binding.sectionLiveMatch.visibility = View.VISIBLE
-                    bindLiveMatchCard(activeRoom!!)
-                } else {
-                    binding.sectionLiveMatch.visibility = View.GONE
-                }
+                liveStripAdapter.updateMatches(temp)
+
+                // Show/hide the whole strip container
+                _binding?.liveScoreStripContainer?.visibility =
+                    if (temp.isEmpty()) View.GONE else View.VISIBLE
             }
 
-            override fun onCancelled(error: DatabaseError) {}
+            override fun onCancelled(error: DatabaseError) {
+                _binding?.liveScoreStripContainer?.visibility = View.GONE
+            }
         }
 
         ref.addValueEventListener(listener)
         liveRoomListener = listener
     }
 
-    private fun bindLiveMatchCard(room: ChatRoomItem) {
-        val cardBinding = ItemChatRoomCardBinding.bind(binding.liveMatchCard.root)
-        with(cardBinding) {
-            roomName.text        = room.name
-            roomDescription.text = room.description
-            chipLive.visibility  = if (room.isLive) View.VISIBLE else View.GONE
+    // ── Open match chat room from strip card tap ───────────────────────────────
 
-            if (room.activeUsers > 0) {
-                activeUsersText.visibility = View.VISIBLE
-                activeUsersText.text       = "${room.activeUsers} online"
-            } else {
-                activeUsersText.visibility = View.GONE
-            }
-
-            if (room.bannerImageUrl.isNotEmpty()) {
-                context?.let { ctx ->
-                    Glide.with(ctx)
-                        .load(room.bannerImageUrl)
-                        .placeholder(R.drawable.loading)
-                        .into(bannerImage)
-                }
-            } else {
-                bannerImage.setImageResource(R.drawable.icc_logo)
-            }
-
-            root.setOnClickListener { openMatchRoom(room) }
-        }
-        binding.tvJoinChat.setOnClickListener { openMatchRoom(room) }
-    }
-
-    private fun openMatchRoom(room: ChatRoomItem) {
+    private fun openMatchRoom(match: MatchData) {
         val args = Bundle().apply {
-            putString("ROOM_ID",   room.id)
-            putString("ROOM_TYPE", room.type.name)
-            putString("ROOM_NAME", room.name)
+            putString("ROOM_ID",   match.matchName)
+            putString("ROOM_TYPE", RoomType.LIVE.name)
+            putString("ROOM_NAME", match.matchName)
         }
         val chatFragment = ChatFragment().apply { arguments = args }
         requireActivity().supportFragmentManager.beginTransaction()
@@ -330,7 +320,7 @@ class Cric_shots : Fragment() {
         try {
             requireActivity().findViewById<BottomNavigationView>(R.id.bottomNavigation)
                 .selectedItemId = R.id.memeIcon
-        } catch (e: Exception) { /* nav item may differ */ }
+        } catch (e: Exception) { }
 
         parentFragmentManager.beginTransaction()
             .replace(R.id.navHost, MemeFragment())
@@ -338,13 +328,11 @@ class Cric_shots : Fragment() {
             .commit()
     }
 
-    // ── Fetch methods ─────────────────────────────────────────────────────────
+    // ── Fetch videos / news ───────────────────────────────────────────────────
 
     private fun fetchVideos() {
         val firestoreInstance = firestore ?: return
         if (!isAdded) return
-
-        // Loader already visible from XML / refreshData(), just ensure recycler is hidden
         _binding?.shotsRecyclerView?.visibility = View.GONE
 
         firestoreInstance.collection("videos")
@@ -352,8 +340,7 @@ class Cric_shots : Fragment() {
             .get()
             .addOnSuccessListener { snapshot ->
                 if (!isAdded || _binding == null) return@addOnSuccessListener
-                // Hide loader, reveal recycler
-                _binding?.llAnime?.visibility        = View.GONE
+                _binding?.llAnime?.visibility           = View.GONE
                 _binding?.shotsRecyclerView?.visibility = View.VISIBLE
                 snapshot?.let {
                     if (!it.isEmpty) {
@@ -366,14 +353,13 @@ class Cric_shots : Fragment() {
             }
             .addOnFailureListener {
                 if (!isAdded || _binding == null) return@addOnFailureListener
-                _binding?.llAnime?.visibility        = View.GONE
+                _binding?.llAnime?.visibility           = View.GONE
                 _binding?.shotsRecyclerView?.visibility = View.VISIBLE
                 checkRefreshComplete()
             }
     }
 
     private fun fetchNews() {
-        // Loader already visible from XML / refreshData(), just ensure recycler is hidden
         _binding?.newsRecycleView?.visibility = View.GONE
 
         firestore?.collection("NewsPosts")
@@ -381,8 +367,7 @@ class Cric_shots : Fragment() {
             ?.get()
             ?.addOnSuccessListener { snapshot ->
                 if (!isAdded || _binding == null) return@addOnSuccessListener
-                // Hide loader, reveal recycler
-                _binding?.llAnime2?.visibility      = View.GONE
+                _binding?.llAnime2?.visibility        = View.GONE
                 _binding?.newsRecycleView?.visibility = View.VISIBLE
                 snapshot?.let {
                     if (!it.isEmpty) {
@@ -395,13 +380,12 @@ class Cric_shots : Fragment() {
             }
             ?.addOnFailureListener {
                 if (!isAdded || _binding == null) return@addOnFailureListener
-                _binding?.llAnime2?.visibility      = View.GONE
+                _binding?.llAnime2?.visibility        = View.GONE
                 _binding?.newsRecycleView?.visibility = View.VISIBLE
                 checkRefreshComplete()
             }
     }
 
-    // All three loaders must be gone before swipe-refresh spinner is dismissed
     private fun checkRefreshComplete() {
         val b = _binding ?: return
         if (b.llAnime.visibility  == View.GONE &&
@@ -430,9 +414,10 @@ class Cric_shots : Fragment() {
         memesListener?.let {
             database.getReference("NoBallZone/memes").removeEventListener(it)
         }
-        _binding?.shotsRecyclerView?.adapter = null
-        _binding?.newsRecycleView?.adapter   = null
-        _binding?.rvTopMemes?.adapter        = null
+        _binding?.shotsRecyclerView?.adapter        = null
+        _binding?.newsRecycleView?.adapter          = null
+        _binding?.rvTopMemes?.adapter               = null
+        _binding?.liveScoreStripRecycler?.adapter   = null
         _binding = null
     }
 

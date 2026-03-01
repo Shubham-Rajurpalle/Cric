@@ -155,9 +155,9 @@ class ChatLobbyFragment : Fragment() {
                         if (!isLive && status !in activeStatuses) continue
 
                         // ── Team info ─────────────────────────────────────────
-                        val localTeamName   = scores.child("localteam").child("name")
+                        val localTeamName   = scores.child("localteam").child("code")
                             .getValue(String::class.java) ?: "Home"
-                        val visitorTeamName = scores.child("visitorteam").child("name")
+                        val visitorTeamName = scores.child("visitorteam").child("code")
                             .getValue(String::class.java) ?: "Away"
 
                         // ── Banner: league logo → local logo → visitor logo ───
@@ -194,8 +194,7 @@ class ChatLobbyFragment : Fragment() {
                         val note      = scores.child("note").getValue(String::class.java)  ?: ""
                         val round     = scores.child("round").getValue(String::class.java) ?: ""
                         val type      = scores.child("type").getValue(String::class.java)  ?: ""
-                        val matchName = scores.child("matchName").getValue(String::class.java)
-                            ?: matchSnapshot.key ?: ""
+                        val matchName       = localTeamName+"  V/S  "+visitorTeamName
 
                         // ── Description ───────────────────────────────────────
                         val description = buildString {

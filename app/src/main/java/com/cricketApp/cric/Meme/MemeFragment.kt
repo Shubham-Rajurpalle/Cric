@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.cricketApp.cric.Chat.ChatAdapter
+import com.cricketApp.cric.Chat.ChatFragment
 import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.Chat.FirebaseDataHelper
 import com.cricketApp.cric.Leaderboard.LeaderboardFragment
@@ -27,6 +28,7 @@ import com.cricketApp.cric.LogIn.SignIn
 import com.cricketApp.cric.Profile.ProfileFragment
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.FragmentMemeBinding
+import com.cricketApp.cric.home.liveMatch.MatchData
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -40,6 +42,11 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
+import com.cricketApp.cric.LiveScoreStripAdapter
+import com.cricketApp.cric.home.liveMatch.LeagueData
+import com.cricketApp.cric.home.liveMatch.ScoreData
+import com.cricketApp.cric.home.liveMatch.StageData
+import com.cricketApp.cric.home.liveMatch.TeamData
 
 class MemeFragment : Fragment() {
     private lateinit var memeAdapter: MemeAdapter
@@ -62,6 +69,9 @@ class MemeFragment : Fragment() {
 
     // Selected filters
     private var selectedFilter = mutableSetOf<String>()
+
+    private val liveStripMatches = mutableListOf<MatchData>()
+    private lateinit var liveStripAdapter: LiveScoreStripAdapter
 
     // Register activity result launchers
     private val memePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -149,6 +159,7 @@ class MemeFragment : Fragment() {
 
         // Setup filters - no login required for filters
         setupFilters()
+        setupLiveScoreStrip()
 
         // Setup Firebase listeners
         setupFirebaseListeners()
@@ -196,6 +207,132 @@ class MemeFragment : Fragment() {
                 scrollToAndHighlightMeme(highlightMemeId!!)
             }, 500) // Small delay to allow memes to load
         }
+    }
+
+    private fun setupLiveScoreStrip() {
+        liveStripAdapter = LiveScoreStripAdapter(liveStripMatches) { match ->
+            // Open the match chat room on tap — same as in Live_matches.kt
+            val args = Bundle().apply {
+                putString("ROOM_ID",   match.matchName)
+                putString("ROOM_TYPE", "LIVE")
+                putString("ROOM_NAME", match.matchName)
+            }
+            val chatFragment = ChatFragment().apply { arguments = args }
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.navHost, chatFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
+        binding.liveScoreStripRecycler.apply {
+            layoutManager = LinearLayoutManager(
+                requireContext(), LinearLayoutManager.HORIZONTAL, false
+            )
+            adapter       = liveStripAdapter
+            isNestedScrollingEnabled = false
+        }
+
+        fetchLiveScoreStrip()
+    }
+
+// ── Firebase fetch (mirrors the filter in Live_matches.kt) ───────────
+
+    private val activeStatuses = setOf(
+        "Live", "Delayed", "Innings Break",
+        "Lunch", "Tea", "Rain", "1st Innings", "2nd Innings"
+    )
+    private var stripListener: com.google.firebase.database.ValueEventListener? = null
+
+    private fun fetchLiveScoreStrip() {
+        val ref = FirebaseDatabase.getInstance().getReference("NoBallZone/liveRooms")
+        stripListener?.let { ref.removeEventListener(it) }
+
+        val listener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (!isAdded || _binding == null) return
+
+                val temp = mutableListOf<MatchData>()
+
+                for (roomSnapshot in snapshot.children) {
+                    val matchName = roomSnapshot.key ?: continue
+                    val scores    = roomSnapshot.child("scores")
+                    if (!scores.exists()) continue
+
+                    val isLive = scores.child("live").getValue(Boolean::class.java) ?: false
+                    val status = scores.child("status").getValue(String::class.java) ?: ""
+                    if (!isLive && status !in activeStatuses) continue
+
+                    temp.add(
+                        MatchData(
+                            matchId    = scores.child("matchId").getValue(Any::class.java)?.toString() ?: "",
+                            matchName  = matchName,
+                            status     = status,
+                            note       = scores.child("note").getValue(String::class.java) ?: "",
+                            live       = isLive,
+                            type       = scores.child("type").getValue(String::class.java) ?: "",
+                            round      = scores.child("round").getValue(String::class.java) ?: "",
+                            startingAt = scores.child("startingAt").getValue(String::class.java) ?: "",
+                            updatedAt  = scores.child("updatedAt").getValue(String::class.java) ?: "",
+                            league = LeagueData(
+                                id = scores.child("league/id").getValue(Any::class.java)?.toString()
+                                    ?: "",
+                                name = scores.child("league/name").getValue(String::class.java)
+                                    ?: "",
+                                imagePath = scores.child("league/imagePath")
+                                    .getValue(String::class.java) ?: ""
+                            ),
+                            stage = StageData(
+                                id = scores.child("stage/id").getValue(Any::class.java)?.toString()
+                                    ?: "",
+                                name = scores.child("stage/name").getValue(String::class.java) ?: ""
+                            ),
+                            localteam = TeamData(
+                                id = scores.child("localteam/id").getValue(Any::class.java)
+                                    ?.toString() ?: "",
+                                name = scores.child("localteam/name").getValue(String::class.java)
+                                    ?: "Team 1",
+                                code = scores.child("localteam/code").getValue(String::class.java)
+                                    ?: "",
+                                imagePath = scores.child("localteam/imagePath")
+                                    .getValue(String::class.java) ?: ""
+                            ),
+                            visitorteam = TeamData(
+                                id        = scores.child("visitorteam/id").getValue(Any::class.java)?.toString() ?: "",
+                                name      = scores.child("visitorteam/name").getValue(String::class.java) ?: "Team 2",
+                                code      = scores.child("visitorteam/code").getValue(String::class.java) ?: "",
+                                imagePath = scores.child("visitorteam/imagePath").getValue(String::class.java) ?: ""
+                            ),
+                            localteamScore = ScoreData(
+                                runs = scores.child("localteamScore/runs").getValue(Int::class.java)
+                                    ?: 0,
+                                wickets = scores.child("localteamScore/wickets")
+                                    .getValue(Int::class.java) ?: 0,
+                                overs = scores.child("localteamScore/overs")
+                                    .getValue(Double::class.java) ?: 0.0
+                            ),
+                            visitorteamScore = ScoreData(
+                                runs    = scores.child("visitorteamScore/runs").getValue(Int::class.java) ?: 0,
+                                wickets = scores.child("visitorteamScore/wickets").getValue(Int::class.java) ?: 0,
+                                overs   = scores.child("visitorteamScore/overs").getValue(Double::class.java) ?: 0.0
+                            )
+                        )
+                    )
+                }
+
+                liveStripAdapter.updateMatches(temp)
+
+                // Show/hide the whole container based on whether there are live matches
+                binding.liveScoreStripContainer.visibility =
+                    if (temp.isEmpty()) View.GONE else View.VISIBLE
+            }
+
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
+                binding.liveScoreStripContainer.visibility = View.GONE
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        stripListener = listener
     }
 
     private fun isUserLoggedIn(): Boolean {
@@ -1036,6 +1173,10 @@ class MemeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
 
+        stripListener?.let {
+            FirebaseDatabase.getInstance()
+                .getReference("NoBallZone/liveRooms").removeEventListener(it)
+        }
         // Remove all value event listeners
         for ((ref, listener) in valueEventListeners) {
             ref.removeEventListener(listener)

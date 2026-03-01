@@ -289,8 +289,8 @@ class ProfileFragment : Fragment() {
         }
 
         // Update the UI with the formatted values
-        binding.hitsCount.text = "$formattedHits Hits"
-        binding.missesCount.text = "$formattedMisses Hits" // This is intentionally "Hits" to match your UI
+        binding.hitsCount.text = "$formattedHits "
+        binding.missesCount.text = "$formattedMisses " // This is intentionally "Hits" to match your UI
     }
 
     private fun loadUserActivities() {

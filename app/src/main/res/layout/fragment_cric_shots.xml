@@ -29,64 +29,65 @@
                 <!-- ══════════════════════════════════════════════════════ -->
                 <!--  SECTION 1: LIVE MATCH BANNER                        -->
                 <!-- ══════════════════════════════════════════════════════ -->
+                <!--
+  ════════════════════════════════════════════════════════
+  In fragment_cric_shots.xml:
+  REMOVE the entire sectionLiveMatch block (the old card)
+  and REPLACE it with this live score strip section.
+  Place it at the TOP of your ScrollView content,
+  above the shots/news sections.
+  ════════════════════════════════════════════════════════
+-->
+
+                <!-- Live Score Strip — identical to Chat & Meme fragments -->
                 <LinearLayout
-                    android:id="@+id/sectionLiveMatch"
+                    android:id="@+id/liveScoreStripContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:visibility="gone">
 
-                    <!-- Header row: live dot + label + "Join Chat" -->
+                    <!-- Header row: pulsing dot + label -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingStart="@dimen/_12sdp"
-                        android:paddingEnd="@dimen/_12sdp"
-                        android:paddingTop="@dimen/_10sdp"
-                        android:paddingBottom="@dimen/_4sdp">
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="2dp">
 
-                        <!-- Pulsing red dot -->
                         <View
-                            android:id="@+id/livePulseDot"
-                            android:layout_width="@dimen/_8sdp"
-                            android:layout_height="@dimen/_8sdp"
-                            android:background="@color/red"
-                            android:layout_marginEnd="@dimen/_6sdp" />
+                            android:id="@+id/liveDot"
+                            android:layout_width="6dp"
+                            android:layout_height="6dp"
+                            android:background="@drawable/live_dot"
+                            android:layout_marginEnd="6dp" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="🏟️ Live Match"
-                            android:textColor="@color/white"
-                            android:textSize="@dimen/_12sdp"
+                            android:text="LIVE MATCHES"
+                            android:textSize="9sp"
+                            android:letterSpacing="0.12"
+                            android:textColor="#AAFFFFFF"
                             android:textStyle="bold" />
 
-                        <TextView
-                            android:id="@+id/tvJoinChat"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Join Chat →"
-                            android:textColor="#FF3D3D"
-                            android:textSize="@dimen/_10sdp"
-                            android:padding="@dimen/_4sdp" />
                     </LinearLayout>
 
-                    <!-- Thin red accent line under Live Match header -->
-                    <View
-                        android:layout_width="@dimen/_40sdp"
-                        android:layout_height="@dimen/_2sdp"
-                        android:layout_marginStart="@dimen/_12sdp"
-                        android:layout_marginBottom="@dimen/_6sdp"
-                        android:background="#FF3D3D" />
-
-                    <include
-                        android:id="@+id/liveMatchCard"
-                        layout="@layout/item_chat_room_card"
+                    <!-- Horizontal scrollable score cards -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/liveScoreStripRecycler"
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_90sdp" />
+                        android:layout_height="@dimen/_68sdp"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="6dp"
+                        android:clipToPadding="false"
+                        android:overScrollMode="never" />
 
                 </LinearLayout>
 

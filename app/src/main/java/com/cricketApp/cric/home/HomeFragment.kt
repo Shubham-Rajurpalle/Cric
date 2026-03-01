@@ -208,7 +208,6 @@ class HomeFragment : Fragment() {
         try {
             val adapter = ViewPagerAdapter(this)
             binding.viewPager.adapter = adapter
-            binding.viewPager.isUserInputEnabled ?: true
 
             TabLayoutMediator(binding.tabsHomePage, binding.viewPager) { tab, position ->
                 tab.text = when (position) {
@@ -218,8 +217,9 @@ class HomeFragment : Fragment() {
                     else -> "CricShots"
                 }
             }.attach()
+
         } catch (e: Exception) {
-        //    Log.e("HomeFragment", "Error setting up tab layout", e)
+            // Log.e("HomeFragment", "Error setting up tab layout", e)
         }
     }
 
