@@ -979,4 +979,6 @@ class ChatAdapter(private val items: MutableList<Any>,
             }
         }
     }
+
+    fun getItems(): MutableList<Any> = items
 }
