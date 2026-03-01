@@ -151,54 +151,88 @@ class Cric_shots : Fragment() {
         b.llAnime3.visibility   = View.VISIBLE
         b.rvTopMemes.visibility = View.GONE
 
-        val ref = database.getReference("NoBallZone/memes")
-        memesListener?.let { ref.removeEventListener(it) }
+        // Query index directly — no full scan
+        database.getReference("NoBallZone/memesByHit")
+            .orderByValue()
+            .limitToLast(3)  // top 3 by hit count
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (!isAdded || _binding == null) return
 
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (!isAdded || _binding == null) return
+                    // Get IDs with their hit counts, highest first
+                    val idToHit = snapshot.children
+                        .associate { it.key!! to (it.getValue(Int::class.java) ?: 0) }
+                        .entries.sortedByDescending { it.value }
 
-                val tempMemes = mutableListOf<MemeMessage>()
-                for (child in snapshot.children) {
-                    val meme = try {
-                        MemeMessage(
-                            id         = child.key ?: continue,
-                            senderId   = child.child("senderId").getValue(String::class.java) ?: "",
-                            senderName = child.child("senderName").getValue(String::class.java) ?: "",
-                            team       = child.child("team").getValue(String::class.java) ?: "",
-                            memeUrl    = child.child("memeUrl").getValue(String::class.java) ?: "",
-                            timestamp  = child.child("timestamp").getValue(Long::class.java) ?: 0L,
-                            hit        = child.child("hit").getValue(Int::class.java) ?: 0,
-                            miss       = child.child("miss").getValue(Int::class.java) ?: 0
-                        )
-                    } catch (e: Exception) { continue }
-                    if (meme.memeUrl.isNotEmpty()) tempMemes.add(meme)
+                    if (idToHit.isEmpty()) {
+                        _binding?.llAnime3?.visibility   = View.GONE
+                        _binding?.sectionTopMemes?.visibility = View.GONE
+                        checkRefreshComplete()
+                        return
+                    }
+
+                    // Fan-out fetch full meme data for each ID in parallel
+                    val results = mutableListOf<MemeMessage?>()
+                    var completed = 0
+                    val total = idToHit.size
+
+                    idToHit.forEach { (id, hitCount) ->
+                        database.getReference("NoBallZone/memes/$id")
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(memeSnap: DataSnapshot) {
+                                    if (!isAdded || _binding == null) return
+                                    try {
+                                        val meme = MemeMessage(
+                                            id         = memeSnap.key ?: "",
+                                            senderId   = memeSnap.child("senderId").getValue(String::class.java) ?: "",
+                                            senderName = memeSnap.child("senderName").getValue(String::class.java) ?: "",
+                                            team       = memeSnap.child("team").getValue(String::class.java) ?: "",
+                                            memeUrl    = memeSnap.child("memeUrl").getValue(String::class.java) ?: "",
+                                            timestamp  = memeSnap.child("timestamp").getValue(Long::class.java) ?: 0L,
+                                            hit        = hitCount,  // use index value — always accurate
+                                            miss       = memeSnap.child("miss").getValue(Int::class.java) ?: 0
+                                        )
+                                        if (meme.memeUrl.isNotEmpty()) results.add(meme)
+                                        else results.add(null)
+                                    } catch (e: Exception) {
+                                        results.add(null)
+                                    }
+                                    completed++
+                                    if (completed == total) showTopMemes()
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {
+                                    results.add(null)
+                                    completed++
+                                    if (completed == total) showTopMemes()
+                                }
+
+                                private fun showTopMemes() {
+                                    if (!isAdded || _binding == null) return
+                                    val top3 = idToHit
+                                        .mapNotNull { (id, _) -> results.filterNotNull().find { it.id == id } }
+                                        .take(3)
+
+                                    _binding?.llAnime3?.visibility = View.GONE
+                                    _binding?.rvTopMemes?.visibility = View.VISIBLE
+                                    if (top3.isNotEmpty()) {
+                                        _binding?.sectionTopMemes?.visibility = View.VISIBLE
+                                        topMemeAdapter.submitList(top3)
+                                    } else {
+                                        _binding?.sectionTopMemes?.visibility = View.GONE
+                                    }
+                                    checkRefreshComplete()
+                                }
+                            })
+                    }
                 }
 
-                val top3 = tempMemes.sortedByDescending { it.hit - it.miss }.take(3)
-
-                _binding?.llAnime3?.visibility   = View.GONE
-                _binding?.rvTopMemes?.visibility = View.VISIBLE
-
-                if (top3.isNotEmpty()) {
-                    _binding?.sectionTopMemes?.visibility = View.VISIBLE
-                    topMemeAdapter.submitList(top3)
-                } else {
-                    _binding?.sectionTopMemes?.visibility = View.GONE
+                override fun onCancelled(error: DatabaseError) {
+                    _binding?.llAnime3?.visibility   = View.GONE
+                    _binding?.rvTopMemes?.visibility = View.VISIBLE
+                    checkRefreshComplete()
                 }
-
-                checkRefreshComplete()
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                _binding?.llAnime3?.visibility   = View.GONE
-                _binding?.rvTopMemes?.visibility = View.VISIBLE
-                checkRefreshComplete()
-            }
-        }
-
-        ref.addListenerForSingleValueEvent(listener)
-        memesListener = listener
+            })
     }
 
     // ── Live Score Strip (identical pattern to Chat / Meme fragments) ─────────
