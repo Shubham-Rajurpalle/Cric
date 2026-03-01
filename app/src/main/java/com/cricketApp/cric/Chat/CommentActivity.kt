@@ -728,19 +728,43 @@ class CommentActivity : AppCompatActivity() {
                     timestamp = System.currentTimeMillis()
                 )
 
-                commentRef.setValue(comment)
-                    .addOnSuccessListener {
-                        updateParentMessageCommentCount()
-                    }
-                    .addOnFailureListener {
-                    //    Log.e("CommentActivity", "Failed to send comment with image: ${it.message}")
-                    }
+                sendCommentWithUserInfo_Image(caption, imageUrl, userName, team, currentUser)
             }
 
             override fun onCancelled(error: DatabaseError) {
             //    Log.e("CommentActivity", "Failed to get user data: ${error.message}")
             }
         })
+    }
+
+    private fun sendCommentWithUserInfo_Image(
+        caption: String, imageUrl: String,
+        userName: String, team: String, currentUser: com.google.firebase.auth.FirebaseUser
+    ) {
+        val path = getCommentsPath()
+        val commentRef = database.getReference(path).push()
+        val commentId = commentRef.key ?: return
+
+        val commentMap = mapOf(
+            "senderId" to currentUser.uid,
+            "senderName" to userName,
+            "team" to team,
+            "message" to caption,
+            "imageUrl" to imageUrl,
+            "timestamp" to System.currentTimeMillis(),
+            "parentId" to messageId,
+            "parentType" to messageType
+        )
+
+        val updates = hashMapOf<String, Any>(
+            "$path/$commentId" to commentMap,
+            "userComments/${currentUser.uid}/$commentId" to commentMap
+        )
+
+        database.reference.updateChildren(updates)
+            .addOnSuccessListener {
+                updateParentMessageCommentCount()
+            }
     }
 
     private fun sendComment(commentText: String) {
@@ -788,18 +812,32 @@ class CommentActivity : AppCompatActivity() {
             timestamp = System.currentTimeMillis()
         )
 
-        commentRef.setValue(comment)
+        // ✅ Multi-path write — atomic, both succeed or both fail
+        val commentMap = mapOf(
+            "senderId" to comment.senderId,
+            "senderName" to comment.senderName,
+            "team" to comment.team,
+            "message" to comment.message,
+            "imageUrl" to "",
+            "timestamp" to comment.timestamp,
+            "parentId" to messageId,
+            "parentType" to messageType
+        )
+
+        val updates = hashMapOf<String, Any>(
+            "$path/$commentId" to commentMap,
+            "userComments/${currentUser.uid}/$commentId" to commentMap
+        )
+
+        database.reference.updateChildren(updates)
             .addOnSuccessListener {
                 binding.editTextComment.text.clear()
-
-                // Update the total comment count in the parent message
                 updateParentMessageCommentCount()
             }
             .addOnFailureListener {
-            //    Log.e("CommentActivity", "Failed to send comment: ${it.message}")
+                // handle failure
             }
     }
-
     private fun updateParentMessageCommentCount() {
         val parentRef = when (messageType) {
             "chat" -> database.getReference("$roomBasePath/chats/$messageId")

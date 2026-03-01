@@ -254,7 +254,19 @@ class MemeFragment : Fragment() {
 
         setChipChecked(effective)
         initialLoadDone = false
-        hideNewMemeBanner()   // reset banner when switching filters
+        hideNewMemeBanner()   // reset banner when switching
+
+        binding.recyclerViewMemes.visibility     = View.GONE
+        binding.llAnime2.visibility              = View.VISIBLE
+
+        // ── Restart all stopped lotties ──
+        for (i in 0 until binding.llAnime2.childCount) {
+            val child = binding.llAnime2.getChildAt(i)
+            if (child is com.airbnb.lottie.LottieAnimationView) {
+                child.playAnimation()
+            }
+        }
+
         viewModel.applyFilter(effective)
     }
 

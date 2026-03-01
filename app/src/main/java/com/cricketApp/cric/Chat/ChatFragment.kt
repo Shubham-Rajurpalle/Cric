@@ -282,6 +282,9 @@ class ChatFragment : Fragment() {
         setChipChecked(effective)
         hideNewMessageBanner()
         initialLoadDone = false
+        binding.llAnime2.visibility            = View.VISIBLE
+        binding.recyclerViewMessages.visibility = View.GONE
+
         viewModel.applyFilter(effective)
     }
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- res/drawable/profile_ring.xml
+     Use this as the background of a FrameLayout wrapping the CardView
+     to get a glowing highlighted ring around the profile picture.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outer glow layer (soft, larger) -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#33FFFFFF" /> <!-- dim white glow -->
+            <size
+                android:width="124dp"
+                android:height="124dp" />
+        </shape>
+    </item>
+
+    <!-- Coloured ring -->
+    <item
+        android:left="4dp"
+        android:top="4dp"
+        android:right="4dp"
+        android:bottom="4dp">
+        <shape android:shape="oval">
+            <stroke
+                android:width="3dp"
+                android:color="@color/blue" />
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+
+</layer-list>

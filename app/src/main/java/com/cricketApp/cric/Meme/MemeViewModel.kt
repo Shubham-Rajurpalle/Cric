@@ -66,6 +66,8 @@ class MemeViewModel(application: Application) : AndroidViewModel(application) {
         repository.stopRealtimeListener()
         repository.resetCursor(filterKey)
 
+        _memes.value = emptyList()
+
         cacheObserverJob?.cancel()
         observeCache(filterKey)
 

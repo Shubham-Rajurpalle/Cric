@@ -18,6 +18,8 @@ import com.google.firebase.database.ValueEventListener
 class hitsFragment : Fragment() {
     private var _binding: FragmentHitsBinding? = null
     private val binding get() = _binding!!
+    private var dataAlreadyLoaded = false
+
 
     private var databaseRef: DatabaseReference? = null
     private var valueEventListener: ValueEventListener? = null
@@ -49,6 +51,10 @@ class hitsFragment : Fragment() {
         binding.leaderboardList.layoutManager = LinearLayoutManager(requireContext())
         adapter = HitsLeaderboardAdapter()
         binding.leaderboardList.adapter = adapter
+        binding.loadingOverlay.visibility = View.VISIBLE
+        binding.lottieLoading.playAnimation()
+
+
 
         // Load data
         loadLeaderboardData()
@@ -56,6 +62,11 @@ class hitsFragment : Fragment() {
 
 
     private fun loadLeaderboardData() {
+
+        if (dataAlreadyLoaded && allTeams.isNotEmpty()) {
+            updateUI()
+            return
+        }
         // If there's an existing listener, remove it first
         if (valueEventListener != null && databaseRef != null) {
             databaseRef?.removeEventListener(valueEventListener!!)
@@ -99,6 +110,7 @@ class hitsFragment : Fragment() {
 
                         // Update UI with the combined data
                         updateUI()
+                        dataAlreadyLoaded = true
                     }
 
                     override fun onCancelled(error: DatabaseError) {
@@ -124,6 +136,9 @@ class hitsFragment : Fragment() {
     private fun updateUI() {
         // Check if binding is null or fragment is not active
         if (_binding == null || !isFragmentActive) return
+        binding.mainScreen.visibility = View.VISIBLE
+        binding.loadingOverlay.visibility = View.GONE
+        binding.lottieLoading.cancelAnimation()
 
         if (allTeams.size >= 3) {
             val firstPlace = allTeams[0]

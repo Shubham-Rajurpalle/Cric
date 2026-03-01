@@ -4,16 +4,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.cricketApp.cric.Chat.CommentActivity
 import com.cricketApp.cric.Chat.FirebaseDataHelper
 import com.cricketApp.cric.R
 import com.cricketApp.cric.databinding.ActivityAllActivitiesBinding
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.firebase.auth.FirebaseAuth
@@ -26,9 +25,18 @@ class AllActivitiesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAllActivitiesBinding
     private lateinit var activitiesAdapter: UserActivityAdapter
-    private val allActivities = ArrayList<UserActivity>()
-    private val TAG = "AdMobActivity"
-    private lateinit var adView: AdView
+
+    // Full sorted list (loaded once, paginated in memory)
+    private val allActivitiesFull = ArrayList<UserActivity>()
+
+    // Currently displayed
+    private val displayedActivities = ArrayList<UserActivity>()
+
+    private val PAGE_SIZE = 15
+    private var currentPage = 0
+    private var isLoadingMore = false
+    private var allSourcesLoaded = 0  // track 4 sources: chats, memes, polls, comments
+    private val TOTAL_SOURCES = 4
 
     private val currentUser = FirebaseAuth.getInstance().currentUser
 
@@ -37,299 +45,264 @@ class AllActivitiesActivity : AppCompatActivity() {
         binding = ActivityAllActivitiesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Setup toolbar
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "All Activities"
 
-        // Setup RecyclerView
         setupRecyclerView()
-
-        // Load Activities
         loadAllUserActivities()
 
         MobileAds.initialize(this) {
-            loadBannerAd()
-        }
-    }
-
-    private fun loadBannerAd() {
-        adView = binding.adView
-        val adRequest = AdRequest.Builder().build()
-
-        adView.adListener = object : AdListener() {
-            override fun onAdLoaded() {
-                // Log.d(TAG, "Ad loaded")
+            val adRequest = AdRequest.Builder().build()
+            binding.adView.adListener = object : AdListener() {
+                override fun onAdFailedToLoad(e: LoadAdError) {}
             }
-            override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                // Log.e(TAG, "Ad failed to load: $loadAdError")
-            }
+            binding.adView.loadAd(adRequest)
         }
-
-        adView.loadAd(adRequest)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
-            finish()
-            return true
+            finish(); return true
         }
         return super.onOptionsItemSelected(item)
     }
 
     private fun setupRecyclerView() {
-        // Enable long press when setting up the adapter
         activitiesAdapter = UserActivityAdapter(
-            allActivities,
+            displayedActivities,
             onActivityClick = { activity ->
-                // Handle activity click
+                val intent = Intent(this, CommentActivity::class.java)
                 when (activity.type) {
-                    UserActivityType.CHAT -> {
-                        navigateToComments(activity.id, "chat")
-                    }
-                    UserActivityType.MEME -> {
-                        navigateToComments(activity.id, "meme")
-                    }
-                    UserActivityType.POLL -> {
-                        navigateToComments(activity.id, "poll")
-                    }
                     UserActivityType.COMMENT -> {
-                        val parentType = activity.additionalData?.get("parentType") as? String ?: "chat"
-                        val parentId = activity.additionalData?.get("parentId") as? String ?: ""
-                        navigateToComments(parentId, parentType)
+                        intent.putExtra(
+                            "ITEM_ID",
+                            activity.additionalData?.get("parentId") as? String ?: ""
+                        )
+                        intent.putExtra(
+                            "ITEM_TYPE",
+                            activity.additionalData?.get("parentType") as? String ?: "chat"
+                        )
+                    }
+
+                    else -> {
+                        intent.putExtra("ITEM_ID", activity.id)
+                        intent.putExtra("ITEM_TYPE", activity.type.name.lowercase())
                     }
                 }
+                startActivity(intent)
             },
-            enableLongPress = true  // Enable long-press functionality
+            enableLongPress = true
         )
 
-        binding.recyclerViewAllActivities.apply {
-            layoutManager = LinearLayoutManager(this@AllActivitiesActivity)
-            adapter = activitiesAdapter
-        }
-    }
+        val layoutManager = LinearLayoutManager(this)
+        binding.recyclerViewAllActivities.layoutManager = layoutManager
+        binding.recyclerViewAllActivities.adapter = activitiesAdapter
 
-    private fun navigateToComments(itemId: String, itemType: String) {
-        val intent = Intent(this, CommentActivity::class.java).apply {
-            putExtra("ITEM_ID", itemId)
-            putExtra("ITEM_TYPE", itemType)
-        }
-        startActivity(intent)
+        // Infinite scroll — load next page when near bottom
+        binding.recyclerViewAllActivities.addOnScrollListener(object :
+            RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy <= 0 || isLoadingMore) return
+
+                val visibleItemCount = layoutManager.childCount
+                val totalItemCount = layoutManager.itemCount
+                val firstVisible = layoutManager.findFirstVisibleItemPosition()
+
+                if ((visibleItemCount + firstVisible) >= totalItemCount - 3) {
+                    loadNextPage()
+                }
+            }
+        })
     }
 
     private fun loadAllUserActivities() {
         val userId = currentUser?.uid ?: return
-
-        // Show loading
         binding.progressBar.visibility = View.VISIBLE
         binding.recyclerViewAllActivities.visibility = View.GONE
+        allActivitiesFull.clear()
+        allSourcesLoaded = 0
 
-        // Clear existing activities
-        allActivities.clear()
+        loadUserChats(userId)
+        loadUserMemes(userId)
+        loadUserPolls(userId)
+        loadUserComments(userId)
+    }
 
-        // First load all chats
-        loadUserChats(userId) {
-            // Then load memes
-            loadUserMemes(userId) {
-                // Then load polls
-                loadUserPolls(userId) {
-                    // Finally load comments and update UI
-                    loadUserComments(userId) {
-                        // Sort activities by timestamp (newest first)
-                        allActivities.sortByDescending { it.timestamp }
+    private fun onSourceLoaded() {
+        allSourcesLoaded++
+        if (allSourcesLoaded == TOTAL_SOURCES) {
+            // All sources done — sort everything and show first page
+            allActivitiesFull.sortByDescending { it.timestamp }
+            currentPage = 0
+            displayedActivities.clear()
 
-                        // Update adapter
-                        activitiesAdapter.notifyDataSetChanged()
+            binding.progressBar.visibility = View.GONE
+            binding.recyclerViewAllActivities.visibility = View.VISIBLE
 
-                        // Hide loading, show content
-                        binding.progressBar.visibility = View.GONE
-                        binding.recyclerViewAllActivities.visibility = View.VISIBLE
-
-                        // Show empty state if needed
-                        if (allActivities.isEmpty()) {
-                            binding.emptyStateLayout.visibility = View.VISIBLE
-                        } else {
-                            binding.emptyStateLayout.visibility = View.GONE
-                        }
-                    }
-                }
+            if (allActivitiesFull.isEmpty()) {
+                binding.emptyStateLayout.visibility = View.VISIBLE
+            } else {
+                binding.emptyStateLayout.visibility = View.GONE
+                loadNextPage()
             }
         }
     }
 
-    private fun loadUserChats(userId: String, onComplete: () -> Unit) {
-        val chatsRef = FirebaseDatabase.getInstance().getReference("NoBallZone/chats")
+    private fun loadNextPage() {
+        if (isLoadingMore) return
+        val start = currentPage * PAGE_SIZE
+        if (start >= allActivitiesFull.size) return  // No more data
 
-        chatsRef.orderByChild("senderId").equalTo(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    for (chatSnapshot in snapshot.children) {
-                        val chat = FirebaseDataHelper.getChatMessageFromSnapshot(chatSnapshot)
-                        chat?.let {
-                            val activity = UserActivity(
-                                id = it.id,
-                                type = UserActivityType.CHAT,
-                                username = it.senderName,
-                                userId = it.senderId,
-                                team = it.team,
-                                content = it.message,
-                                imageUrl = it.imageUrl,
-                                timestamp = it.timestamp,
-                                hits = it.hit,
-                                misses = it.miss,
-                                reactions = it.reactions
-                            )
-                            allActivities.add(activity)
-                        }
-                    }
-                    onComplete()
-                }
+        isLoadingMore = true
+        val end = minOf(start + PAGE_SIZE, allActivitiesFull.size)
+        val nextItems = allActivitiesFull.subList(start, end)
 
-                override fun onCancelled(error: DatabaseError) {
-                //    Log.e("AllActivitiesActivity", "Error loading chats", error.toException())
-                    onComplete()
-                }
-            })
+        val insertStart = displayedActivities.size
+        displayedActivities.addAll(nextItems)
+        activitiesAdapter.notifyItemRangeInserted(insertStart, nextItems.size)
+
+        currentPage++
+        isLoadingMore = false
     }
 
-    private fun loadUserMemes(userId: String, onComplete: () -> Unit) {
-        val memesRef = FirebaseDatabase.getInstance().getReference("NoBallZone/memes")
-
-        memesRef.orderByChild("senderId").equalTo(userId)
+    private fun loadUserChats(userId: String) {
+        FirebaseDatabase.getInstance().getReference("NoBallZone/chats")
+            .orderByChild("senderId").equalTo(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    for (memeSnapshot in snapshot.children) {
-                        val meme = FirebaseDataHelper.getMemeMessageFromSnapshot(memeSnapshot)
-                        meme?.let {
-                            val activity = UserActivity(
-                                id = it.id,
-                                type = UserActivityType.MEME,
-                                username = it.senderName,
-                                userId = it.senderId,
-                                team = it.team,
-                                content = "",  // Memes don't have text content
-                                imageUrl = it.memeUrl,
-                                timestamp = it.timestamp,
-                                hits = it.hit,
-                                misses = it.miss,
-                                reactions = it.reactions
-                            )
-                            allActivities.add(activity)
-                        }
-                    }
-                    onComplete()
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                //    Log.e("AllActivitiesActivity", "Error loading memes", error.toException())
-                    onComplete()
-                }
-            })
-    }
-
-    private fun loadUserPolls(userId: String, onComplete: () -> Unit) {
-        val pollsRef = FirebaseDatabase.getInstance().getReference("NoBallZone/polls")
-
-        pollsRef.orderByChild("senderId").equalTo(userId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    for (pollSnapshot in snapshot.children) {
-                        val poll = FirebaseDataHelper.getPollMessageFromSnapshot(pollSnapshot)
-                        poll?.let {
-                            val activity = UserActivity(
-                                id = it.id,
-                                type = UserActivityType.POLL,
-                                username = it.senderName,
-                                userId = it.senderId,
-                                team = it.team,
-                                content = it.question,
-                                timestamp = it.timestamp,
-                                hits = it.hit,
-                                misses = it.miss,
-                                reactions = it.reactions,
-                                additionalData = mapOf<String, Any>(
-                                    "options" to it.options as Any,
-                                    "voters" to (it.voters ?: mapOf<String, String>()) as Any
+                    for (s in snapshot.children) {
+                        FirebaseDataHelper.getChatMessageFromSnapshot(s)?.let {
+                            allActivitiesFull.add(
+                                UserActivity(
+                                    it.id,
+                                    UserActivityType.CHAT,
+                                    it.senderName,
+                                    it.senderId,
+                                    it.team,
+                                    it.message,
+                                    it.imageUrl ?: "",
+                                    it.timestamp,
+                                    it.hit,
+                                    it.miss,
+                                    it.reactions
                                 )
                             )
-                            allActivities.add(activity)
                         }
                     }
-                    onComplete()
+                    onSourceLoaded()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                //    Log.e("AllActivitiesActivity", "Error loading polls", error.toException())
-                    onComplete()
+                    onSourceLoaded()
                 }
             })
     }
 
-    private fun loadUserComments(userId: String, onComplete: () -> Unit) {
-        // Load comments from chats, memes, and polls
-        val commentSources = listOf(
-            Pair("NoBallZone/chats", "chat"),
-            Pair("NoBallZone/memes", "meme"),
-            Pair("NoBallZone/polls", "poll")
-        )
-
-        var completedSources = 0
-
-        for ((path, parentType) in commentSources) {
-            loadCommentsFromCollection(path, userId, parentType) {
-                completedSources++
-                if (completedSources == commentSources.size) {
-                    onComplete()
+    private fun loadUserMemes(userId: String) {
+        FirebaseDatabase.getInstance().getReference("NoBallZone/memes")
+            .orderByChild("senderId").equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (s in snapshot.children) {
+                        FirebaseDataHelper.getMemeMessageFromSnapshot(s)?.let {
+                            allActivitiesFull.add(
+                                UserActivity(
+                                    it.id,
+                                    UserActivityType.MEME,
+                                    it.senderName,
+                                    it.senderId,
+                                    it.team,
+                                    "",
+                                    it.memeUrl,
+                                    it.timestamp,
+                                    it.hit,
+                                    it.miss,
+                                    it.reactions
+                                )
+                            )
+                        }
+                    }
+                    onSourceLoaded()
                 }
-            }
-        }
+
+                override fun onCancelled(error: DatabaseError) {
+                    onSourceLoaded()
+                }
+            })
     }
 
-    private fun loadCommentsFromCollection(path: String, userId: String, parentType: String, onComplete: () -> Unit) {
-        val ref = FirebaseDatabase.getInstance().getReference(path)
+    private fun loadUserPolls(userId: String) {
+        FirebaseDatabase.getInstance().getReference("NoBallZone/polls")
+            .orderByChild("senderId").equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (s in snapshot.children) {
+                        FirebaseDataHelper.getPollMessageFromSnapshot(s)?.let {
+                            allActivitiesFull.add(
+                                UserActivity(
+                                    it.id,
+                                    UserActivityType.POLL,
+                                    it.senderName,
+                                    it.senderId,
+                                    it.team,
+                                    it.question,
+                                    "",
+                                    it.timestamp,
+                                    it.hit,
+                                    it.miss,
+                                    it.reactions,
+                                    mapOf(
+                                        "options" to (it.options as Any),
+                                        "voters" to ((it.voters ?: mapOf<String, String>()) as Any)
+                                    )
+                                )
+                            )
+                        }
+                    }
+                    onSourceLoaded()
+                }
 
-        ref.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                for (itemSnapshot in snapshot.children) {
-                    val itemId = itemSnapshot.key ?: continue
-                    val commentsSnapshot = itemSnapshot.child("comments")
+                override fun onCancelled(error: DatabaseError) {
+                    onSourceLoaded()
+                }
+            })
+    }
 
-                    for (commentSnapshot in commentsSnapshot.children) {
-                        val commentSenderId = commentSnapshot.child("senderId").getValue(String::class.java) ?: continue
-
-                        if (commentSenderId == userId) {
-                            val commentId = commentSnapshot.key ?: continue
-                            val senderName = commentSnapshot.child("senderName").getValue(String::class.java) ?: "Anonymous"
-                            val team = commentSnapshot.child("team").getValue(String::class.java) ?: "No Team"
-                            val message = commentSnapshot.child("message").getValue(String::class.java) ?: ""
-                            val imageUrl = commentSnapshot.child("imageUrl").getValue(String::class.java) ?: ""
-                            val timestamp = commentSnapshot.child("timestamp").getValue(Long::class.java) ?: 0L
-
-                            val activity = UserActivity(
-                                id = commentId,
+    private fun loadUserComments(userId: String) {
+        FirebaseDatabase.getInstance()
+            .getReference("userComments/$userId")
+            .orderByChild("timestamp")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (s in snapshot.children) {
+                        allActivitiesFull.add(
+                            UserActivity(
+                                id = s.key ?: continue,
                                 type = UserActivityType.COMMENT,
-                                username = senderName,
+                                username = s.child("senderName").getValue(String::class.java)
+                                    ?: "Anonymous",
                                 userId = userId,
-                                team = team,
-                                content = message,
-                                imageUrl = imageUrl,
-                                timestamp = timestamp,
+                                team = s.child("team").getValue(String::class.java) ?: "",
+                                content = s.child("message").getValue(String::class.java) ?: "",
+                                imageUrl = s.child("imageUrl").getValue(String::class.java) ?: "",
+                                timestamp = s.child("timestamp").getValue(Long::class.java) ?: 0L,
                                 additionalData = mapOf(
-                                    "parentId" to itemId,
-                                    "parentType" to parentType
+                                    "parentId" to (s.child("parentId").getValue(String::class.java)
+                                        ?: ""),
+                                    "parentType" to (s.child("parentType")
+                                        .getValue(String::class.java) ?: "chat")
                                 )
                             )
-                            allActivities.add(activity)
-                        }
+                        )
                     }
+                    onSourceLoaded()
                 }
-                onComplete()
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-            //    Log.e("AllActivitiesActivity", "Error loading comments from $path", error.toException())
-                onComplete()
-            }
-        })
+                override fun onCancelled(error: DatabaseError) {
+                    onSourceLoaded()
+                }
+            })
     }
 }

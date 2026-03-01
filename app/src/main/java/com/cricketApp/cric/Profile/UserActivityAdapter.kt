@@ -220,56 +220,51 @@ class UserActivityAdapter(
         private fun deleteActivity(activity: UserActivity, callback: (Boolean) -> Unit) {
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
-            // Verify that the current user owns this activity
             if (currentUserId != activity.userId) {
                 callback(false)
                 return
             }
 
+            // COMMENT: multi-path delete (primary + userComments index)
+            if (activity.type == UserActivityType.COMMENT) {
+                val parentId = activity.additionalData?.get("parentId") as? String
+                val parentType = activity.additionalData?.get("parentType") as? String
+
+                val collectionPath = when (parentType) {
+                    "chat" -> "NoBallZone/chats"
+                    "meme" -> "NoBallZone/memes"
+                    "poll" -> "NoBallZone/polls"
+                    else -> null
+                }
+
+                if (parentId != null && collectionPath != null) {
+                    val updates = hashMapOf<String, Any?>(
+                        "$collectionPath/$parentId/comments/${activity.id}" to null,
+                        "userComments/$currentUserId/${activity.id}" to null
+                    )
+                    FirebaseDatabase.getInstance().reference.updateChildren(updates)
+                        .addOnSuccessListener { callback(true) }
+                        .addOnFailureListener { callback(false) }
+                } else {
+                    callback(false)
+                }
+                return  // ← critical: don't fall through to removeValue()
+            }
+
+            // CHAT / MEME / POLL: simple single-node delete
             val dbRef = when (activity.type) {
-                UserActivityType.CHAT -> {
-                    FirebaseDatabase.getInstance().getReference("NoBallZone/chats/${activity.id}")
-                }
-                UserActivityType.MEME -> {
-                    FirebaseDatabase.getInstance().getReference("NoBallZone/memes/${activity.id}")
-                }
-                UserActivityType.POLL -> {
-                    FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${activity.id}")
-                }
-                UserActivityType.COMMENT -> {
-                    // For comments, we need the parent ID and type
-                    val parentId = activity.additionalData?.get("parentId") as? String
-                    val parentType = activity.additionalData?.get("parentType") as? String
-
-                    if (parentId != null && parentType != null) {
-                        val path = when (parentType) {
-                            "chat" -> "NoBallZone/chats"
-                            "meme" -> "NoBallZone/memes"
-                            "poll" -> "NoBallZone/polls"
-                            else -> null
-                        }
-
-                        if (path != null) {
-                            FirebaseDatabase.getInstance().getReference("$path/$parentId/comments/${activity.id}")
-                        } else {
-                            null
-                        }
-                    } else {
-                        null
-                    }
-                }
+                UserActivityType.CHAT -> FirebaseDatabase.getInstance().getReference("NoBallZone/chats/${activity.id}")
+                UserActivityType.MEME -> FirebaseDatabase.getInstance().getReference("NoBallZone/memes/${activity.id}")
+                UserActivityType.POLL -> FirebaseDatabase.getInstance().getReference("NoBallZone/polls/${activity.id}")
+                else -> null  // COMMENT already handled above
             } ?: run {
                 callback(false)
                 return
             }
 
             dbRef.removeValue()
-                .addOnSuccessListener {
-                    callback(true)
-                }
-                .addOnFailureListener {
-                    callback(false)
-                }
+                .addOnSuccessListener { callback(true) }
+                .addOnFailureListener { callback(false) }
         }
 
         private fun loadProfilePicture(userId: String, imageView: ImageView) {

@@ -22,6 +22,8 @@
         private var databaseRef: DatabaseReference? = null
         private var valueEventListener: ValueEventListener? = null
         private lateinit var adapter: MissLeaderboardAdapter
+        private var dataAlreadyLoaded = false
+
         private val allTeams = mutableListOf<TeamData>()
 
         // Add a flag to track whether the fragment is attached
@@ -49,10 +51,19 @@
             adapter = MissLeaderboardAdapter()
             binding.leaderboardList.adapter = adapter
 
+            binding.loadingOverlay.visibility = View.VISIBLE
+            binding.lottieLoading.playAnimation()
+
+
             loadLeaderboardData()
         }
 
         private fun loadLeaderboardData() {
+            if (dataAlreadyLoaded && allTeams.isNotEmpty()) {
+                updateUI()
+                return
+            }
+
             // If there's an existing listener, remove it first
             if (valueEventListener != null && databaseRef != null) {
                 databaseRef?.removeEventListener(valueEventListener!!)
@@ -96,6 +107,7 @@
 
                             // Update UI with the combined data
                             updateUI()
+                            dataAlreadyLoaded = true
                         }
 
                         override fun onCancelled(error: DatabaseError) {
@@ -121,6 +133,10 @@
         private fun updateUI() {
             // Check if binding is null or fragment is not active
             if (_binding == null || !isFragmentActive) return
+            binding.mainScreen.visibility = View.VISIBLE
+            binding.loadingOverlay.visibility = View.GONE
+            binding.lottieLoading.cancelAnimation()
+
 
             if (allTeams.size >= 3) {
                 val firstPlace = allTeams[0]

@@ -61,6 +61,8 @@ class ChatViewModel(
         repository.stopRealtimeListener()
         repository.resetCursor(roomId, filterKey)
 
+        _messages.value = emptyList()
+
         cacheObserverJob?.cancel()
         cacheObserverJob = viewModelScope.launch {
             repository.observeCombined(roomId, filterKey).collect { list ->

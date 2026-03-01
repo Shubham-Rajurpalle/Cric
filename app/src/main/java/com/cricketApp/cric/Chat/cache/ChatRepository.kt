@@ -125,6 +125,10 @@ class ChatRepository(context: Context) {
     ) {
         try {
             val ck = cursorKey(roomId, filterKey)
+            if (isFirstPage) {
+                dao.clearChatFilter(roomId, filterKey)
+                dao.clearPollFilter(roomId, filterKey)
+            }
 
             val chats: List<ChatMessage>
             val polls: List<PollMessage>
@@ -157,11 +161,6 @@ class ChatRepository(context: Context) {
                     chats = fetchChatsByTeam(roomId, roomType, team, cursor)
                     polls = fetchPollsByTeam(roomId, roomType, team, cursor)
                 }
-            }
-
-            if (isFirstPage) {
-                dao.clearChatFilter(roomId, filterKey)
-                dao.clearPollFilter(roomId, filterKey)
             }
 
             val totalItems = chats.size + polls.size
