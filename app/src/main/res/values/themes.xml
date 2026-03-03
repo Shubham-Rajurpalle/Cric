@@ -15,7 +15,11 @@
         <!-- Tab Text Style -->
         <item name="tabTextAppearance">@style/TabTextStyle</item>
     </style>
-
+    <style name="TransparentDialog" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+    </style>
     <style name="Theme.Cric" parent="Base.Theme.Cric" />
 
     <style name="TabTextStyle">
